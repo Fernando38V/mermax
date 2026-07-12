@@ -162,7 +162,7 @@ CREATE TABLE LINEA_PRODUCCION (
 
 CREATE TABLE EMPLEADO (
     numero INT AUTO_INCREMENT NOT NULL,
-    emNombre VARCHAR(80) NOT NULL UNIQUE,
+    emNombre VARCHAR(80) NOT NULL,
     emPrimerApell VARCHAR(80) NOT NULL,
     emSegundoApell VARCHAR(80),
     puesto VARCHAR(80),
@@ -194,8 +194,10 @@ CREATE TABLE ESTACION_TRABAJO (
 
 CREATE TABLE USUARIO (
     num INT AUTO_INCREMENT NOT NULL,
-    contrasena VARCHAR(255) NOT NULL UNIQUE,
-    empleado INT NOT NULL,
+    contrasena VARCHAR(255) NOT NULL,
+    username VARCHAR(50) NOT NULL,
+    correo VARCHAR(50) NOT NULL,
+    empleado INT NOT NULL UNIQUE,
     rol VARCHAR(10) NOT NULL,
     PRIMARY KEY (num),
     CONSTRAINT fk_usuario_empleado FOREIGN KEY (empleado) REFERENCES EMPLEADO(numero),
@@ -205,7 +207,7 @@ CREATE TABLE USUARIO (
 CREATE TABLE UMBRAL_ALERTA (
     numero INT AUTO_INCREMENT NOT NULL,
     valor DECIMAL(10,2) NOT NULL,
-    activo VARCHAR(50) NOT NULL,
+    activo BOOLEAN NOT NULL,
     indicador_kpi VARCHAR(10) NOT NULL,
     linea_produccion INT NOT NULL,
     PRIMARY KEY (numero),
@@ -337,9 +339,11 @@ CREATE TABLE SOLICITUD_INSPECCION (
     hora_atencion TIME,
     edo_solicitud VARCHAR(10) NOT NULL,
     registro_merma VARCHAR(20),
+    usuario INT NOT NULL,
     PRIMARY KEY (codigo),
     CONSTRAINT fk_solicitud_inspeccion_edo_solicitud FOREIGN KEY (edo_solicitud) REFERENCES EDO_SOLICITUD(codigo),
-    CONSTRAINT fk_solicitud_inspeccion_registro_merma FOREIGN KEY (registro_merma) REFERENCES REGISTRO_MERMA(folio)
+    CONSTRAINT fk_solicitud_inspeccion_registro_merma FOREIGN KEY (registro_merma) REFERENCES REGISTRO_MERMA(folio),
+    CONSTRAINT fk_solicitud_inspeccion_usuario FOREIGN KEY (usuario) REFERENCES USUARIO(num)
 );
 
 CREATE TABLE REGISTRO_DISPOSICION (
