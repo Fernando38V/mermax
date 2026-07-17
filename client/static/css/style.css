@@ -1,0 +1,259 @@
+/* =========================================================
+   MermaX - Tema visual
+   Paleta extraida de los mockups (login + registro de scrap)
+   ========================================================= */
+
+:root {
+  /* Fondos */
+  --mx-bg-app: #0b1220;        /* fondo general de la app (sidebar, panel login) */
+  --mx-bg-card: #101a2e;       /* tarjetas / paneles (form de login, tabla) */
+  --mx-bg-input: #ffffff;      /* inputs en fondo oscuro son blancos, como en el mockup */
+  --mx-bg-hover: #16223b;      /* hover de filas / items de sidebar */
+  --mx-bg-active: #1b2a47;     /* item activo de sidebar */
+
+  /* Bordes */
+  --mx-border: #22304a;
+  --mx-border-light: #e5e7eb;  /* bordes sobre fondo blanco (inputs) */
+
+  /* Texto */
+  --mx-text-light: #f3f5f9;    /* texto principal sobre fondo oscuro */
+  --mx-text-muted: #8b95a7;    /* texto secundario sobre fondo oscuro */
+  --mx-text-dark: #1f2937;     /* texto sobre fondo blanco (inputs) */
+  --mx-text-placeholder: #9aa2b1;
+
+  /* Acento (azul de botones, links activos, estado "En inspeccion") */
+  --mx-accent: #1d4ed8;
+  --mx-accent-hover: #1c40b0;
+  --mx-accent-soft: rgba(29, 78, 216, 0.15); /* fondo de badges tipo "En inspeccion" */
+
+  /* Sombra y radios */
+  --mx-radius: 0.65rem;
+  --mx-shadow-card: 0 20px 45px rgba(0, 0, 0, 0.35);
+
+  --mx-font: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+}
+
+body {
+  font-family: var(--mx-font);
+  background-color: var(--mx-bg-app);
+  color: var(--mx-text-light);
+}
+
+/* =========================================================
+   Utilidades generales de color (para no usar bg-primary, etc.
+   de Bootstrap, que no coinciden con la paleta de MermaX)
+   ========================================================= */
+
+.mx-bg-app   { background-color: var(--mx-bg-app); }
+.mx-bg-card  { background-color: var(--mx-bg-card); }
+.mx-text-muted { color: var(--mx-text-muted) !important; }
+
+/* =========================================================
+   Inputs estilo mockup: fondo blanco, icono a la izquierda,
+   sobre un panel oscuro
+   ========================================================= */
+
+.mx-input-group {
+  position: relative;
+}
+
+.mx-input-group .mx-input-icon {
+  position: absolute;
+  top: 50%;
+  left: 0.9rem;
+  transform: translateY(-50%);
+  color: var(--mx-text-placeholder);
+  pointer-events: none;
+}
+
+.mx-input-group .mx-input-toggle {
+  position: absolute;
+  top: 50%;
+  right: 0.9rem;
+  transform: translateY(-50%);
+  color: var(--mx-text-placeholder);
+  background: none;
+  border: none;
+  padding: 0;
+}
+
+.mx-input {
+  width: 100%;
+  background-color: var(--mx-bg-input);
+  color: var(--mx-text-dark);
+  border: 1px solid var(--mx-border-light);
+  border-radius: 0.5rem;
+  padding: 0.65rem 1rem 0.65rem 2.5rem;
+  font-size: 0.95rem;
+}
+
+.mx-input::placeholder {
+  color: var(--mx-text-placeholder);
+}
+
+.mx-input:focus {
+  outline: none;
+  border-color: var(--mx-accent);
+  box-shadow: 0 0 0 3px var(--mx-accent-soft);
+}
+
+.mx-label {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--mx-text-light);
+  margin-bottom: 0.4rem;
+  display: inline-block;
+}
+
+/* =========================================================
+   Boton primario (azul, como "Acceder" y "Registrar merma")
+   ========================================================= */
+
+.mx-btn-primary {
+  background-color: var(--mx-accent);
+  color: #ffffff;
+  border: none;
+  border-radius: 0.5rem;
+  padding: 0.75rem 1.5rem;
+  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  transition: background-color 0.15s ease;
+}
+
+.mx-btn-primary:hover {
+  background-color: var(--mx-accent-hover);
+  color: #ffffff;
+}
+
+/* =========================================================
+   Tarjeta (panel de login, contenedores de contenido)
+   ========================================================= */
+
+.mx-card {
+  background-color: var(--mx-bg-card);
+  border: 1px solid var(--mx-border);
+  border-radius: var(--mx-radius);
+  box-shadow: var(--mx-shadow-card);
+}
+
+/* =========================================================
+   Layout de LOGIN: split screen
+   ========================================================= */
+
+.mx-login-wrapper {
+  min-height: 100vh;
+}
+
+.mx-login-image {
+  background-size: cover;
+  background-position: center;
+  position: relative;
+  min-height: 100vh;
+}
+
+.mx-login-image::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: rgba(11, 18, 32, 0.55);
+}
+
+.mx-login-panel {
+  background-color: var(--mx-bg-app);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem;
+}
+
+.mx-login-card {
+  width: 100%;
+  max-width: 460px;
+  padding: 2.5rem;
+}
+
+.mx-login-card h2 {
+  border-left: 4px solid var(--mx-accent);
+  padding-left: 0.85rem;
+  font-weight: 600;
+}
+
+/* =========================================================
+   Layout de la APP (sidebar + topbar), usado por layout_app.html
+   ========================================================= */
+
+.mx-sidebar {
+  background-color: var(--mx-bg-app);
+  border-right: 1px solid var(--mx-border);
+  width: 240px;
+  min-height: 100vh;
+  padding: 1.25rem 0.85rem;
+  position: fixed;
+  top: 0;
+  left: 0;
+}
+
+.mx-sidebar-brand {
+  font-weight: 700;
+  font-size: 1.25rem;
+  padding: 0.5rem 0.6rem 1.5rem;
+}
+
+.mx-sidebar-link {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  color: var(--mx-text-muted);
+  text-decoration: none;
+  padding: 0.6rem 0.75rem;
+  border-radius: 0.5rem;
+  font-size: 0.9rem;
+  margin-bottom: 0.15rem;
+}
+
+.mx-sidebar-link:hover {
+  background-color: var(--mx-bg-hover);
+  color: var(--mx-text-light);
+}
+
+.mx-sidebar-link.active {
+  background-color: var(--mx-bg-active);
+  color: var(--mx-text-light);
+  font-weight: 600;
+  border-left: 3px solid var(--mx-accent);
+  padding-left: calc(0.75rem - 3px);
+}
+
+.mx-sidebar-footer {
+  position: absolute;
+  bottom: 1rem;
+  left: 0.85rem;
+  right: 0.85rem;
+  color: var(--mx-text-muted);
+  font-size: 0.75rem;
+}
+
+.mx-content-wrapper {
+  margin-left: 240px;
+  background-color: #f5f6f8; /* el area de contenido del mockup es clara, no navy */
+  min-height: 100vh;
+  color: var(--mx-text-dark);
+}
+
+.mx-topbar {
+  background-color: #ffffff;
+  border-bottom: 1px solid #e5e7eb;
+  padding: 1rem 1.75rem;
+}
+
+.mx-badge-status {
+  background-color: var(--mx-accent-soft);
+  color: var(--mx-accent);
+  font-weight: 600;
+  font-size: 0.8rem;
+  padding: 0.25rem 0.6rem;
+  border-radius: 0.4rem;
+}
