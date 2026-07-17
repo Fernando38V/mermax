@@ -1,8 +1,18 @@
-{% extends 'base/base.html' %}
-{% block content %}
-<div class="container mt-4">
-  <h3>Bienvenido, {{ usuario.nombre_completo }}</h3>
-  <p class="text-muted mb-4">Rol: {{ usuario.rol_nombre }}</p>
-  <a href="{% url 'home:logout' %}" class="btn btn-outline-secondary">Cerrar sesión</a>
+{% extends 'base/layout_app.html' %}
+
+{% block title %}Dashboard - Mermax{% endblock title %}
+
+{% block nav_dashboard %}active{% endblock nav_dashboard %}
+
+{% block page_title %} das board del admin {% endblock page_title %}
+{% block page_subtitle %} es del admin{% endblock page_subtitle %}
+
+{% block app_content %}
+<div class="row g-3 mb-4">
+  <div class="col-6 col-lg-3">
+    <h3>Bienvenido, {{ usuario.nombre_completo }}</h3>
+    <p class="text-muted mb-4">Rol: {{ usuario.rol_nombre }}</p>
+    <a href="{% url 'home:logout' %}" class="btn btn-outline-secondary">Cerrar sesión</a>
+  </div>
 </div>
 {% endblock %}

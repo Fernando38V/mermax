@@ -1,29 +1,76 @@
 {% extends 'base/base.html' %}
+{% load static %}
+
+{% block title %}Iniciar sesión - MermaX{% endblock title %}
+
 {% block content %}
-<div class="d-flex justify-content-center align-items-center" style="min-height: 80vh;">
-  <div class="card shadow-sm" style="width: 100%; max-width: 380px;">
-    <div class="card-body p-4">
-      <h4 class="card-title mb-4 text-center">MERMAX &mdash; Iniciar sesión</h4>
 
-      {% if messages %}
-        {% for message in messages %}
-          <div class="alert alert-danger py-2">{{ message }}</div>
-        {% endfor %}
-      {% endif %}
+<div class="row g-0 mx-login-wrapper">
 
-      <form method="post" novalidate>
-        {% csrf_token %}
-        <div class="mb-3">
-          <label for="username" class="form-label">Usuario</label>
-          <input type="text" class="form-control" id="username" name="username" required autofocus>
-        </div>
-        <div class="mb-3">
-          <label for="password" class="form-label">Contraseña</label>
-          <input type="password" class="form-control" id="password" name="password" required>
-        </div>
-        <button type="submit" class="btn btn-primary w-100">Entrar</button>
-      </form>
-    </div>
-  </div>
+  <!-- columna izqueida -->
+   <div class="col-12 col-lg-6 mx-login-image"
+      style="background-image: url('{% static 'img/login.png' %}')">
+   </div>
+
+   <!-- Coluamna derecha -->
+   <div class="col-12 col-lg-6 mx-login-panel">
+
+      <div class="mx-login-card">
+         <h2 class="mx-login-title">Iniciar sesión</h2>
+
+         {% if form.non_field_errors %}
+         
+          <div class="alert alert-danger" role="alert">
+              {{ form.non_field_errors }}
+          </div>
+         {% endif %}
+
+         <form method="POST" action="{% url 'home:login' %}">
+            {% csrf_token %}
+
+            <div class="mb-3">
+               <label for="username">Username o correo</label>
+               <div class="mx-input-group">
+                  <span class="material-symbols-outlined mx-input-icon">person</span>
+                  <input type="text" name="username" id="id_username" class="mx-input" placeholder="ingresar nombre de usuario o correo" autocomplete="username" required autofocus>
+               </div>
+            </div>
+
+            <div class="mb-4">
+              <label for="password">Contraseña</label>
+              <div class="mx-input-group">
+                <span class="material-symbols-outlined mx-input-icon">lock</span> 
+                <input type="password" name="password" id="id_password" class="mx-input" placeholder="ingresar contraseña" autocomplete="current-password" required></span>
+              
+                <button type="button" class="mx-input-toggle" id="mxTogglePassword" aria-label="Mostrar contraseña">
+                  <span class="material-symbols-outlined" id="mxToggleIcon">visibility</span>
+                </button>
+              </div>
+            </div>
+            
+            <button type="submit" class="mx-btn-primary w-100">
+              Acceder
+              <span class="material-symbols-outlined">login</span>
+            </button>
+   </div>
 </div>
-{% endblock %}
+
+{% endblock content %}
+
+{% block extra_js %}
+
+<script>
+  const mxToggleBtn = document.getElementById('mxTogglePassword');
+  const mxPasswordInput = document.getElementById('id_password');
+  const mxToggleIcon = document.getElementById('mxToggleIcon')
+
+  mxToggleBtn.addEventListener('click', () => {
+    const isPassword = mxPasswordInput.type === 'password';
+    mxPasswordInput.type = isPassword ? 'text' : 'password';
+    mxToggleIcon.textContent = isPassword ? 'visibility' : 'visibility_off';
+    mx
+  });
+    
+</script>
+
+{% endblock extra_js %}
