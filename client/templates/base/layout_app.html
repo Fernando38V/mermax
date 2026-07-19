@@ -1,0 +1,84 @@
+{% extends "base/base.html" %}
+{% load static %}
+
+{% block content %}
+<div class="d-flex">
+
+    <!-- Sidebar -->
+    <aside class="mx-sidebar d-flex flex-column">
+        <div class="mx-sidebar-brand">Mermax</div>
+
+        <nav class="flex-grow-1">
+            <a href="" class="mx-sidebar-link {% block nav_dashboard %}{% endblock nav_dashboard %}">
+                <span class="material-symbols-outlined">Dashboard</span> Dashboard
+            </a>
+
+            <a href="" class="mx-sidebar-link {% block nav_merma %}{% endblock nav_merma %}">
+                <span class="material-symbols-outlined">inventory_2</span> Merma
+            </a>
+
+            <a href="" class="mx-sidebar-link {% block nav_almacen %}{% endblock nav_almacen %}">
+                <span class="material-symbols-outlined">warehouse</span> Almacen
+            </a>
+
+            <a href="" class="mx-sidebar-link {% block nav_inspecciones %}{% endblock nav_inspecciones %}">
+                <span class="material-symbols-outlined">content_paste_search</span> Inspecciones
+            </a>
+
+            <a href="" class="mx-sidebar-link {% block nav_trazabilidad %}{% endblock nav_trazabilidad %}">
+                <span class="material-symbols-outlined">account_tree</span> Trazabilidad
+            </a>
+
+            <a href="" class="mx-sidebar-link {% block nav_alertas %}{% endblock nav_alertas %}">
+                <span class="material-symbols-outlined">warning</span> Alertas
+            </a>
+
+            <a href="" class="mx-sidebar-link {% block nav_bitacora %}{% endblock nav_bitacora %}">
+                <span class="material-symbols-outlined">docs</span> Bitácora
+            </a>
+
+            <a href="" class="mx-sidebar-link {% block nav_catalogos %}{% endblock nav_catalogos %}">
+                <span class="material-symbols-outlined">view_list</span> Catalogos
+            </a>
+
+        </nav>
+    </aside>
+
+    <!-- Contenido principal -->
+    <div class="mx-content-wrapper flex-grow-1">
+        
+        <!-- TOPBAR -->
+         <header class="mx-topbar d-flex justify-content-between align-items-center">
+            <div>
+                <h1 class="h4 mb-0">{% block page_title %}{% endblock page_title %}</h1>
+                <p class="mx-text-muted mb-0 small">{% block page_subtitle %}{% endblock page_subtitle %}</p>
+            </div>
+            <div class="d-flex align-items-center gap-3">
+                <span class="material-symbols-outlined">notifications</span>
+                <div class="d-flex align-items-center gap-2">
+                    <div class="rounded-circle bg-primary text-white d-flex align-items-center justify-content-center" style="width: 36px; height: 36px; font-size: 1.2rem;">
+                        {{ usuario.nombre_completo|slice:":1" }}
+                    </div>
+
+                    <div>
+                        <div class="fw-semibold">
+                        {{ usuario.nombre_completo }}
+                        </div>
+                        <small class="mx-text-muted">
+                        {{ usuario.rol_nombre }}
+                        </small>
+                    </div>
+
+                </div>
+            </div>
+
+         </header>
+
+         <!-- contenido de cada pagina -->
+         <main class="p-4">
+            {% block app_content %}{% endblock app_content %}
+         </main>
+    </div>
+
+</div>
+{% endblock content %}
