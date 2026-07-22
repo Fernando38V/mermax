@@ -1124,3 +1124,148 @@ BEGIN
 END $$
 
 DELIMITER ;
+
+-- ======================================================
+-- Modificaciones a la base de datos - 21/07/2026 | Axel
+-- ======================================================
+
+-- Nueva tabla para la devolucion a proveedor - RF-08: Devolución a proveedor
+CREATE TABLE disposicion_devolucion (
+    folio VARCHAR(20) primary key,
+    motivo_rechazo VARCHAR(255) NOT NULL,
+    registro_disposicion VARCHAR(20) NOT NULL UNIQUE,
+    proveedor VARCHAR(10) NOT NULL,
+    CONSTRAINT fk_devolucion_registro FOREIGN KEY (registro_disposicion) REFERENCES REGISTRO_DISPOSICION(folio),
+    CONSTRAINT fk_devolucion_proveedor FOREIGN KEY (proveedor) REFERENCES PROVEEDOR(codigo)
+);
+
+-- Nueva tabla para las empresas recicladoras - RF-09: Reciclaje
+CREATE TABLE EMPRESA_RECICLADORA (
+    codigo VARCHAR(10) PRIMARY KEY,
+    nombre VARCHAR(100) NOT NULL,
+    telefono VARCHAR(20),
+    correo VARCHAR(100),
+    activo BOOLEAN NOT NULL DEFAULT TRUE
+);
+
+-- Nueva tabla para el reciclaje - RF-09: Reciclaje
+CREATE TABLE DISPOSICION_RECICLAJE (
+    folio VARCHAR(20) PRIMARY KEY,
+    empresa_recicladora VARCHAR(10) NOT NULL,
+    peso_neto DECIMAL(10,2) NOT NULL,
+    registro_disposicion VARCHAR(20) NOT NULL UNIQUE,
+    CONSTRAINT fk_reciclaje_registro FOREIGN KEY (registro_disposicion) REFERENCES REGISTRO_DISPOSICION(folio),
+    CONSTRAINT fk_reciclaje_empresa FOREIGN KEY (empresa_recicladora) REFERENCES EMPRESA_RECICLADORA(codigo)
+);
+
+-- Nueva tabla para los metodos de destruccion del desecho controlado - RF-10: Desecho controlado
+CREATE TABLE METODO_DESTRUCCION (
+    codigo VARCHAR(10) PRIMARY KEY,
+    nombre VARCHAR(100) NOT NULL,
+    descripcion VARCHAR(255) NOT NULL,
+    activo BOOLEAN NOT NULL DEFAULT TRUE
+);
+
+-- Nueva tabla para el desecho controlado - RF-10: Desecho controlado
+CREATE TABLE DISPOSICION_DESECHO (
+    folio VARCHAR(20) PRIMARY KEY,
+    metodo_destruccion VARCHAR(10) NOT NULL,
+    folio_probatorio VARCHAR(10) NOT NULL,
+    registro_disposicion VARCHAR(20) NOT NULL UNIQUE,
+    CONSTRAINT fk_desecho_registro FOREIGN KEY (registro_disposicion) REFERENCES REGISTRO_DISPOSICION(folio),
+    CONSTRAINT fk_desecho_metodo FOREIGN KEY (metodo_destruccion) REFERENCES METODO_DESTRUCCION(codigo)
+);
+
+-- Modificacion en la tabla registro_disposicion
+ALTER TABLE registro_disposicion
+    drop column motivo_rechazo,
+    drop column empresa_recicladora,
+    drop column peso_neto,
+    drop column metodo_destruccion,
+    drop column folio_probatorio;
+
+-- Columnas de estado (Activo/Inactivo) faltantes q si se mencionaban en los RFs
+ALTER TABLE COMPONENTE ADD COLUMN activo BOOLEAN NOT NULL DEFAULT TRUE;
+ALTER TABLE PROVEEDOR ADD COLUMN activo BOOLEAN NOT NULL DEFAULT TRUE;
+ALTER TABLE ESTACION_TRABAJO ADD COLUMN activo BOOLEAN NOT NULL DEFAULT TRUE;
+ALTER TABLE EMPLEADO ADD COLUMN activo BOOLEAN NOT NULL DEFAULT TRUE;
+ALTER TABLE CAUSA_RAIZ ADD COLUMN activo BOOLEAN NOT NULL DEFAULT TRUE;
+ALTER TABLE TIPO_MERMA ADD COLUMN activo BOOLEAN NOT NULL DEFAULT TRUE;
+ALTER TABLE USUARIO ADD COLUMN activo BOOLEAN NOT NULL DEFAULT TRUE;
+
+-- Nueva tabla para bitacora de auditoria - RF-47: Bitacora de Auditoria
+CREATE TABLE BITACORA_AUDITORIA (
+    num INT AUTO_INCREMENT PRIMARY KEY,
+    usuario INT NOT NULL,
+    modulo VARCHAR(50) NOT NULL,
+    accion VARCHAR(20) NOT NULL,
+    valor_anterior TEXT,
+    valor_nuevo TEXT,
+    motivo VARCHAR(255),
+    fecha_hora DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT fk_bitacora_auditoria_usuario FOREIGN KEY (usuario) REFERENCES USUARIO(num)
+);
+
+-- Inserts faltantes de las modificaciones
+
+INSERT INTO empresa_recicladora (codigo, nombre, telefono, correo, activo) VALUES
+('REC-01', 'Reciclados Tecnológicos del norte','664-201-3344', 'contacto@rectecnorte.com', TRUE),
+('REC-02', 'Metales Industriales S.A.', '656-402-1188', 'ventas@metalesind.com', TRUE),
+('REC-03', 'Cartonera y Reciclados Locales', '664-330-5521', 'info@cartonerarl.com', TRUE),
+('REC-04', 'Plásticos e Inyecciones del Norte', '664-511-7790', 'contacto@plasticosnorte.com', TRUE),
+('REC-05', 'E-Waste Solutions de México', '656-887-2244', 'operaciones@ewastesolutions.mx', TRUE);
+
+INSERT INTO METODO_DESTRUCCION (codigo, nombre, descripcion, activo) VALUES
+('MET-01', 'Trituración Mecánica', 'Reducción física del material mediante trituradora industrial', TRUE),
+('MET-02', 'Incineración Controlada', 'Destrucción térmica bajo condiciones ambientales autorizadas', TRUE),
+('MET-03', 'Fundición por Inducción', 'Fundido de piezas metálicas para recuperación de aleaciones', TRUE),
+('MET-04', 'Desmantelamiento Químico', 'Separación de componentes electrónicos mediante procesos químicos', TRUE),
+('MET-05', 'Compactado e Hidropulpeado', 'Compresión y disolución de material de cartón/celulosa', TRUE);
+
+SET FOREIGN_KEY_CHECKS = 0;
+
+INSERT INTO REGISTRO_DISPOSICION (folio, fecha_determinacion, fecha_ejecucion, cantidad_ejecutada, observaciones, sale_almacen, llega_almacen, disposicion_final, usuario, registro_merma, estado_disposicion) VALUES
+('DISP-2026-021', '2026-07-21', '2026-07-21', 12.00, 'Devolución de biseles defectuosos de origen al proveedor LG Display.', 'ALM-SCRP', 'ALM-PROV', 'RTN_PROV', 3, 'MRM-2026-002', 'CERRADA'),
+('DISP-2026-022', '2026-07-21', '2026-07-21', 8.00, 'Fundición de tornillería dañada para recuperación de aleación metálica.', 'ALM-SCRP', 'ALM-FIN', 'RECIC_MET', 3, 'MRM-2026-006', 'CERRADA'),
+('DISP-2026-023', '2026-07-21', '2026-07-21', 30.00, 'Peletizado de gabinetes plásticos traseros agrietados por estiba.', 'ALM-SCRP', 'ALM-FIN', 'RECIC_PLA', 3, 'MRM-2026-015', 'CERRADA'),
+('DISP-2026-024', '2026-07-21', NULL, NULL, 'Baterías y residuos químicos de soldadura en espera de disposición controlada.', 'ALM-SCRP', NULL, 'HAZ_WASTE', 1, 'MRM-2026-017', 'PROCESO'),
+('DISP-2026-025', '2026-07-21', '2026-07-21', 3.00, 'Destrucción fiscal certificada de módulos OLED de alto valor por auditoría.', 'ALM-SCRP', 'ALM-FIN', 'DESTR_CER', 3, 'MRM-2026-007', 'CERRADA');
+
+SET FOREIGN_KEY_CHECKS = 1;
+
+
+-- RF-08: Devolución a proveedor
+INSERT INTO disposicion_devolucion (folio, motivo_rechazo, registro_disposicion, proveedor) VALUES
+('DEV-2026-001', 'Bisel de aluminio con defecto de fábrica confirmado por ingeniería.', 'DISP-2026-021', 'PRV-LGX02');
+
+-- RF-09: Reciclaje
+INSERT INTO DISPOSICION_RECICLAJE (folio, empresa_recicladora, peso_neto, registro_disposicion) VALUES
+('RCJ-2026-001', 'REC-02', 1.20, 'DISP-2026-022'),
+('RCJ-2026-002', 'REC-04', 45.00, 'DISP-2026-023');
+
+-- RF-10: Desecho controlado
+INSERT INTO DISPOSICION_DESECHO (folio, metodo_destruccion, folio_probatorio, registro_disposicion) VALUES
+('DES-2026-001', 'MET-04', 'HAZ-0091', 'DISP-2026-024'),
+('DES-2026-002', 'MET-01', 'FIS-9931', 'DISP-2026-025');
+
+-- RF-47: Bitácora de auditoría (ejemplos de trazabilidad)
+INSERT INTO BITACORA_AUDITORIA (usuario, modulo, accion, valor_anterior, valor_nuevo, motivo, fecha_hora) VALUES
+(3, 'REGISTRO_DISPOSICION', 'INSERT', NULL, 'DISP-2026-021 creado con disposicion_final=RTN_PROV', 'Alta de disposición por devolución a proveedor', '2026-07-21 09:15:00'),
+(3, 'REGISTRO_DISPOSICION', 'INSERT', NULL, 'DISP-2026-022 creado con disposicion_final=RECIC_MET', 'Alta de disposición por reciclaje de metal', '2026-07-21 09:20:00'),
+(1, 'REGISTRO_DISPOSICION', 'UPDATE', 'estado_disposicion=PROCESO', 'estado_disposicion=CERRADA', 'Cierre de disposición tras confirmación de retorno a proveedor', '2026-07-21 11:40:00'),
+(4, 'COMPONENTE', 'UPDATE', 'activo=TRUE', 'activo=FALSE', 'Baja lógica de componente descontinuado por proveedor', '2026-07-21 14:05:00');
+
+INSERT INTO empleado (emNombre, emPrimerApell, emSegundoApell, puesto, edad, fecha_ingreso, area, activo) VALUES
+('Axel', 'Islas', 'Ruelas', 'Administrador General de Sistemas', 30, '2026-07-21', 'ARE-QA', TRUE),
+('Anwar', 'Estrada', 'Santos', 'Administrador General de Sistemas', 30, '2026-07-21', 'ARE-QA', TRUE),
+('Jorge', 'Martinez', 'Zambrano', 'Administrador General de Sistemas', 30, '2026-07-21', 'ARE-QA', TRUE),
+('Diego', 'Sanchez', 'Hernandez', 'Administrador General de Sistemas', 30, '2026-07-21', 'ARE-QA', TRUE);
+
+INSERT INTO usuario (contrasena, username, correo, empleado, rol, activo) VALUES
+('123', 'axel', 'axel@gmail.com', 5, 'ADMIN', TRUE),
+('123', 'anwar', 'anwar@gmail.com', 6, 'ADMIN', TRUE),
+('123', 'jorge', 'jorge@gmail.com', 7, 'ADMIN', TRUE),
+('123', 'diego', 'diego@gmail.com', 8, 'ADMIN', TRUE);
+
+-- Actualizar las contraseñas de los primeros 4 registros de usuarios
+UPDATE usuario SET contrasena = '123' WHERE usuario.num <= 4;

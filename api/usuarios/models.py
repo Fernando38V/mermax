@@ -28,6 +28,7 @@ class Empleado(models.Model):
     edad = models.IntegerField(blank=True, null=True)
     fecha_ingreso = models.DateField(blank=True, null=True)
     area = models.ForeignKey(Area, on_delete=models.PROTECT, db_column='area')
+    activo = models.BooleanField(default=True)
 
     class Meta:
         managed = False
@@ -46,6 +47,7 @@ class Usuario(models.Model):
     correo = models.CharField(max_length=50)
     empleado = models.OneToOneField(Empleado, on_delete=models.PROTECT, db_column='empleado')
     rol = models.ForeignKey(Rol, on_delete=models.PROTECT, db_column='rol')
+    activo = models.BooleanField(default=True)
 
     class Meta:
         managed = False

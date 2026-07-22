@@ -118,6 +118,7 @@ class TipoMerma(models.Model):
     codigo = models.CharField(primary_key=True, max_length=10)
     nombre = models.CharField(max_length=100, unique=True)
     descripcion = models.CharField(max_length=100, blank=True, null=True)
+    activo = models.BooleanField(default=True)
 
     class Meta:
         managed = False
@@ -133,6 +134,7 @@ class CausaRaiz(models.Model):
     codigo = models.CharField(primary_key=True, max_length=10)
     nombre = models.CharField(max_length=100, unique=True)
     descripcion = models.CharField(max_length=100, blank=True, null=True)
+    activo = models.BooleanField(default=True)
 
     class Meta:
         managed = False
@@ -230,6 +232,7 @@ class Componente(models.Model):
     costo = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True)
     descripcion = models.CharField(max_length=100, blank=True, null=True)
     tipo = models.CharField(max_length=50, blank=True, null=True)
+    activo = models.BooleanField(default=True)
 
     class Meta:
         managed = False
@@ -249,6 +252,7 @@ class Proveedor(models.Model):
     direccion_numero = models.CharField(db_column='dirNumero', max_length=10, blank=True, null=True)
     direccion_colonia = models.CharField(db_column='dirColonia', max_length=100, blank=True, null=True)
     rfc = models.CharField(db_column='RFC', max_length=13, blank=True, null=True)
+    activo = models.BooleanField(default=True)
 
     class Meta:
         managed = False
@@ -335,6 +339,7 @@ class EstacionTrabajo(models.Model):
     nombre = models.CharField(max_length=100, unique=True)
     etapa = models.CharField(max_length=50, blank=True, null=True)
     linea_produccion = models.ForeignKey(LineaProduccion, on_delete=models.PROTECT, db_column='linea_produccion')
+    activo = models.BooleanField(default=True)
 
     class Meta:
         managed = False
@@ -345,6 +350,36 @@ class EstacionTrabajo(models.Model):
     def __str__(self):
         return self.nombre
 
+class EmpresaRecicladora(models.Model):
+    codigo = models.CharField(primary_key=True, max_length=10)
+    nombre = models.CharField(max_length=100)
+    telefono = models.CharField(max_length=20, blank=True, null=True)
+    correo = models.CharField(max_length=100, blank=True, null=True)
+    activo = models.BooleanField(default=True)
+
+    class Meta:
+        managed = False
+        db_table = 'empresa_recicladora'
+        verbose_name = 'Empresa recicladora'
+        verbose_name_plural = 'Empresas recicladoras'
+
+    def __str__(self):
+        return self.nombre
+
+class MetodoDestruccion(models.Model):
+    codigo = models.CharField(primary_key=True, max_length=10)
+    nombre = models.CharField(max_length=100)
+    descripcion = models.CharField(max_length=255)
+    activo = models.BooleanField(default=True)
+
+    class Meta:
+        managed = False
+        db_table = 'metodo_destruccion'
+        verbose_name = 'Método de destrucción'
+        verbose_name_plural = 'Métodos de destrucción'
+
+    def __str__(self):
+        return self.nombre
 
 class LineaTurno(models.Model):
     codigo = models.CharField(primary_key=True, max_length=10)

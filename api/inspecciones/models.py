@@ -18,7 +18,7 @@ Correcciones aplicadas:
   inspectdb por choque de nombres (dos FK al mismo modelo Almacen).
 """
 
-from catalogos.models import Almacen, DisposicionFinal, EdoSolicitud, EstadoDisposicion
+from catalogos.models import Almacen, DisposicionFinal, EdoSolicitud, EmpresaRecicladora, EstadoDisposicion, MetodoDestruccion, Proveedor
 from usuarios.models import Usuario
 
 
@@ -71,6 +71,66 @@ class RegistroDisposicion(models.Model):
         db_table = 'registro_disposicion'
         verbose_name = 'Registro de disposición'
         verbose_name_plural = 'Registros de disposición'
+
+    def __str__(self):
+        return self.folio
+    
+
+class DisposicionDevolucion(models.Model):
+    """RF-08: Devolución a proveedor."""
+    folio = models.CharField(primary_key=True, max_length=20)
+    motivo_rechazo = models.CharField(max_length=255)
+    registro_disposicion = models.OneToOneField(
+        RegistroDisposicion, on_delete=models.CASCADE, db_column='registro_disposicion'
+    )
+    proveedor = models.ForeignKey(Proveedor, on_delete=models.PROTECT, db_column='proveedor')
+
+    class Meta:
+        managed = False
+        db_table = 'disposicion_devolucion'
+        verbose_name = 'Devolución a proveedor'
+        verbose_name_plural = 'Devoluciones a proveedor'
+
+    def __str__(self):
+        return self.folio
+
+
+class DisposicionReciclaje(models.Model):
+    """RF-09: Reciclaje."""
+    folio = models.CharField(primary_key=True, max_length=20)
+    empresa_recicladora = models.ForeignKey(
+        EmpresaRecicladora, on_delete=models.PROTECT, db_column='empresa_recicladora'
+    )
+    peso_neto = models.DecimalField(max_digits=10, decimal_places=2)
+    registro_disposicion = models.OneToOneField(
+        RegistroDisposicion, on_delete=models.CASCADE, db_column='registro_disposicion'
+    )
+
+    class Meta:
+        managed = False
+        db_table = 'disposicion_reciclaje'
+        verbose_name = 'Disposición de reciclaje'
+        verbose_name_plural = 'Disposiciones de reciclaje'
+
+    def __str__(self):
+        return self.folio
+
+class DisposicionDesecho(models.Model):
+    """RF-10: Desecho controlado."""
+    folio = models.CharField(primary_key=True, max_length=20)
+    metodo_destruccion = models.ForeignKey(
+        MetodoDestruccion, on_delete=models.PROTECT, db_column='metodo_destruccion'
+    )
+    folio_probatorio = models.CharField(max_length=10)
+    registro_disposicion = models.OneToOneField(
+        RegistroDisposicion, on_delete=models.CASCADE, db_column='registro_disposicion'
+    )
+
+    class Meta:
+        managed = False
+        db_table = 'disposicion_desecho'
+        verbose_name = 'Disposición de desecho controlado'
+        verbose_name_plural = 'Disposiciones de desecho controlado'
 
     def __str__(self):
         return self.folio
