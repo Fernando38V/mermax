@@ -1269,3 +1269,42 @@ INSERT INTO usuario (contrasena, username, correo, empleado, rol, activo) VALUES
 
 -- Actualizar las contraseñas de los primeros 4 registros de usuarios
 UPDATE usuario SET contrasena = '123' WHERE usuario.num <= 4;
+
+-- ======================================================
+-- Modificaciones a la base de datos - 22/07/2026 | Axel
+-- ======================================================
+
+-- Eliminar campo 'puesto' de la tabla empleado
+ALTER TABLE empleado 
+    DROP COLUMN puesto;
+
+-- Reemplazar 'edad' por la fecha de nacimiento
+ALTER TABLE empleado
+    ADD COLUMN fecha_nacimiento DATE NOT NULL DEFAULT '2026-07-22' AFTER emSegundoApell;
+
+UPDATE empleado
+SET fecha_nacimiento = '1997-07-22' where numero = 1;
+
+UPDATE empleado
+SET fecha_nacimiento = '1992-07-22' where numero = 2;
+
+UPDATE empleado
+SET fecha_nacimiento = '1985-07-22' where numero = 3;
+
+UPDATE empleado
+SET fecha_nacimiento = '1988-07-22' where numero = 4;
+
+UPDATE empleado
+SET fecha_nacimiento = '1996-07-22' where numero = 5;
+
+UPDATE empleado
+SET fecha_nacimiento = '1996-07-22' where numero = 6;
+
+UPDATE empleado
+SET fecha_nacimiento = '1996-07-22' where numero = 7;
+
+UPDATE empleado
+SET fecha_nacimiento = '1996-07-22' where numero = 8;
+
+ALTER TABLE empleado 
+    DROP COLUMN edad;
