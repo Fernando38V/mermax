@@ -54,3 +54,51 @@ class UpdateRecicladoraSerializer(serializers.ModelSerializer):
             "activo",
         ]
         
+# ======================================================
+# Metodos de destruccion
+# ======================================================
+
+class ListMetodoSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = models.MetodoDestruccion
+        fields = [
+            "codigo",
+            "nombre",
+            "descripcion",
+            "activo",
+        ]
+
+class CreateMetodoSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = models.MetodoDestruccion
+        fields = [
+            "codigo",
+            "nombre",
+            "descripcion",
+            "activo",
+        ]
+    
+    def validate_codigo(self, value):
+        if not re.match(r'^MET-\d{2}$', value):
+            raise serializers.ValidationError("El código debe tener el formato MET-01")
+        return value
+    
+class DetailMetodoSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = models.MetodoDestruccion
+        fields = [
+            "codigo",
+            "nombre",
+            "descripcion",
+            "activo",
+        ]        
+
+class UpdateMetodoSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = models.MetodoDestruccion
+        fields = [
+            "nombre",
+            "descripcion",
+            "activo",
+        ]
+
