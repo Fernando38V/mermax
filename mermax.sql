@@ -1308,3 +1308,45 @@ SET fecha_nacimiento = '1996-07-22' where numero = 8;
 
 ALTER TABLE empleado 
     DROP COLUMN edad;
+
+
+-- ======================================================
+-- Modificaciones a la base de datos - 23/07/2026 | Jona
+-- ======================================================
+
+DELIMITER $$
+
+CREATE TRIGGER tg_generar_folio_merma
+BEFORE INSERT ON registro_merma
+FOR EACH ROW
+BEGIN
+    DECLARE ultimo INT DEFAULT 0;
+
+    -- Fecha automática
+    IF NEW.fecha IS NULL THEN
+        SET NEW.fecha = CURDATE();
+    END IF;
+
+    -- Folio automático
+    IF NEW.folio IS NULL OR NEW.folio = '' THEN
+
+        SELECT IFNULL(
+            MAX(CAST(SUBSTRING(folio,10) AS UNSIGNED)),
+            0
+        )
+        INTO ultimo
+        FROM registro_merma
+        WHERE folio LIKE CONCAT('MRM-',YEAR(CURDATE()),'-%');
+
+        SET NEW.folio = CONCAT(
+            'MRM-',
+            YEAR(CURDATE()),
+            '-',
+            LPAD(ultimo+1,3,'0')
+        );
+
+    END IF;
+
+END$$
+
+DELIMITER ;
