@@ -30,13 +30,15 @@ class LoteMaterial(models.Model):
     almacen = models.ForeignKey(Almacen, on_delete=models.PROTECT, db_column='almacen')
     estado_lote = models.ForeignKey(EstadoLote, on_delete=models.PROTECT, db_column='estado_lote')
     proveedor = models.ForeignKey(Proveedor, on_delete=models.PROTECT, db_column='proveedor')
-    resuelta = models.BooleanField(default=False)
-    fecha_resolucion = models.DateField(blank=True, null=True)
-    motivo_resolucion = models.CharField(max_length=100, blank=True, null=True)
-    usuario_resolucion = models.ForeignKey(
-        Usuario, on_delete=models.PROTECT, db_column='usuario_resolucion',
-        related_name='discrepancias_resueltas', blank=True, null=True,
-    )
+
+    class Meta:
+        managed = False
+        db_table = 'lote_material'
+        verbose_name = 'Lote de material'
+        verbose_name_plural = 'Lotes de material'
+
+    def __str__(self):
+        return f'Lote {self.num} - {self.componente_id}'
 
     class Meta:
         managed = False
@@ -59,6 +61,16 @@ class Discrepancia(models.Model):
     registro_merma = models.ForeignKey(
         'mermas.RegistroMerma', on_delete=models.SET_NULL,
         db_column='registro_merma', blank=True, null=True
+    )
+    edo_discrepancia = models.ForeignKey(
+        'catalogos.EdoDiscrepancia', on_delete=models.PROTECT,
+        db_column='edo_discrepancia', default='ABIERTA',
+    )
+    fecha_resolucion = models.DateField(blank=True, null=True)
+    motivo_resolucion = models.CharField(max_length=100, blank=True, null=True)
+    usuario_resolucion = models.ForeignKey(
+        Usuario, on_delete=models.PROTECT, db_column='usuario_resolucion',
+        related_name='discrepancias_resueltas', blank=True, null=True,
     )
 
     class Meta:
