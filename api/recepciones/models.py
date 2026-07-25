@@ -30,6 +30,13 @@ class LoteMaterial(models.Model):
     almacen = models.ForeignKey(Almacen, on_delete=models.PROTECT, db_column='almacen')
     estado_lote = models.ForeignKey(EstadoLote, on_delete=models.PROTECT, db_column='estado_lote')
     proveedor = models.ForeignKey(Proveedor, on_delete=models.PROTECT, db_column='proveedor')
+    resuelta = models.BooleanField(default=False)
+    fecha_resolucion = models.DateField(blank=True, null=True)
+    motivo_resolucion = models.CharField(max_length=100, blank=True, null=True)
+    usuario_resolucion = models.ForeignKey(
+        Usuario, on_delete=models.PROTECT, db_column='usuario_resolucion',
+        related_name='discrepancias_resueltas', blank=True, null=True,
+    )
 
     class Meta:
         managed = False

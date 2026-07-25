@@ -152,30 +152,31 @@ CAMPOS_EMPLEADO = [
     "nombre",
     "primer_apellido",
     "segundo_apellido",
-    "edad",
+    "fecha_nacimiento",
     "fecha_ingreso",
     "area",
     "turno",
     "activo",
 ]
 
-
 class ListEmpleadoSerializer(serializers.ModelSerializer):
+    edad = serializers.IntegerField(read_only=True)   # viene de la propiedad del modelo
+
     class Meta:
         model = Empleado
-        fields = ["numero"] + CAMPOS_EMPLEADO
-
+        fields = ["numero", "edad"] + CAMPOS_EMPLEADO
 
 class CreateEmpleadoSerializer(serializers.ModelSerializer):
     class Meta:
         model = Empleado
         fields = CAMPOS_EMPLEADO
 
-
 class DetailEmpleadoSerializer(serializers.ModelSerializer):
+    edad = serializers.IntegerField(read_only=True)   # viene de la propiedad del modelo
+
     class Meta:
         model = Empleado
-        fields = ["numero"] + CAMPOS_EMPLEADO
+        fields = ["numero", "edad"] + CAMPOS_EMPLEADO
 
 
 class UpdateEmpleadoSerializer(serializers.ModelSerializer):

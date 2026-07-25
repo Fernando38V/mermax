@@ -18,6 +18,7 @@ Correcciones aplicadas:
   guardar y validar credenciales.
 """
 from django.db import models
+from datetime import date
 
 from catalogos.models import Area, Rol, Turno
 
@@ -27,7 +28,7 @@ class Empleado(models.Model):
     nombre = models.CharField(db_column='emNombre', max_length=80)
     primer_apellido = models.CharField(db_column='emPrimerApell', max_length=80)
     segundo_apellido = models.CharField(db_column='emSegundoApell', max_length=80, blank=True, null=True)
-    edad = models.IntegerField(blank=True, null=True)
+    fecha_nacimiento = models.DateField(blank=True, null=True)
     fecha_ingreso = models.DateField(blank=True, null=True)
     area = models.ForeignKey(Area, on_delete=models.PROTECT, db_column='area')
     turno = models.ForeignKey(Turno, on_delete=models.PROTECT, db_column='turno', blank=True, null=True)
@@ -46,6 +47,17 @@ class Empleado(models.Model):
     def nombre_completo(self):
         partes = [self.nombre, self.primer_apellido, self.segundo_apellido]
         return ' '.join(p for p in partes if p)
+
+    fecha_nacimiento = models.DateField(blank=True, null=True)   # sustituye a edad
+
+    @property
+    def edad(self):
+        if not self.fecha_nacimiento:
+            return None
+        hoy = date.today()
+        return hoy.year - self.fecha_nacimiento.year - (
+            (hoy.month, hoy.day) < (self.fecha_nacimiento.month, self.fecha_nacimiento.day)
+        )
 
 
 class Usuario(models.Model):
