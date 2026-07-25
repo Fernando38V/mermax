@@ -81,7 +81,6 @@ CREATE TABLE EDO_SOLICITUD (
     PRIMARY KEY (codigo)
 );
 
--- CORREGIDO: codigo VARCHAR(10) -> VARCHAR(20) y descripcion VARCHAR(50) -> VARCHAR(150)
 CREATE TABLE INDICADOR_KPI (
     codigo VARCHAR(20) NOT NULL,
     nombre VARCHAR(100) NOT NULL UNIQUE,
@@ -97,7 +96,6 @@ CREATE TABLE ESTADO_ALERTA (
     PRIMARY KEY (codigo)
 );
 
--- AGREGADO: correo, por RF-23 (dato de contacto obligatorio del proveedor)
 CREATE TABLE PROVEEDOR (
     codigo VARCHAR(10) NOT NULL,
     nombre VARCHAR(150) NOT NULL UNIQUE,
@@ -164,7 +162,6 @@ CREATE TABLE LINEA_PRODUCCION (
     CONSTRAINT fk_linea_produccion_estado_linea FOREIGN KEY (estado_linea) REFERENCES ESTADO_LINEA(codigo)
 );
 
--- AGREGADO: turno con FK a TURNO, por RF-31 (turno asignado al empleado)
 CREATE TABLE EMPLEADO (
     numero INT AUTO_INCREMENT NOT NULL,
     emNombre VARCHAR(80) NOT NULL,
@@ -210,7 +207,6 @@ CREATE TABLE USUARIO (
     CONSTRAINT fk_usuario_rol FOREIGN KEY (rol) REFERENCES ROL(clave)
 );
 
--- CORREGIDO: indicador_kpi VARCHAR(10) -> VARCHAR(20) para empatar con la FK
 CREATE TABLE UMBRAL_ALERTA (
     numero INT AUTO_INCREMENT NOT NULL,
     valor DECIMAL(10,2) NOT NULL,
