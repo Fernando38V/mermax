@@ -985,3 +985,31 @@ FROM REGISTRO_MERMA rm
 INNER JOIN LOTE_MATERIAL lm ON rm.lote_material = lm.num AND rm.componente = lm.componente
 INNER JOIN COMPONENTE c ON rm.componente = c.codigo
 GROUP BY lm.num, lm.componente, c.descripcion ORDER BY cantidad_mermada DESC;
+
+/* ==========================================================================
+   TRIGGER 4: tg_actualizar_costo_merma
+   Objetivo: Recalcular automáticamente el costo total al modificar una merma.
+   ========================================================================== */
+
+DROP TRIGGER IF EXISTS tg_actualizar_costo_merma;
+
+DELIMITER $$
+
+CREATE TRIGGER tg_actualizar_costo_merma
+BEFORE UPDATE ON REGISTRO_MERMA
+FOR EACH ROW
+BEGIN
+    DECLARE costo_unitario DECIMAL(10,2);
+
+    -- Obtener el costo unitario del componente
+    SELECT costo
+    INTO costo_unitario
+    FROM COMPONENTE
+    WHERE codigo = NEW.componente;
+
+    -- Recalcular el costo total
+    SET NEW.costo_total = NEW.cantidad * IFNULL(costo_unitario, 0.00);
+
+END$$
+
+DELIMITER ;
