@@ -1,5 +1,14 @@
 MODELS DEL PROYECTO
 
+> Actualizado 25/07/2026. Cambios respecto a la version anterior:
+> - Empleado: se elimino 'puesto' (se duplicaba con Usuario.rol) y se agrego
+>   la FK 'turno' (RF-31). Se agrego la propiedad nombre_completo.
+> - Proveedor: se agrego 'correo' (RF-23).
+> - Usuario: se agregaron is_authenticated / is_anonymous, necesarios para
+>   que DRF acepte el token en los endpoints protegidos.
+> OJO: el modelo Empleado NO tiene 'fecha_nacimiento'. Esa columna no existe
+> en la tabla; declararla provoca el error 1054 en cualquier consulta.
+
 ## Models de catalogos
 
 class EstadoLinea(models.Model):
@@ -233,6 +242,7 @@ class Componente(models.Model):
 class Proveedor(models.Model):
     codigo = models.CharField(primary_key=True, max_length=10)
     nombre = models.CharField(max_length=150, unique=True)
+    correo = models.CharField(max_length=100, blank=True, null=True)
     telefono = models.CharField(max_length=20, blank=True, null=True)
     direccion_calle = models.CharField(db_column='dirCalle', max_length=150, blank=True, null=True)
     direccion_numero = models.CharField(db_column='dirNumero', max_length=10, blank=True, null=True)
@@ -419,10 +429,10 @@ class Empleado(models.Model):
     nombre = models.CharField(db_column='emNombre', max_length=80)
     primer_apellido = models.CharField(db_column='emPrimerApell', max_length=80)
     segundo_apellido = models.CharField(db_column='emSegundoApell', max_length=80, blank=True, null=True)
-    puesto = models.CharField(max_length=80, blank=True, null=True)
     edad = models.IntegerField(blank=True, null=True)
     fecha_ingreso = models.DateField(blank=True, null=True)
     area = models.ForeignKey(Area, on_delete=models.PROTECT, db_column='area')
+    turno = models.ForeignKey(Turno, on_delete=models.PROTECT, db_column='turno', blank=True, null=True)
     activo = models.BooleanField(default=True)
 
     class Meta:
@@ -433,6 +443,11 @@ class Empleado(models.Model):
 
     def __str__(self):
         return f'{self.nombre} {self.primer_apellido}'
+
+    @property
+    def nombre_completo(self):
+        partes = [self.nombre, self.primer_apellido, self.segundo_apellido]
+        return ' '.join(p for p in partes if p)
 
 
 class Usuario(models.Model):
@@ -452,6 +467,16 @@ class Usuario(models.Model):
 
     def __str__(self):
         return self.username
+
+    # DRF pregunta por esto cuando el objeto hace de request.user.
+    # Sin ellos, IsAuthenticated rechaza al usuario aunque el token sea valido.
+    @property
+    def is_authenticated(self):
+        return True
+
+    @property
+    def is_anonymous(self):
+        return False
 
 
 def _generar_token_key():

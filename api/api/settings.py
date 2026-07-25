@@ -47,7 +47,7 @@ INSTALLED_APPS = [
     
 ]
 
-RESTFRAMEWORK = {
+REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': (
         'usuarios.authentication.UsuarioTokenAuthentication',
     ),
