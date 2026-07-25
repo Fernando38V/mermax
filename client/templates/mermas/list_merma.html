@@ -1,0 +1,43 @@
+{% extends "base/layout_app.html" %}
+
+{% block nav_merma %}active{% endblock nav_merma %}
+
+{% block page_title %}Mermas{% endblock page_title %}
+{% block page_subtitle %}Listado de merma{% endblock page_subtitle %}
+
+{% block app_content %}
+
+<button class="btn btn-primary">
+    <span class="material-symbols-outlined">add</span> 
+    Registrar Merma
+</button>
+
+<table class="table ">
+    <thead>
+        <th>#</th>
+        <th>Fecha</th>
+        <th>Cantidad</th>
+        <th>Tipo</th>
+        <th>Causa Raiz</th>
+        <th>Estado</th>
+        <th></th>
+        <th>Acciones</th>
+    </thead>
+    <tbody>
+        {% for merma in mermas %}
+        <tr>
+            <td>{{ merma.folio }}</td>
+            <td>{{ merma.fecha }}</td>
+            <td>{{ merma.cantidad|floatformat:0 }} {{ merma.unidad }}</td>
+            <td>{{ merma.tipo_merma.nombre }}</td>
+            <td></td>
+            <td></td>
+            <td></td>
+            <td>Pendiente</td>
+                
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+
+{% endblock app_content %}

@@ -13,6 +13,6 @@ def login_required_api(view_func):
     def wrapper(request, *args, **kwargs):
         if not request.session.get('api_token'):
             messages.warning(request, 'Debes iniciar sesión para continuar.')
-            return redirect('home:login')
+            return redirect('usuarios:login')
         return view_func(request, *args, **kwargs)
     return wrapper
