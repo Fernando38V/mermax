@@ -1,6 +1,27 @@
 {% extends "base/base.html" %}
 {% load static %}
 
+{#
+  Sidebar dinámico por rol (RNF-02 Control de acceso por rol, RNF-16).
+
+  usuario.rol trae la clave del rol: SUPER / ALMAC / CALID / ADMIN.
+  Viene del context processor home.context_processors.usuario_sesion,
+  así que está disponible en todas las páginas que extiendan este layout,
+  sin que cada vista tenga que mandarlo.
+
+  Reparto de opciones según los RF:
+    Dashboard      todos           RF-12
+    Merma          SUPER           RF-02, RF-03 (registra y corrige)
+    Almacén        ALMAC           RF-04, RF-05 (recibe y reporta discrepancias)
+    Inspecciones   CALID           RF-07 a RF-10 (inspecciona y dictamina)
+    Trazabilidad   todos           RF-11 (consulta, no modifica)
+    Alertas        CALID           RF-13 (la alerta se despliega en su panel)
+    Bitácora       ADMIN           RF-47
+    Catálogos      ADMIN           RF-15 a RF-46
+
+  Los href van vacíos hasta que existan las urls de cada módulo.
+#}
+
 {% block content %}
 <div class="d-flex">
 
@@ -9,46 +30,57 @@
         <div class="mx-sidebar-brand">Mermax</div>
 
         <nav class="flex-grow-1">
+
             <a href="" class="mx-sidebar-link {% block nav_dashboard %}{% endblock nav_dashboard %}">
-                <span class="material-symbols-outlined">Dashboard</span> Dashboard
+                <span class="material-symbols-outlined">dashboard</span> Dashboard
             </a>
 
+            {% if usuario.rol == 'SUPER' %}
             <a href="" class="mx-sidebar-link {% block nav_merma %}{% endblock nav_merma %}">
                 <span class="material-symbols-outlined">inventory_2</span> Merma
             </a>
+            {% endif %}
 
+            {% if usuario.rol == 'ALMAC' %}
             <a href="" class="mx-sidebar-link {% block nav_almacen %}{% endblock nav_almacen %}">
                 <span class="material-symbols-outlined">warehouse</span> Almacen
             </a>
+            {% endif %}
 
+            {% if usuario.rol == 'CALID' %}
             <a href="" class="mx-sidebar-link {% block nav_inspecciones %}{% endblock nav_inspecciones %}">
                 <span class="material-symbols-outlined">content_paste_search</span> Inspecciones
             </a>
+            {% endif %}
 
             <a href="" class="mx-sidebar-link {% block nav_trazabilidad %}{% endblock nav_trazabilidad %}">
                 <span class="material-symbols-outlined">account_tree</span> Trazabilidad
             </a>
 
+            {% if usuario.rol == 'CALID' %}
             <a href="" class="mx-sidebar-link {% block nav_alertas %}{% endblock nav_alertas %}">
                 <span class="material-symbols-outlined">warning</span> Alertas
             </a>
+            {% endif %}
 
+            {% if usuario.rol == 'ADMIN' %}
             <a href="" class="mx-sidebar-link {% block nav_bitacora %}{% endblock nav_bitacora %}">
-                <span class="material-symbols-outlined">docs</span> Bitácora
+                <span class="material-symbols-outlined">description</span> Bitácora
             </a>
 
             <a href="" class="mx-sidebar-link {% block nav_catalogos %}{% endblock nav_catalogos %}">
                 <span class="material-symbols-outlined">view_list</span> Catalogos
             </a>
+            {% endif %}
 
         </nav>
     </aside>
 
     <!-- Contenido principal -->
     <div class="mx-content-wrapper flex-grow-1">
-        
+
         <!-- TOPBAR -->
-         <header class="mx-topbar d-flex justify-content-between align-items-center">
+        <header class="mx-topbar d-flex justify-content-between align-items-center">
             <div>
                 <h1 class="h4 mb-0">{% block page_title %}{% endblock page_title %}</h1>
                 <p class="mx-text-muted mb-0 small">{% block page_subtitle %}{% endblock page_subtitle %}</p>
@@ -72,12 +104,12 @@
                 </div>
             </div>
 
-         </header>
+        </header>
 
-         <!-- contenido de cada pagina -->
-         <main class="p-4">
+        <!-- contenido de cada pagina -->
+        <main class="p-4">
             {% block app_content %}{% endblock app_content %}
-         </main>
+        </main>
     </div>
 
 </div>
