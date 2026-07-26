@@ -93,6 +93,15 @@ class DiscrepanciaSerializer(serializers.ModelSerializer):
     def validate(self, data):
         cantidad_reportada = data.get('cantidad_reportada')
         cantidad_recibida = data.get('cantidad_recibida')
+        registro_merma = data.get('registro_merma')
+        
+        if registro_merma:
+            estado_actual = getattr(registro_merma.edo_flujo_merma, 'pk', registro_merma.edo_flujo_merma_id)
+            
+            if estado_actual != 'REGISTRADA':
+                raise serializers.ValidationError({
+                    "registro_merma": f"No se puede crear una discrepancia para la merma '{registro_merma.folio}' porque su estado actual es '{estado_actual}'. Solo se permiten discrepancias en estado 'REGISTRADA'."
+                })
         
         if cantidad_reportada is not None and cantidad_reportada < 0:
             raise serializers.ValidationError(
