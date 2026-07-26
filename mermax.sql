@@ -81,6 +81,12 @@ CREATE TABLE EDO_SOLICITUD (
     PRIMARY KEY (codigo)
 );
 
+CREATE TABLE EDO_DISCREPANCIA (
+    codigo VARCHAR(10) NOT NULL,
+    nombre VARCHAR(50) NOT NULL UNIQUE,
+    PRIMARY KEY (codigo)
+);
+
 CREATE TABLE INDICADOR_KPI (
     codigo VARCHAR(20) NOT NULL,
     nombre VARCHAR(100) NOT NULL UNIQUE,
@@ -167,7 +173,7 @@ CREATE TABLE EMPLEADO (
     emNombre VARCHAR(80) NOT NULL,
     emPrimerApell VARCHAR(80) NOT NULL,
     emSegundoApell VARCHAR(80),
-    edad INT,
+    fecha_nacimiento DATE,
     fecha_ingreso DATE,
     area VARCHAR(10) NOT NULL,
     turno VARCHAR(10),
@@ -322,15 +328,21 @@ CREATE TABLE REGISTRO_MERMA (
 
 CREATE TABLE DISCREPANCIA (
     folio VARCHAR(20) NOT NULL,
-    fecha DATE NOT NULL,
+    fecha_reporte DATE NOT NULL,
     cantidad_reportada DECIMAL(10,2) NOT NULL,
     cantidad_recibida DECIMAL(10,2) NOT NULL,
     diferencia DECIMAL(10,2) NOT NULL,
-    motivo VARCHAR(100),
-    usuario INT NOT NULL,
+    motivo_reporte VARCHAR(100),
+    usuario_reporte INT NOT NULL,
     registro_merma VARCHAR(20),
+    edo_discrepancia VARCHAR(10) NOT NULL DEFAULT 'ABIERTA',
+    fecha_resolucion DATE,
+    motivo_resolucion VARCHAR(100),
+    usuario_resolucion INT,
     PRIMARY KEY (folio),
-    CONSTRAINT fk_discrepancia_usuario FOREIGN KEY (usuario) REFERENCES USUARIO(num),
+    CONSTRAINT fk_discrepancia_usuario_reporte FOREIGN KEY (usuario_reporte) REFERENCES USUARIO(num),
+    CONSTRAINT fk_discrepancia_usuario_resolucion FOREIGN KEY (usuario_resolucion) REFERENCES USUARIO(num),
+    CONSTRAINT fk_discrepancia_edo FOREIGN KEY (edo_discrepancia) REFERENCES EDO_DISCREPANCIA(codigo),
     CONSTRAINT fk_discrepancia_registro_merma FOREIGN KEY (registro_merma) REFERENCES REGISTRO_MERMA(folio)
 );
 
@@ -433,6 +445,10 @@ INSERT INTO DISPOSICION_FINAL (clave, nombre, descripcion) VALUES
 INSERT INTO EDO_SOLICITUD (codigo, nombre) VALUES
 ('PENDIENTE', 'Pendiente'),
 ('ATENDIDA', 'Atendida');
+
+INSERT INTO EDO_DISCREPANCIA (codigo, nombre) VALUES
+('ABIERTA', 'Abierta'),
+('RESUELTA', 'Resuelta');
 
 INSERT INTO INDICADOR_KPI (codigo, nombre, descripcion, formula, unidad) VALUES
 ('PCT_SCRAP', '% de Scrap por Línea', 'Porcentaje de merma respecto a la producción total', '(cantidad_merma / cantidad_producida) * 100', '%'),
@@ -576,26 +592,25 @@ INSERT INTO PROD_COMP (producto, componente, unidad, cantidad_requerida) VALUES
 
 -- EMPLEADO y USUARIO del equipo (los 4 integrantes como usuarios de prueba)
 
-INSERT INTO EMPLEADO (emNombre, emPrimerApell, emSegundoApell, edad, fecha_ingreso, area, turno) VALUES
-('Axel', 'Islas', 'Ruelas', 30, '2026-01-15', 'ARE-ALM', 'MAT'),
-('Anwar', 'Estrada', 'Santos', 30, '2026-01-15', 'ARE-ADM', 'MAT'),
-('Jorge', 'Martinez', 'Zambrano', 30, '2026-01-15', 'ARE-PROD', 'MAT'),
-('Diego', 'Sanchez', 'Hernandez', 30, '2026-01-15', 'ARE-QA', 'NOC');
+INSERT INTO EMPLEADO (emNombre, emPrimerApell, emSegundoApell, fecha_nacimiento, fecha_ingreso, area, turno) VALUES
+('Axel', 'Islas', 'Ruelas', '1996-03-12', '2026-01-15', 'ARE-ALM', 'MAT'),
+('Anwar', 'Estrada', 'Santos', '1995-11-04', '2026-01-15', 'ARE-ADM', 'MAT'),
+('Jorge', 'Martinez', 'Zambrano', '1996-07-21', '2026-01-15', 'ARE-PROD', 'MAT'),
+('Diego', 'Sanchez', 'Hernandez', '1997-02-09', '2026-01-15', 'ARE-QA', 'NOC'),
+('Marisol', 'Aguirre', 'Trejo', '1994-08-30', '2026-02-02', 'ARE-PROD', 'NOC'),
+('Ramon', 'Quintero', 'Bejarano', '1993-05-17', '2026-02-02', 'ARE-ALM', 'NOC');
 
--- Contraseñas ya hasheadas con el algoritmo PBKDF2-SHA256 de Django 4.2.
--- Los cuatro usuarios tienen la contraseña: 123
--- NO se guardan en texto plano: check_password() del login sólo funciona con este formato.
--- Para cambiar una contraseña a mano:
---   py manage.py shell
---   from django.contrib.auth.hashers import make_password
---   print(make_password("nueva"))
+-- Contraseñas hasheadas con PBKDF2-SHA256 de Django 4.2. Los 6 usuarios: 123
 INSERT INTO USUARIO (contrasena, username, correo, empleado, rol) VALUES
 ('pbkdf2_sha256$600000$NJ8VRTRgu9Ph$j27xRKYr4Yxcc4qIqXHxXQTxY4BA2hVuGouw4W5OnjE=', 'axel', 'axel@mermax.com', 1, 'ALMAC'),
 ('pbkdf2_sha256$600000$IBOf69JCDXTX$An+iXBhMEmIwwVTY/5wLj6iQJ7BLiIBhtS/gXNByyyU=', 'anwar', 'anwar@mermax.com', 2, 'ADMIN'),
 ('pbkdf2_sha256$600000$kH6f9zScdSOF$OBQ8QrXhq53ULqGn9Q8HQQFU0EpJ0dHJjbTM0yrvGZk=', 'jorge', 'jorge@mermax.com', 3, 'SUPER'),
-('pbkdf2_sha256$600000$i42rnKDGVSaw$XuXopO3zFpiXmOWUSCzfXfzwUzEtSct+Uf6xHSuR03s=', 'diego', 'diego@mermax.com', 4, 'CALID');
+('pbkdf2_sha256$600000$i42rnKDGVSaw$XuXopO3zFpiXmOWUSCzfXfzwUzEtSct+Uf6xHSuR03s=', 'diego', 'diego@mermax.com', 4, 'CALID'),
+('pbkdf2_sha256$600000$meuTFeyuDF1I$gPoiY8vC0Tk7pu7xeCpacLrEss51iR8hPYVS5/HiIF4=', 'marisol', 'marisol@mermax.com', 5, 'SUPER'),
+('pbkdf2_sha256$600000$ILqd4BSYDnmu$inOSUhqdhZ1FISPXTILxVdguNQ4ubFvrNUSqClDPHXU=', 'ramon', 'ramon@mermax.com', 6, 'ALMAC');
 
--- REGISTRO_MERMA (usuario 1=axel/ALMAC, 2=anwar/ADMIN, 3=jorge/SUPER, 4=diego/CALID)
+-- Usuarios: 1=axel/ALMAC/MAT, 2=anwar/ADMIN/MAT, 3=jorge/SUPER/MAT,
+-- 4=diego/CALID/NOC, 5=marisol/SUPER/NOC, 6=ramon/ALMAC/NOC
 -- Nota: jorge (SUPER) es quien normalmente registra la merma
 --   MRM-2026-001: CERRADA    - ciclo completo, sin discrepancia
 --   MRM-2026-002: REGISTRADA - limpio, sirve para probar el Trigger 2
@@ -610,8 +625,8 @@ INSERT INTO REGISTRO_MERMA (folio, cantidad, costo_total, fecha, unidad, descrip
 
 -- La discrepancia cuelga de MRM-2026-004, que es el folio que queda bloqueado.
 -- cantidad_reportada debe coincidir con REGISTRO_MERMA.cantidad (regla del Trigger 3).
-INSERT INTO DISCREPANCIA (folio, fecha, cantidad_reportada, cantidad_recibida, diferencia, motivo, usuario, registro_merma) VALUES
-('DISC-2026-001', '2026-07-07', 2.00, 1.00, -1.00, 'Sólo se recibió una pieza de las dos reportadas por la línea.', 1, 'MRM-2026-004');
+INSERT INTO DISCREPANCIA (folio, fecha_reporte, cantidad_reportada, cantidad_recibida, diferencia, motivo_reporte, usuario_reporte, registro_merma, edo_discrepancia) VALUES
+('DISC-2026-001', '2026-07-07', 2.00, 1.00, -1.00, 'Sólo se recibió una pieza de las dos reportadas por la línea.', 1, 'MRM-2026-004', 'ABIERTA');
 
 -- Toda merma que llega a RECIBIDA tiene solicitud: es lo que hace el Trigger 2.
 -- MRM-2026-001 ya cerro su ciclo (solicitud ATENDIDA); MRM-2026-003 apenas se
@@ -704,7 +719,8 @@ BEGIN
         -- 2. Verificar si tiene discrepancias abiertas
         SELECT COUNT(*) INTO existe_discrepancia
         FROM DISCREPANCIA
-        WHERE registro_merma = NEW.folio;
+        WHERE registro_merma = NEW.folio
+          AND edo_discrepancia <> 'RESUELTA';
 
         -- 3. Si no hay discrepancias, generar la solicitud automáticamente
         IF existe_discrepancia = 0 THEN
@@ -890,105 +906,12 @@ BEGIN
 END$$
 
 DELIMITER ;
-   
--- PRUEBA A - Trigger 1 rechaza un componente que no pertenece al lote
--- Esperado: ERROR 1644 "El componente no corresponde al lote de material referenciado."
-INSERT INTO REGISTRO_MERMA (folio, cantidad, fecha, unidad, edo_flujo_merma, usuario, lote_material, componente, tipo_merma, causa_raiz, estacion_trabajo, orden_produccion)
-VALUES ('MRM-TEST-001', 2.00, '2026-07-24', 'Pieza', 'REGISTRADA', 3, 1, 'COMP-02', 'DEF_FAB', 'ESD', 'EST-01', 1);
 
-
--- PRUEBA B - Trigger 1 acepta el registro y calcula el costo
--- Esperado: el INSERT pasa y costo_total = 2 x 850.00 = 1700.00
-INSERT INTO REGISTRO_MERMA (folio, cantidad, fecha, unidad, edo_flujo_merma, usuario, lote_material, componente, tipo_merma, causa_raiz, estacion_trabajo, orden_produccion)
-VALUES ('MRM-TEST-002', 2.00, '2026-07-24', 'Pieza', 'REGISTRADA', 3, 1, 'COMP-01', 'ERR_ENSAM', 'SOLD_FRIA', 'EST-01', 1);
-
-SELECT folio, cantidad, costo_total, edo_flujo_merma
-FROM REGISTRO_MERMA WHERE folio = 'MRM-TEST-002';
-
-
--- PRUEBA C - Trigger 3 valida la cantidad reportada
--- Esperado: ERROR 1644 "La cantidad reportada no coincide con el registro original de la merma."
-INSERT INTO DISCREPANCIA (folio, fecha, cantidad_reportada, cantidad_recibida, diferencia, motivo, usuario, registro_merma)
-VALUES ('DISC-TEST-000', '2026-07-24', 5.00, 1.00, 0.00, 'Cantidad reportada incorrecta', 1, 'MRM-TEST-002');
-
-
--- PRUEBA D - Trigger 3 recalcula la diferencia y bloquea el flujo
--- Esperado: el INSERT pasa. Aunque se manda diferencia = 99.00, el trigger la
-INSERT INTO DISCREPANCIA (folio, fecha, cantidad_reportada, cantidad_recibida, diferencia, motivo, usuario, registro_merma)
-VALUES ('DISC-TEST-001', '2026-07-24', 2.00, 1.00, 99.00, 'Prueba de discrepancia', 1, 'MRM-TEST-002');
-
-SELECT folio, cantidad_reportada, cantidad_recibida, diferencia
-FROM DISCREPANCIA WHERE folio = 'DISC-TEST-001';
-
-SELECT folio, edo_flujo_merma
-FROM REGISTRO_MERMA WHERE folio = 'MRM-TEST-002';
-
--- PRUEBA E - Trigger 2 respeta el bloqueo del Trigger 3
--- Esperado: el UPDATE pasa, pero el SELECT devuelve 0 filas. El folio tiene discrepancia, así que NO se genera solicitud de inspección.
-UPDATE REGISTRO_MERMA SET edo_flujo_merma = 'RECIBIDA' WHERE folio = 'MRM-TEST-002';
-
-SELECT * FROM SOLICITUD_INSPECCION WHERE registro_merma = 'MRM-TEST-002';
-
--- PRUEBA F - Trigger 2 con un folio limpio (encadenamiento completo)
--- Esperado: aparece una fila nueva con código 'SOL-MRM-2026-002', edo_solicitud = 'PENDIENTE' y la fecha/hora del sistema.
--- Ésta es la prueba más importante: confirma que los 3 triggers trabajan en cadena sin pisarse.
-
-UPDATE REGISTRO_MERMA SET edo_flujo_merma = 'RECIBIDA' WHERE folio = 'MRM-2026-002';
-
-SELECT * FROM SOLICITUD_INSPECCION WHERE registro_merma = 'MRM-2026-002';
-
--- PRUEBA G - Trigger de utilidad: folio y fecha automáticos
--- Esperado: se genera 'MRM-2026-005' (el consecutivo después del 004) con la fecha de hoy. No se mandan ni folio ni fecha.
-
-INSERT INTO REGISTRO_MERMA (cantidad, fecha, unidad, edo_flujo_merma, usuario, lote_material, componente, tipo_merma, causa_raiz, estacion_trabajo, orden_produccion)
-VALUES (1.00, NULL, 'Pieza', 'REGISTRADA', 3, 2, 'COMP-02', 'DEF_FAB', 'ESD', 'EST-03', 2);
-
-SELECT folio, fecha, costo_total FROM REGISTRO_MERMA
-WHERE folio LIKE 'MRM-2026-%' ORDER BY folio DESC LIMIT 1;
-
--- LIMPIEZA - deja la base como quedó al importar. Respeta el orden de las FK.
-
-DELETE FROM SOLICITUD_INSPECCION WHERE registro_merma IN ('MRM-TEST-002', 'MRM-2026-002');
-DELETE FROM DISCREPANCIA WHERE folio LIKE 'DISC-TEST-%';
-DELETE FROM REGISTRO_MERMA WHERE folio LIKE 'MRM-TEST-%';
-DELETE FROM REGISTRO_MERMA WHERE folio = 'MRM-2026-005';
-UPDATE REGISTRO_MERMA SET edo_flujo_merma = 'REGISTRADA' WHERE folio = 'MRM-2026-002';
-
-SELECT folio, edo_flujo_merma, costo_total FROM REGISTRO_MERMA ORDER BY folio;
-
--- CONSULTAS DE VERIFICACIÓN (para el documento y el dashboard del RF-12)
-
--- 1. Total de merma y costo acumulado por componente
-SELECT componente, COUNT(*) AS total_registros, SUM(cantidad) AS cantidad_total_merma,
-       SUM(costo_total) AS costo_total_perdido
-FROM REGISTRO_MERMA GROUP BY componente ORDER BY costo_total_perdido DESC;
-
--- 2. Costo promedio de merma por componente
-SELECT componente, AVG(cantidad) AS promedio_cantidad_por_evento,
-       AVG(costo_total) AS costo_promedio_por_evento
-FROM REGISTRO_MERMA GROUP BY componente ORDER BY costo_promedio_por_evento DESC;
-
--- 3. Eficiencia de estaciones de trabajo
-SELECT estacion_trabajo, COUNT(*) AS incidentes, SUM(costo_total) AS costo_acumulado
-FROM REGISTRO_MERMA GROUP BY estacion_trabajo ORDER BY costo_acumulado DESC;
-
--- 4. Rastreo completo: de la merma a la inspección
-SELECT m.folio AS folio_merma, m.componente, m.cantidad, m.edo_flujo_merma AS estado_merma,
-       s.codigo AS codigo_inspeccion, s.edo_solicitud AS estado_inspeccion, s.fecha_generacion
-FROM REGISTRO_MERMA m
-INNER JOIN SOLICITUD_INSPECCION s ON m.folio = s.registro_merma;
-
--- 5. Componentes mermados por lote de procedencia
-SELECT lm.num AS numero_lote, lm.componente, c.descripcion AS nombre_componente,
-       SUM(rm.cantidad) AS cantidad_mermada
-FROM REGISTRO_MERMA rm
-INNER JOIN LOTE_MATERIAL lm ON rm.lote_material = lm.num AND rm.componente = lm.componente
-INNER JOIN COMPONENTE c ON rm.componente = c.codigo
-GROUP BY lm.num, lm.componente, c.descripcion ORDER BY cantidad_mermada DESC;
 
 /* ==========================================================================
    TRIGGER 4: tg_actualizar_costo_merma
-   Objetivo: Recalcular automáticamente el costo total al modificar una merma.
+   Objetivo: Recalcular el costo total sólo cuando cambia la base del cálculo,
+   y bloquear la edición del registro una vez recibido en almacén (RF-03).
    ========================================================================== */
 
 DROP TRIGGER IF EXISTS tg_actualizar_costo_merma;
@@ -1001,14 +924,34 @@ FOR EACH ROW
 BEGIN
     DECLARE costo_unitario DECIMAL(10,2);
 
-    -- Obtener el costo unitario del componente
-    SELECT costo
-    INTO costo_unitario
-    FROM COMPONENTE
-    WHERE codigo = NEW.componente;
+    -- RF-03: sólo se puede corregir mientras el almacenista no registre la
+    -- recepción. Los cambios de estado sí se permiten: hacen avanzar el flujo.
+    IF OLD.edo_flujo_merma <> 'REGISTRADA'
+       AND ( NEW.cantidad <> OLD.cantidad
+             OR NOT (NEW.componente <=> OLD.componente)
+             OR NOT (NEW.tipo_merma <=> OLD.tipo_merma)
+             OR NOT (NEW.causa_raiz <=> OLD.causa_raiz) ) THEN
+        SIGNAL SQLSTATE '45000'
+        SET MESSAGE_TEXT = 'Error: el registro ya fue recibido en almacen y no puede modificarse.';
+    END IF;
 
-    -- Recalcular el costo total
-    SET NEW.costo_total = NEW.cantidad * IFNULL(costo_unitario, 0.00);
+    -- Recostear sólo si cambió la cantidad o el componente. Si se recalculara
+    -- en cada UPDATE, un cambio de estado reescribiría el costo histórico con
+    -- el precio actual del componente.
+    IF NEW.cantidad <> OLD.cantidad OR NOT (NEW.componente <=> OLD.componente) THEN
+
+        IF NEW.cantidad <= 0 THEN
+            SIGNAL SQLSTATE '45000'
+            SET MESSAGE_TEXT = 'Error: La cantidad de merma debe ser mayor a cero.';
+        END IF;
+
+        SELECT costo INTO costo_unitario
+        FROM COMPONENTE
+        WHERE codigo = NEW.componente;
+
+        SET NEW.costo_total = NEW.cantidad * IFNULL(costo_unitario, 0.00);
+
+    END IF;
 
 END$$
 
