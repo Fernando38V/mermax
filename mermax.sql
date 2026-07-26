@@ -758,8 +758,14 @@ DELIMITER ;
 
 
 /* ==========================================================================
-   TRIGGER 3: tg_validar_y_bloquear_discrepancia
-   Objetivo: Validar datos de entrada, calcular diferencia y cambiar flujo.
+   TRIGGER 3: tg_validar_y_bloquear_discrepancia          (Jona, 26/07/2026)
+   Objetivo:
+     1. Validar que la merma este en estado REGISTRADA.
+     2. Validar la cantidad reportada contra la merma original.
+     3. Generar folio automatico (DISC-YYYY-XXX).
+     4. Asignar la fecha de reporte si viene nula.
+     5. Calcular la diferencia en el servidor.
+     6. Bloquear el flujo pasando la merma a DISCREPAN.
    ========================================================================== */
 
 DROP TRIGGER IF EXISTS tg_validar_y_bloquear_discrepancia;
@@ -771,18 +777,54 @@ BEFORE INSERT ON DISCREPANCIA
 FOR EACH ROW
 BEGIN
     DECLARE cantidad_original DECIMAL(10,2);
+    DECLARE estado_actual VARCHAR(50);
+    DECLARE ultimo INT DEFAULT 0;
 
-    SELECT cantidad INTO cantidad_original
+    -- 1. Consultar cantidad y estado actual de la merma original
+    SELECT cantidad, edo_flujo_merma
+    INTO cantidad_original, estado_actual
     FROM REGISTRO_MERMA
     WHERE folio = NEW.registro_merma;
 
+    -- 1.1 Validar que la merma este en estado 'REGISTRADA'
+    IF estado_actual <> 'REGISTRADA' THEN
+        SIGNAL SQLSTATE '45000'
+        SET MESSAGE_TEXT = 'Error: No se puede crear una discrepancia. La merma no se encuentra en estado REGISTRADA.';
+    END IF;
+
+    -- 1.2 Validar cantidad reportada contra el registro original
     IF NEW.cantidad_reportada <> cantidad_original THEN
         SIGNAL SQLSTATE '45000'
         SET MESSAGE_TEXT = 'Error: La cantidad reportada no coincide con el registro original de la merma.';
     END IF;
 
+    -- 2. Autocompletar la fecha de reporte si viene vacia
+    IF NEW.fecha_reporte IS NULL THEN
+        SET NEW.fecha_reporte = CURDATE();
+    END IF;
+
+    -- 3. Autogenerar folio (DISC-YYYY-XXX) si no se especifica
+    IF NEW.folio IS NULL OR NEW.folio = '' THEN
+        SELECT IFNULL(
+            MAX(CAST(SUBSTRING(folio, 11) AS UNSIGNED)),
+            0
+        )
+        INTO ultimo
+        FROM DISCREPANCIA
+        WHERE folio LIKE CONCAT('DISC-', YEAR(CURDATE()), '-%');
+
+        SET NEW.folio = CONCAT(
+            'DISC-',
+            YEAR(CURDATE()),
+            '-',
+            LPAD(ultimo + 1, 3, '0')
+        );
+    END IF;
+
+    -- 4. Calcular la diferencia en el servidor
     SET NEW.diferencia = NEW.cantidad_recibida - NEW.cantidad_reportada;
 
+    -- 5. Bloquear el flujo
     UPDATE REGISTRO_MERMA
     SET edo_flujo_merma = 'DISCREPAN'
     WHERE folio = NEW.registro_merma;
