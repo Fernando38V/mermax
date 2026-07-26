@@ -527,10 +527,16 @@ INSERT INTO LOTE_MATERIAL (fecha, cantidad, caducidad, numero_lote_prov, compone
 ('2026-06-22', 1000.00, NULL, 'FOX-GAB-04', 'COMP-04', 'ALM-PROD', 'DISPONIBLE', 'PRV-FOX01'),
 ('2026-06-25', 1200.00, NULL, 'LGX-ARNES-05', 'COMP-05', 'ALM-PROD', 'DISPONIBLE', 'PRV-LGX02');
 
+-- RF-15: cada linea de produccion lleva configurado su maximo de scrap.
+-- La linea 3 (Panel LED) tolera mas porque es la etapa mas costosa y delicada.
+-- La linea 2 lleva ademas un umbral de costo, para ejercitar los dos KPIs.
 INSERT INTO UMBRAL_ALERTA (valor, activo, indicador_kpi, linea_produccion) VALUES
 (2.50, TRUE, 'PCT_SCRAP', 1),
-(1500.00, TRUE, 'COSTO_MERMA', 2),
-(3.00, TRUE, 'PCT_SCRAP', 3);
+(2.50, TRUE, 'PCT_SCRAP', 2),
+(3.00, TRUE, 'PCT_SCRAP', 3),
+(2.50, TRUE, 'PCT_SCRAP', 4),
+(2.50, TRUE, 'PCT_SCRAP', 5),
+(30000.00, TRUE, 'COSTO_MERMA', 2);
 
 -- ORDEN_PRODUCCION (numero es AUTO_INCREMENT, quedan 1..10)
 -- Una orden por cada estacion de trabajo. Es requisito del Trigger 1:
