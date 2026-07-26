@@ -143,13 +143,10 @@ class Discrepancia(models.Model):
     diferencia = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True) 
     motivo_reporte = models.CharField(max_length=100, blank=True, null=True)
     
-    # Llaves foráneas
     usuario_reporte = models.ForeignKey(Usuario, on_delete=models.PROTECT, db_column='usuario_reporte', related_name='disc_reportadas_mermas')
-    # CORRECCIÓN E304: Agregado related_name
     registro_merma = models.ForeignKey(RegistroMerma, on_delete=models.CASCADE, db_column='registro_merma', related_name='discrepancias_mermas')
     edo_discrepancia = models.ForeignKey(EdoDiscrepancia, on_delete=models.PROTECT, db_column='edo_discrepancia', default='ABIERTA')
     
-    # Resolución
     fecha_resolucion = models.DateField(blank=True, null=True)
     motivo_resolucion = models.CharField(max_length=100, blank=True, null=True)
     usuario_resolucion = models.ForeignKey(Usuario, on_delete=models.PROTECT, db_column='usuario_resolucion', blank=True, null=True, related_name='disc_resueltas_mermas')
@@ -166,11 +163,8 @@ class SolicitudInspeccion(models.Model):
     fecha_atencion = models.DateField(blank=True, null=True)
     hora_atencion = models.TimeField(blank=True, null=True)
     
-    # Llaves foráneas
     edo_solicitud = models.ForeignKey(EdoSolicitud, on_delete=models.PROTECT, db_column='edo_solicitud')
-    # CORRECCIÓN E304: Agregado related_name
     registro_merma = models.ForeignKey(RegistroMerma, on_delete=models.CASCADE, db_column='registro_merma', related_name='solicitudes_mermas')
-    # CORRECCIÓN E304: Agregado related_name
     usuario = models.ForeignKey(Usuario, on_delete=models.PROTECT, db_column='usuario', blank=True, null=True, related_name='solicitudes_usuario_mermas') 
 
     class Meta:

@@ -748,41 +748,6 @@ END $$
 
 DELIMITER ;
 
-
-/* ==========================================================================
-   TRIGGER 3: tg_validar_y_bloquear_discrepancia
-   Objetivo: Validar datos de entrada, calcular diferencia y cambiar flujo.
-   ========================================================================== */
-
-DROP TRIGGER IF EXISTS tg_validar_y_bloquear_discrepancia;
-
-DELIMITER $$
-
-CREATE TRIGGER tg_validar_y_bloquear_discrepancia
-BEFORE INSERT ON DISCREPANCIA
-FOR EACH ROW
-BEGIN
-    DECLARE cantidad_original DECIMAL(10,2);
-
-    SELECT cantidad INTO cantidad_original
-    FROM REGISTRO_MERMA
-    WHERE folio = NEW.registro_merma;
-
-    IF NEW.cantidad_reportada <> cantidad_original THEN
-        SIGNAL SQLSTATE '45000'
-        SET MESSAGE_TEXT = 'Error: La cantidad reportada no coincide con el registro original de la merma.';
-    END IF;
-
-    SET NEW.diferencia = NEW.cantidad_recibida - NEW.cantidad_reportada;
-
-    UPDATE REGISTRO_MERMA
-    SET edo_flujo_merma = 'DISCREPAN'
-    WHERE folio = NEW.registro_merma;
-
-END $$
-
-DELIMITER ;
-
 -- ======================================================
 -- Tablas satélite de disposición final (Axel, 21/07/2026)
 -- ======================================================
@@ -960,5 +925,74 @@ BEGIN
     END IF;
 
 END$$
+
+DELIMITER ;
+
+
+DELIMITER ;
+
+/* ==========================================================================
+   TRIGGER UNIFICADO: tg_validar_y_bloquear_discrepancia
+   Objetivo: 
+     1. Validar cantidad reportada contra la merma original.
+     2. Generar folio automático (DISC-YYYY-XXX).
+     3. Asignar fecha de reporte si viene nula.
+     4. Calcular la diferencia (recibida - reportada).
+     5. Actualizar el estado del registro de merma a 'DISCREPAN'.
+   ========================================================================== */
+
+DROP TRIGGER IF EXISTS tg_validar_y_bloquear_discrepancia;
+
+DELIMITER $$
+
+CREATE TRIGGER tg_validar_y_bloquear_discrepancia
+BEFORE INSERT ON DISCREPANCIA
+FOR EACH ROW
+BEGIN
+    DECLARE cantidad_original DECIMAL(10,2);
+    DECLARE ultimo INT DEFAULT 0;
+
+    -- 1. Validar contra el registro de merma original
+    SELECT cantidad INTO cantidad_original
+    FROM REGISTRO_MERMA
+    WHERE folio = NEW.registro_merma;
+
+    IF NEW.cantidad_reportada <> cantidad_original THEN
+        SIGNAL SQLSTATE '45000'
+        SET MESSAGE_TEXT = 'Error: La cantidad reportada no coincide con el registro original de la merma.';
+    END IF;
+
+    -- 2. Autocompletar la fecha de reporte si viene vacía
+    IF NEW.fecha_reporte IS NULL THEN
+        SET NEW.fecha_reporte = CURDATE();
+    END IF;
+
+    -- 3. Autogenerar folio (DISC-YYYY-XXX) si no se especifica
+    IF NEW.folio IS NULL OR NEW.folio = '' THEN
+        SELECT IFNULL(
+            MAX(CAST(SUBSTRING(folio, 11) AS UNSIGNED)),
+            0
+        )
+        INTO ultimo
+        FROM DISCREPANCIA
+        WHERE folio LIKE CONCAT('DISC-', YEAR(CURDATE()), '-%');
+
+        SET NEW.folio = CONCAT(
+            'DISC-',
+            YEAR(CURDATE()),
+            '-',
+            LPAD(ultimo + 1, 3, '0')
+        );
+    END IF;
+
+    -- 4. Calcular la diferencia
+    SET NEW.diferencia = NEW.cantidad_recibida - NEW.cantidad_reportada;
+
+    -- 5. Cambiar el estado en la tabla REGISTRO_MERMA
+    UPDATE REGISTRO_MERMA
+    SET edo_flujo_merma = 'DISCREPAN'
+    WHERE folio = NEW.registro_merma;
+
+END $$
 
 DELIMITER ;

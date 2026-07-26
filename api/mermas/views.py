@@ -50,10 +50,6 @@ class UpdateRegistroMermaAPIView(generics.UpdateAPIView):
 # ======================================================
 
 class DiscrepanciaCreateAPIView(generics.CreateAPIView):
-    """
-    Endpoint para registrar una nueva discrepancia en el sistema.
-    Usa el método POST y valida automáticamente los datos con DiscrepanciaSerializer.
-    """
     queryset = models.Discrepancia.objects.all()
     serializer_class = serializers.DiscrepanciaSerializer
     
@@ -77,14 +73,11 @@ class ConfirmarRecepcionAPIView(APIView):
         # 2. Obtenemos las observaciones que enviaste desde Postman
         observaciones = request.data.get('observaciones', 'Sin observaciones')
 
-        # 3. ACTUALIZAMOS LA BASE DE DATOS ============================
-        # Cambiamos el estado al flujo de "Recibida"
+        # 3.Cambiamos el estado al flujo de "Recibida"
         registro_merma.edo_flujo_merma_id = 'RECIBIDA' 
         
-        # Si tienes un campo en tu modelo para guardar la observación (como 'descripcion'), puedes guardarlo así:
-        # registro_merma.descripcion = observaciones         
+        
         registro_merma.save()
-        # ============================================================
 
         return Response(
             {
