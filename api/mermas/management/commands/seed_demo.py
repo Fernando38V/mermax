@@ -248,13 +248,15 @@ class Command(BaseCommand):
             faltante = Decimal(random.randint(1, int(cantidad)))
             Discrepancia.objects.create(
                 folio=f'{P_DISCREPANCIA}{n:04d}',
-                fecha=fecha_merma + timedelta(days=1),
+                fecha_reporte=fecha_merma + timedelta(days=1),
                 cantidad_reportada=cantidad,
                 cantidad_recibida=cantidad - faltante,
                 diferencia=Decimal('0'),          # el Trigger 3 lo sobreescribe
-                motivo=random.choice(MOTIVOS_DISCREPANCIA),
-                usuario=random.choice(self.almacenistas),
+                motivo_reporte=random.choice(MOTIVOS_DISCREPANCIA),
+                usuario_reporte=random.choice(self.almacenistas),
                 registro_merma_id=folio,
+                # edo_discrepancia queda en ABIERTA por default: es lo que
+                # mantiene el folio bloqueado hasta que alguien lo resuelva.
             )
             contadores['discrepancias'] += 1
             return
