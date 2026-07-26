@@ -521,11 +521,19 @@ INSERT INTO PROVEEDOR (codigo, nombre, correo, telefono, dirCalle, dirNumero, di
 -- LOTE_MATERIAL (num es AUTO_INCREMENT, quedan como 1,2,3... en ese orden)
 
 INSERT INTO LOTE_MATERIAL (fecha, cantidad, caducidad, numero_lote_prov, componente, almacen, estado_lote, proveedor) VALUES
-('2026-06-15', 500.00, NULL, 'LGX-MAIN-01', 'COMP-01', 'ALM-PROD', 'DISPONIBLE', 'PRV-LGX02'),
-('2026-06-18', 350.00, NULL, 'FOX-FUENTE-02', 'COMP-02', 'ALM-PROD', 'DISPONIBLE', 'PRV-FOX01'),
-('2026-06-20', 200.00, '2027-06-20', 'SAM-PANEL-03', 'COMP-03', 'ALM-PROD', 'DISPONIBLE', 'PRV-SAM03'),
-('2026-06-22', 1000.00, NULL, 'FOX-GAB-04', 'COMP-04', 'ALM-PROD', 'DISPONIBLE', 'PRV-FOX01'),
-('2026-06-25', 1200.00, NULL, 'LGX-ARNES-05', 'COMP-05', 'ALM-PROD', 'DISPONIBLE', 'PRV-LGX02');
+-- Los lotes se dimensionan acorde a la produccion del trimestre (~19,700
+-- piezas). Con lotes de 200-1200 unidades, toda la merma del periodo se
+-- cargaba a un solo lote y el RF-11 reportaba 78% de merma por lote.
+('2026-04-28', 5000.00, NULL, 'LGX-MAIN-01', 'COMP-01', 'ALM-PROD', 'DISPONIBLE', 'PRV-LGX02'),
+('2026-04-29', 5000.00, NULL, 'FOX-FUENTE-02', 'COMP-02', 'ALM-PROD', 'DISPONIBLE', 'PRV-FOX01'),
+('2026-04-30', 5000.00, '2027-04-30', 'SAM-PANEL-03', 'COMP-03', 'ALM-PROD', 'DISPONIBLE', 'PRV-SAM03'),
+('2026-05-02', 5000.00, NULL, 'FOX-GAB-04', 'COMP-04', 'ALM-PROD', 'DISPONIBLE', 'PRV-FOX01'),
+('2026-05-02', 5000.00, NULL, 'LGX-ARNES-05', 'COMP-05', 'ALM-PROD', 'DISPONIBLE', 'PRV-LGX02'),
+('2026-06-15', 5000.00, NULL, 'LGX-MAIN-06', 'COMP-01', 'ALM-PROD', 'DISPONIBLE', 'PRV-LGX02'),
+('2026-06-16', 5000.00, NULL, 'FOX-FUENTE-07', 'COMP-02', 'ALM-PROD', 'DISPONIBLE', 'PRV-FOX01'),
+('2026-06-17', 5000.00, '2027-06-17', 'SAM-PANEL-08', 'COMP-03', 'ALM-PROD', 'DISPONIBLE', 'PRV-SAM03'),
+('2026-06-18', 5000.00, NULL, 'FOX-GAB-09', 'COMP-04', 'ALM-PROD', 'DISPONIBLE', 'PRV-FOX01'),
+('2026-06-18', 5000.00, NULL, 'LGX-ARNES-10', 'COMP-05', 'ALM-PROD', 'DISPONIBLE', 'PRV-LGX02');
 
 -- RF-15: cada linea de produccion lleva configurado su maximo de scrap.
 -- La linea 3 (Panel LED) tolera mas porque es la etapa mas costosa y delicada.
