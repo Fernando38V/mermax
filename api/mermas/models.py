@@ -8,17 +8,10 @@ Núcleo del sistema: órdenes de producción, turnos de orden y el registro
 de merma en sí.
 
 Correcciones aplicadas:
-- OrdenProducto: igual que ProdComp en catalogos, inspectdb generó
-  OneToOneField sobre 'orden' por la PK compuesta (orden, producto), lo cual
-  impediría que una orden tenga más de un producto. Se corrige a ForeignKey
-  con primary_key=True.
-- on_delete=DO_NOTHING reemplazado por:
-    * PROTECT en catálogos y en 'usuario' (auditoría).
-    * SET_NULL en las FK opcionales de RegistroMerma (lote_material,
-      componente, causa_raiz, estacion_trabajo, orden_produccion), tal
-      como ya estaban definidas como nullable en el SQL.
-    * CASCADE en OrdenProducto/TurnoOrden -> OrdenProduccion, porque esos
-      registros no tienen sentido sin la orden a la que pertenecen.
+- OrdenProducto: se quitó primary_key=True de la ForeignKey para evitar
+  el warning de unique=True encubierto, manteniendo el unique_together.
+- Se agregaron related_name en Discrepancia y SolicitudInspeccion para 
+  evitar reverse accessor clashes (E304) con las apps inspecciones y recepciones.
 """
 
 from catalogos.models import (
@@ -48,7 +41,7 @@ class OrdenProduccion(models.Model):
 
 
 class OrdenProducto(models.Model):
-    orden = models.ForeignKey(OrdenProduccion, on_delete=models.CASCADE, db_column='orden', primary_key=True)
+    orden = models.ForeignKey(OrdenProduccion, on_delete=models.CASCADE, db_column='orden')
     producto = models.ForeignKey(Producto, on_delete=models.PROTECT, db_column='producto')
     cantidad = models.IntegerField()
 
@@ -121,3 +114,65 @@ class RegistroMerma(models.Model):
 
     def __str__(self):
         return self.folio
+
+
+class EdoDiscrepancia(models.Model):
+    codigo = models.CharField(primary_key=True, max_length=10)
+    nombre = models.CharField(max_length=50)
+
+    class Meta:
+        managed = False
+        db_table = 'EDO_DISCREPANCIA'
+
+
+class EdoSolicitud(models.Model):
+    codigo = models.CharField(primary_key=True, max_length=10)
+    nombre = models.CharField(max_length=50)
+
+    class Meta:
+        managed = False
+        db_table = 'EDO_SOLICITUD'
+
+
+class Discrepancia(models.Model):
+    folio = models.CharField(primary_key=True, max_length=20)
+    fecha_reporte = models.DateField(auto_now_add=True)
+    cantidad_reportada = models.DecimalField(max_digits=10, decimal_places=2)
+    cantidad_recibida = models.DecimalField(max_digits=10, decimal_places=2)
+    # diferencia se calcula sola en la BD (Trigger 3)
+    diferencia = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True) 
+    motivo_reporte = models.CharField(max_length=100, blank=True, null=True)
+    
+    # Llaves foráneas
+    usuario_reporte = models.ForeignKey(Usuario, on_delete=models.PROTECT, db_column='usuario_reporte', related_name='disc_reportadas_mermas')
+    # CORRECCIÓN E304: Agregado related_name
+    registro_merma = models.ForeignKey(RegistroMerma, on_delete=models.CASCADE, db_column='registro_merma', related_name='discrepancias_mermas')
+    edo_discrepancia = models.ForeignKey(EdoDiscrepancia, on_delete=models.PROTECT, db_column='edo_discrepancia', default='ABIERTA')
+    
+    # Resolución
+    fecha_resolucion = models.DateField(blank=True, null=True)
+    motivo_resolucion = models.CharField(max_length=100, blank=True, null=True)
+    usuario_resolucion = models.ForeignKey(Usuario, on_delete=models.PROTECT, db_column='usuario_resolucion', blank=True, null=True, related_name='disc_resueltas_mermas')
+
+    class Meta:
+        managed = False
+        db_table = 'DISCREPANCIA'
+
+
+class SolicitudInspeccion(models.Model):
+    codigo = models.CharField(primary_key=True, max_length=20)
+    fecha_generacion = models.DateField(auto_now_add=True)
+    hora_generacion = models.TimeField(auto_now_add=True)
+    fecha_atencion = models.DateField(blank=True, null=True)
+    hora_atencion = models.TimeField(blank=True, null=True)
+    
+    # Llaves foráneas
+    edo_solicitud = models.ForeignKey(EdoSolicitud, on_delete=models.PROTECT, db_column='edo_solicitud')
+    # CORRECCIÓN E304: Agregado related_name
+    registro_merma = models.ForeignKey(RegistroMerma, on_delete=models.CASCADE, db_column='registro_merma', related_name='solicitudes_mermas')
+    # CORRECCIÓN E304: Agregado related_name
+    usuario = models.ForeignKey(Usuario, on_delete=models.PROTECT, db_column='usuario', blank=True, null=True, related_name='solicitudes_usuario_mermas') 
+
+    class Meta:
+        managed = False
+        db_table = 'SOLICITUD_INSPECCION'

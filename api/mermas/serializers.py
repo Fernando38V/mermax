@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from mermas.models import RegistroMerma
+from mermas.models import RegistroMerma, Discrepancia
 
 
 # ======================================================
@@ -38,6 +38,7 @@ class CreateRegistroMermaSerializer(serializers.ModelSerializer):
             "estacion_trabajo",
             "orden_produccion",
         ]
+        read_only_fields = ["usuario"]
 
     def validate_cantidad(self, value):
         if value <= 0:
@@ -76,3 +77,31 @@ class UpdateRegistroMermaSerializer(serializers.ModelSerializer):
                 "La cantidad debe ser mayor que cero."
             )
         return value
+    
+# ======================================================
+# Discrepancias
+# ======================================================
+
+class DiscrepanciaSerializer(serializers.ModelSerializer):
+    folio = serializers.CharField(required=False, allow_blank=True)
+
+    class Meta:
+        model = Discrepancia
+        fields = "__all__"
+        read_only_fields = ["folio", "diferencia", "fecha_reporte", "usuario_reporte"]
+
+    def validate(self, data):
+        cantidad_reportada = data.get('cantidad_reportada')
+        cantidad_recibida = data.get('cantidad_recibida')
+        
+        if cantidad_reportada is not None and cantidad_reportada < 0:
+            raise serializers.ValidationError(
+                {"cantidad_reportada": "La cantidad reportada no puede ser negativa."}
+            )
+            
+        if cantidad_recibida is not None and cantidad_recibida < 0:
+            raise serializers.ValidationError(
+                {"cantidad_recibida": "La cantidad recibida no puede ser negativa."}
+            )
+            
+        return data
