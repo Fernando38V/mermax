@@ -1,5 +1,21 @@
 MODELS DEL PROYECTO
 
+> Actualizado 25/07/2026. Cambios respecto a la version anterior:
+> - Empleado: 'puesto' eliminado (se duplicaba con Usuario.rol) y 'edad'
+>   sustituido por 'fecha_nacimiento'; la edad es un dato derivado que caduca,
+>   ahora se calcula en una propiedad. Se agrego la FK 'turno' (RF-31) y la
+>   propiedad nombre_completo.
+> - Proveedor: se agrego 'correo' (RF-23).
+> - Usuario: se agregaron is_authenticated / is_anonymous, necesarios para
+>   que DRF acepte el token en los endpoints protegidos.
+> - RF-48: nuevo catalogo EdoDiscrepancia (ABIERTA/RESUELTA). Discrepancia
+>   gana edo_discrepancia, fecha_resolucion, motivo_resolucion y
+>   usuario_resolucion, y renombra fecha/motivo/usuario a *_reporte.
+>
+> OJO: los modelos con managed=False no se validan contra la base al migrar.
+> Un campo que no exista en la tabla no truena hasta que alguien consulte esa
+> tabla: sale el error 1054. Corre 'manage.py check' tras tocar un modelo.
+
 ## Models de catalogos
 
 class EstadoLinea(models.Model):
@@ -95,6 +111,22 @@ class EdoSolicitud(models.Model):
         db_table = 'edo_solicitud'
         verbose_name = 'Estado de solicitud'
         verbose_name_plural = 'Estados de solicitud'
+
+    def __str__(self):
+        return self.nombre
+
+
+class EdoDiscrepancia(models.Model):
+    # RF-48: estado de la discrepancia. El Trigger 2 solo cuenta las que estan
+    # en ABIERTA, asi que marcarla RESUELTA libera el folio bloqueado.
+    codigo = models.CharField(primary_key=True, max_length=10)
+    nombre = models.CharField(unique=True, max_length=50)
+
+    class Meta:
+        managed = False
+        db_table = 'edo_discrepancia'
+        verbose_name = 'Estado de discrepancia'
+        verbose_name_plural = 'Estados de discrepancia'
 
     def __str__(self):
         return self.nombre
@@ -233,6 +265,7 @@ class Componente(models.Model):
 class Proveedor(models.Model):
     codigo = models.CharField(primary_key=True, max_length=10)
     nombre = models.CharField(max_length=150, unique=True)
+    correo = models.CharField(max_length=100, blank=True, null=True)
     telefono = models.CharField(max_length=20, blank=True, null=True)
     direccion_calle = models.CharField(db_column='dirCalle', max_length=150, blank=True, null=True)
     direccion_numero = models.CharField(db_column='dirNumero', max_length=10, blank=True, null=True)
@@ -419,10 +452,10 @@ class Empleado(models.Model):
     nombre = models.CharField(db_column='emNombre', max_length=80)
     primer_apellido = models.CharField(db_column='emPrimerApell', max_length=80)
     segundo_apellido = models.CharField(db_column='emSegundoApell', max_length=80, blank=True, null=True)
-    puesto = models.CharField(max_length=80, blank=True, null=True)
-    edad = models.IntegerField(blank=True, null=True)
+    fecha_nacimiento = models.DateField(blank=True, null=True)
     fecha_ingreso = models.DateField(blank=True, null=True)
     area = models.ForeignKey(Area, on_delete=models.PROTECT, db_column='area')
+    turno = models.ForeignKey(Turno, on_delete=models.PROTECT, db_column='turno', blank=True, null=True)
     activo = models.BooleanField(default=True)
 
     class Meta:
@@ -433,6 +466,24 @@ class Empleado(models.Model):
 
     def __str__(self):
         return f'{self.nombre} {self.primer_apellido}'
+
+    @property
+    def nombre_completo(self):
+        partes = [self.nombre, self.primer_apellido, self.segundo_apellido]
+        return ' '.join(p for p in partes if p)
+
+
+    @property
+    def edad(self):
+        # Dato derivado: se calcula, no se almacena. Guardarlo como entero lo
+        # deja congelado en el valor que tenia al registrar al empleado.
+        # Requiere: from datetime import date
+        if not self.fecha_nacimiento:
+            return None
+        hoy = date.today()
+        return hoy.year - self.fecha_nacimiento.year - (
+            (hoy.month, hoy.day) < (self.fecha_nacimiento.month, self.fecha_nacimiento.day)
+        )
 
 
 class Usuario(models.Model):
@@ -452,6 +503,16 @@ class Usuario(models.Model):
 
     def __str__(self):
         return self.username
+
+    # DRF pregunta por esto cuando el objeto hace de request.user.
+    # Sin ellos, IsAuthenticated rechaza al usuario aunque el token sea valido.
+    @property
+    def is_authenticated(self):
+        return True
+
+    @property
+    def is_anonymous(self):
+        return False
 
 
 def _generar_token_key():
@@ -619,16 +680,31 @@ class LoteMaterial(models.Model):
 
 
 class Discrepancia(models.Model):
+    # RF-48: dos usuarios distintos, quien la reporta y quien la resuelve.
+    # Pueden ser de turnos diferentes, por eso cada FK lleva su related_name.
     folio = models.CharField(primary_key=True, max_length=20)
-    fecha = models.DateField()
+    fecha_reporte = models.DateField()
     cantidad_reportada = models.DecimalField(max_digits=10, decimal_places=2)
     cantidad_recibida = models.DecimalField(max_digits=10, decimal_places=2)
     diferencia = models.DecimalField(max_digits=10, decimal_places=2)
-    motivo = models.CharField(max_length=100, blank=True, null=True)
-    usuario = models.ForeignKey(Usuario, on_delete=models.PROTECT, db_column='usuario')
+    motivo_reporte = models.CharField(max_length=100, blank=True, null=True)
+    usuario_reporte = models.ForeignKey(
+        Usuario, on_delete=models.PROTECT, db_column='usuario_reporte',
+        related_name='discrepancias_reportadas',
+    )
     registro_merma = models.ForeignKey(
         'mermas.RegistroMerma', on_delete=models.SET_NULL,
-        db_column='registro_merma', blank=True, null=True
+        db_column='registro_merma', blank=True, null=True,
+    )
+    edo_discrepancia = models.ForeignKey(
+        'catalogos.EdoDiscrepancia', on_delete=models.PROTECT,
+        db_column='edo_discrepancia', default='ABIERTA',
+    )
+    fecha_resolucion = models.DateField(blank=True, null=True)
+    motivo_resolucion = models.CharField(max_length=100, blank=True, null=True)
+    usuario_resolucion = models.ForeignKey(
+        Usuario, on_delete=models.PROTECT, db_column='usuario_resolucion',
+        related_name='discrepancias_resueltas', blank=True, null=True,
     )
 
     class Meta:
@@ -639,6 +715,10 @@ class Discrepancia(models.Model):
 
     def __str__(self):
         return self.folio
+
+    @property
+    def esta_resuelta(self):
+        return self.edo_discrepancia_id == 'RESUELTA'
 
 ## Models de inspecciones
 

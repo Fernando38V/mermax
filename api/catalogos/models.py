@@ -99,7 +99,6 @@ class EdoFlujoMerma(models.Model):
     def __str__(self):
         return self.nombre
 
-
 class EdoSolicitud(models.Model):
     codigo = models.CharField(primary_key=True, max_length=10)
     nombre = models.CharField(max_length=50, unique=True)
@@ -109,6 +108,19 @@ class EdoSolicitud(models.Model):
         db_table = 'edo_solicitud'
         verbose_name = 'Estado de solicitud'
         verbose_name_plural = 'Estados de solicitud'
+
+    def __str__(self):
+        return self.nombre
+
+class EdoDiscrepancia(models.Model):
+    codigo = models.CharField(primary_key=True, max_length=10)
+    nombre = models.CharField(unique=True, max_length=50)
+
+    class Meta:
+        managed = False
+        db_table = 'edo_discrepancia'
+        verbose_name = 'Estado de discrepancia'
+        verbose_name_plural = 'Estados de discrepancia'
 
     def __str__(self):
         return self.nombre
