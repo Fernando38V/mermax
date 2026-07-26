@@ -934,11 +934,12 @@ DELIMITER ;
 /* ==========================================================================
    TRIGGER UNIFICADO: tg_validar_y_bloquear_discrepancia
    Objetivo: 
-     1. Validar cantidad reportada contra la merma original.
-     2. Generar folio automático (DISC-YYYY-XXX).
-     3. Asignar fecha de reporte si viene nula.
-     4. Calcular la diferencia (recibida - reportada).
-     5. Actualizar el estado del registro de merma a 'DISCREPAN'.
+     1. Validar que la merma esté en estado 'REGISTRADA'.
+     2. Validar cantidad reportada contra la merma original.
+     3. Generar folio automático (DISC-YYYY-XXX).
+     4. Asignar fecha de reporte si viene nula.
+     5. Calcular la diferencia (recibida - reportada).
+     6. Actualizar el estado del registro de merma a 'DISCREPAN'.
    ========================================================================== */
 
 DROP TRIGGER IF EXISTS tg_validar_y_bloquear_discrepancia;
@@ -950,13 +951,22 @@ BEFORE INSERT ON DISCREPANCIA
 FOR EACH ROW
 BEGIN
     DECLARE cantidad_original DECIMAL(10,2);
+    DECLARE estado_actual VARCHAR(50);
     DECLARE ultimo INT DEFAULT 0;
 
-    -- 1. Validar contra el registro de merma original
-    SELECT cantidad INTO cantidad_original
+    -- 1. Consultar cantidad y estado actual de la merma original
+    SELECT cantidad, edo_flujo_merma 
+    INTO cantidad_original, estado_actual
     FROM REGISTRO_MERMA
     WHERE folio = NEW.registro_merma;
 
+    -- 1.1 Validar que la merma esté en estado 'REGISTRADA'
+    IF estado_actual <> 'REGISTRADA' THEN
+        SIGNAL SQLSTATE '45000'
+        SET MESSAGE_TEXT = 'Error: No se puede crear una discrepancia. La merma no se encuentra en estado REGISTRADA.';
+    END IF;
+
+    -- 1.2 Validar cantidad reportada contra el registro original
     IF NEW.cantidad_reportada <> cantidad_original THEN
         SIGNAL SQLSTATE '45000'
         SET MESSAGE_TEXT = 'Error: La cantidad reportada no coincide con el registro original de la merma.';
