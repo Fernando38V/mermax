@@ -54,7 +54,7 @@ class CreateRegistroMermaSerializer(serializers.ModelSerializer):
             "estacion_trabajo",
             "orden_produccion",
         ]
-        read_only_fields = ["usuario"]
+        read_only_fields = ["usuario", "edo_flujo_merma"]
 
     def validate_cantidad(self, value):
         if value <= 0:
