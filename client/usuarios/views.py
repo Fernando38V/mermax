@@ -49,6 +49,7 @@ def logout_view(request):
 
 @login_required_api
 def dashboard_view(request):
+    print("Dashboard:", request.session.get("api_token"))
     """Vista de ejemplo para comprobar que la sesión quedó activa."""
     return render(request, 'dashboard/dashboard.html', {
         'usuario': request.session.get('usuario'),
