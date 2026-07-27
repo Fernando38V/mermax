@@ -30,8 +30,9 @@ class CreateRegistroMermaAPIView(generics.CreateAPIView):
     serializer_class = serializers.CreateRegistroMermaSerializer
     
     def perform_create(self, serializer):
-        serializer.save(usuario=self.request.user)
-
+        serializer.save(
+            usuario=self.request.user, 
+            edo_flujo_merma_id='REGISTRADA')
 
 class DetailRegistroMermaAPIView(generics.RetrieveAPIView):
 
