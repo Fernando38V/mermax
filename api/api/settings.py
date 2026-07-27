@@ -44,6 +44,7 @@ INSTALLED_APPS = [
     'mermas',
     'inspecciones',
     'reportes',
+    'auditoria',
     
 ]
 
