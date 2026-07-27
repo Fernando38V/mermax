@@ -7,18 +7,25 @@ Estructura:
 - CatalogoAdminViewSet     CRUD completo con baja lógica, para los 6 catálogos
                            que los RF piden administrar
 
-La baja lógica está centralizada en BajaLogicaMixin: el método DELETE nunca
-borra la fila, cambia 'activo' a False. Los RF-18, 22, 26, 30, 38 y 42 lo
-piden explícitamente para no perder la trazabilidad del scrap histórico.
+La baja lógica está en BajaLogicaMixin: el DELETE nunca borra la fila, cambia
+'activo' a False. Los RF-18, 22, 26, 30, 38 y 42 lo piden explícitamente para
+no perder la trazabilidad del scrap histórico.
 
-Control de acceso: la clase SoloAdministrador aplica el RNF-02. Los catálogos
-se pueden CONSULTAR desde cualquier rol (el Supervisor necesita ver las causas
+La bitácora está en BitacoraMixin (RF-47). Va primero en la herencia para
+observar la operación y anotarla, pero delega el borrado a BajaLogicaMixin,
+así que sigue siendo baja lógica. Como se agrega en la clase base, los 6
+catálogos quedan auditados sin tocar cada uno.
+
+Control de acceso: SoloAdministrador aplica el RNF-02. Los catálogos se
+pueden CONSULTAR desde cualquier rol (el Supervisor necesita ver las causas
 raíz para registrar una merma, RF-37), pero sólo el Administrador puede
 crearlos, editarlos o darlos de baja.
 """
 from rest_framework import filters, permissions, status, viewsets
 from rest_framework.generics import ListAPIView
 from rest_framework.response import Response
+
+from auditoria.services import BitacoraMixin
 
 from . import serializers as s
 from .models import (
@@ -35,9 +42,7 @@ from .models import (
 # ======================================================
 
 class SoloAdministrador(permissions.BasePermission):
-    """
-    Lectura para cualquier usuario autenticado; escritura sólo para ADMIN.
-    """
+    """Lectura para cualquier usuario autenticado; escritura sólo para ADMIN."""
     message = 'Sólo el Administrador puede modificar los catálogos.'
 
     def has_permission(self, request, view):
@@ -59,19 +64,21 @@ class BajaLogicaMixin:
     """
     campo_baja = 'activo'
 
+    def perform_destroy(self, instance):
+        setattr(instance, self.campo_baja, False)
+        instance.save(update_fields=[self.campo_baja])
+
     def destroy(self, request, *args, **kwargs):
-        objeto = self.get_object()
-        setattr(objeto, self.campo_baja, False)
-        objeto.save(update_fields=[self.campo_baja])
+        self.perform_destroy(self.get_object())
         return Response(
             {'detail': 'Registro dado de baja. Su historial se conserva.'},
             status=status.HTTP_200_OK,
         )
 
 
-class CatalogoAdminViewSet(BajaLogicaMixin, viewsets.ModelViewSet):
+class CatalogoAdminViewSet(BitacoraMixin, BajaLogicaMixin, viewsets.ModelViewSet):
     """
-    CRUD estándar de un catálogo administrable.
+    CRUD estándar de un catálogo administrable, con baja lógica y bitácora.
     Trae buscador de texto y filtro por estado activo/inactivo, que es lo que
     piden los RF de consulta (RF-17, 21, 25, 29, 37, 41).
     """
@@ -98,6 +105,7 @@ class CatalogoLecturaView(ListAPIView):
 class LineaProduccionViewSet(CatalogoAdminViewSet):
     queryset = LineaProduccion.objects.select_related('area', 'estado_linea').all()
     serializer_class = s.LineaProduccionSerializer
+    modulo_bitacora = 'LINEA_PRODUCCION'
     search_fields = ['nombre', 'descripcion']  # numero_linea es entero: SearchFilter usa icontains y trona
     ordering_fields = ['numero_linea', 'nombre']
     ordering = ['numero_linea']
@@ -110,11 +118,13 @@ class LineaProduccionViewSet(CatalogoAdminViewSet):
             qs = qs.filter(estado_linea=estado.upper())
         return qs
 
-    def destroy(self, request, *args, **kwargs):
+    def perform_destroy(self, instance):
         """RF-18: la baja cambia el estado de la línea a INACTIVA."""
-        linea = self.get_object()
-        linea.estado_linea_id = 'INACTIVA'
-        linea.save(update_fields=['estado_linea'])
+        instance.estado_linea_id = 'INACTIVA'
+        instance.save(update_fields=['estado_linea'])
+
+    def destroy(self, request, *args, **kwargs):
+        self.perform_destroy(self.get_object())
         return Response(
             {'detail': 'Línea marcada como Inactiva. No podrá seleccionarse en nuevos registros.'},
             status=status.HTTP_200_OK,
@@ -128,6 +138,7 @@ class LineaProduccionViewSet(CatalogoAdminViewSet):
 class ComponenteViewSet(CatalogoAdminViewSet):
     queryset = Componente.objects.all()
     serializer_class = s.ComponenteSerializer
+    modulo_bitacora = 'COMPONENTE'
     search_fields = ['codigo', 'nombre', 'descripcion', 'tipo']
     ordering_fields = ['codigo', 'nombre', 'costo']
     ordering = ['codigo']
@@ -140,6 +151,7 @@ class ComponenteViewSet(CatalogoAdminViewSet):
 class ProveedorViewSet(CatalogoAdminViewSet):
     queryset = Proveedor.objects.all()
     serializer_class = s.ProveedorSerializer
+    modulo_bitacora = 'PROVEEDOR'
     search_fields = ['codigo', 'nombre', 'rfc', 'correo']
     ordering_fields = ['codigo', 'nombre']
     ordering = ['nombre']
@@ -152,6 +164,7 @@ class ProveedorViewSet(CatalogoAdminViewSet):
 class EstacionTrabajoViewSet(CatalogoAdminViewSet):
     queryset = EstacionTrabajo.objects.select_related('linea_produccion').all()
     serializer_class = s.EstacionTrabajoSerializer
+    modulo_bitacora = 'ESTACION_TRABAJO'
     search_fields = ['codigo', 'nombre', 'etapa']
     ordering_fields = ['codigo', 'nombre']
     ordering = ['codigo']
@@ -172,6 +185,7 @@ class EstacionTrabajoViewSet(CatalogoAdminViewSet):
 class CausaRaizViewSet(CatalogoAdminViewSet):
     queryset = CausaRaiz.objects.all()
     serializer_class = s.CausaRaizSerializer
+    modulo_bitacora = 'CAUSA_RAIZ'
     search_fields = ['codigo', 'nombre', 'descripcion']
     ordering = ['nombre']
 
@@ -183,6 +197,7 @@ class CausaRaizViewSet(CatalogoAdminViewSet):
 class TipoMermaViewSet(CatalogoAdminViewSet):
     queryset = TipoMerma.objects.all()
     serializer_class = s.TipoMermaSerializer
+    modulo_bitacora = 'TIPO_MERMA'
     search_fields = ['codigo', 'nombre', 'descripcion']
     ordering = ['nombre']
 
@@ -194,6 +209,7 @@ class TipoMermaViewSet(CatalogoAdminViewSet):
 class EmpresaRecicladoraViewSet(CatalogoAdminViewSet):
     queryset = EmpresaRecicladora.objects.all()
     serializer_class = s.EmpresaRecicladoraSerializer
+    modulo_bitacora = 'EMPRESA_RECICLADORA'
     search_fields = ['codigo', 'nombre']
     ordering = ['nombre']
 
@@ -201,6 +217,7 @@ class EmpresaRecicladoraViewSet(CatalogoAdminViewSet):
 class MetodoDestruccionViewSet(CatalogoAdminViewSet):
     queryset = MetodoDestruccion.objects.all()
     serializer_class = s.MetodoDestruccionSerializer
+    modulo_bitacora = 'METODO_DESTRUCCION'
     search_fields = ['codigo', 'nombre']
     ordering = ['nombre']
 
