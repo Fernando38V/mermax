@@ -6,61 +6,58 @@
 {% block page_subtitle %}Listado de merma{% endblock page_subtitle %}
 
 {% block app_content %}
-    
-        
+
     <div class="mb-4 d-flex justify-content-end">
         <button class="mx-btn-primary">
-            <span class="material-symbols-outlined">add</span> 
+            <span class="material-symbols-outlined">add</span>
             Registrar Merma
         </button>
     </div>
-    
-    <!-- Filtros -->
+
     <div class="row g-3 mb-4">
         <div class="col">
             <label class="form-label">Linea de producción</label>
-            <select class="form-select">
-                <option value="">Seleccione</option>
-                {% for linea in mermas %}
-                <option value="{{ linea.linea_produccion }}">{{ linea.linea_produccion_nombre }}</option>
+            <select class="form-select" name="linea">
+                <option value="">Todas</option>
+                {% for linea in lineas %}
+                <option value="{{ linea.num }}">{{ linea.nombre }}</option>
                 {% endfor %}
             </select>
         </div>
         <div class="col">
             <label class="form-label">Tipo de merma</label>
-            <select class="form-select">
-                <option value="">Seleccione</option>
-                {% for merma in mermas %}
-                <option value="{{ merma.tipo_merma }}">{{ merma.tipo_merma_nombre }}</option>
+            <select class="form-select" name="tipo_merma">
+                <option value="">Todos</option>
+                {% for tipo in tipos_merma %}
+                <option value="{{ tipo.codigo }}">{{ tipo.nombre }}</option>
                 {% endfor %}
             </select>
         </div>
         <div class="col">
             <label class="form-label">Componente</label>
-            <select class="form-select">
-                <option value="">Seleccione</option>
-                {% for merma in mermas %}
-                <option value="{{ merma.componente }}">{{ merma.componente_nombre }}</option>
+            <select class="form-select" name="componente">
+                <option value="">Todos</option>
+                {% for componente in componentes %}
+                <option value="{{ componente.codigo }}">{{ componente.nombre }}</option>
                 {% endfor %}
             </select>
         </div>
-        
         <div class="col">
             <label class="form-label">Estado</label>
-            <select class="form-select">
-                <option value="">Seleccione</option>
-                {% for merma in mermas %}
-                <option value="{{ merma.edo_flujo_merma }}">{{ merma.edo_merma_nombre }}</option>
+            <select class="form-select" name="estado">
+                <option value="">Todos</option>
+                {% for estado in estados %}
+                <option value="{{ estado.codigo }}">{{ estado.nombre }}</option>
                 {% endfor %}
             </select>
         </div>
         <div class="col">
             <label class="form-label">Fecha</label>
-            <input type="date" class="form-control">
+            <input type="date" class="form-control" name="fecha">
         </div>
     </div>
-    
-    <table class="table ">
+
+    <table class="table">
         <thead>
             <th>Folio</th>
             <th>Fecha</th>
@@ -71,7 +68,6 @@
             <th>Tipo</th>
             <th>Causa Raiz</th>
             <th>Estado</th>
-            
             <th>Acciones</th>
         </thead>
         <tbody>
@@ -86,9 +82,13 @@
                 <td>{{ merma.tipo_merma_nombre }}</td>
                 <td>{{ merma.causa_raiz_nombre }}</td>
                 <td>{{ merma.edo_merma_nombre }}</td>
-                
                 <td>Pendiente</td>
-                    
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="10" class="text-center mx-text-muted py-4">
+                    No hay mermas registradas.
+                </td>
             </tr>
             {% endfor %}
         </tbody>
