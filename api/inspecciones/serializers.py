@@ -166,3 +166,12 @@ class UpdateDesechoSerializer(serializers.ModelSerializer):
             "folio_probatorio",
             "registro_disposicion",
         ]
+        
+# ======================================================
+# Solicitudes de Inspección
+# ======================================================
+
+class SolicitudInspeccionSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = models.SolicitudInspeccion
+        fields = '__all__'

@@ -130,3 +130,28 @@ class DiscrepanciaSerializer(serializers.ModelSerializer):
             )
             
         return data
+    
+class ListDiscrepanciaSerializer(serializers.ModelSerializer):
+    usuario_reporte_nombre = serializers.CharField(source="usuario_reporte.username", read_only=True)
+    merma_folio = serializers.CharField(source="registro_merma.folio", read_only=True)
+    estado_nombre = serializers.CharField(source="edo_discrepancia.nombre", read_only=True) # Si aplica
+
+    class Meta:
+        model = Discrepancia
+        fields = [
+            "folio",
+            "fecha_reporte",
+            "cantidad_reportada",
+            "cantidad_recibida",
+            "diferencia",
+            "motivo_reporte",
+            "usuario_reporte",
+            "usuario_reporte_nombre",
+            "registro_merma",
+            "merma_folio",
+            "edo_discrepancia",
+            "estado_nombre",
+            "fecha_resolucion",
+            "motivo_resolucion",
+            "usuario_resolucion"
+        ]

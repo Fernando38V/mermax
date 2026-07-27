@@ -14,7 +14,9 @@ urlpatterns = [
     # ======================================================
     # Discrepancias y Recepción
     # ======================================================
-    path("discrepancia/create/", views.DiscrepanciaCreateAPIView.as_view(), name="create_discrepancia"),
+    path('discrepancias/list/', views.ListDiscrepanciaAPIView.as_view(), name='list-discrepancias'),
+    path("discrepancias/create/", views.DiscrepanciaCreateAPIView.as_view(), name="create_discrepancia"),
+    path('discrepancias/resolver/<str:folio>/', views.ResolverDiscrepanciaAPIView.as_view(), name='resolver-discrepancia'),
     path("recepcion/confirmar/<str:folio>/", views.ConfirmarRecepcionAPIView.as_view(), name="confirmar_recepcion")
-    
-]
+
+]   

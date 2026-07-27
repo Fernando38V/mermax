@@ -5,6 +5,9 @@ app_name = 'inspecciones'
 
 urlpatterns = [
     
+    # urls de solicitudes de inspeccion
+    path('solicitudes/list/', views.ListSolicitudInspeccionAPIView.as_view(), name='list_solicitudes'),
+    path('solicitudes/iniciar/<str:codigo_solicitud>/', views.IniciarInspeccionAPIView.as_view(), name='iniciar_inspeccion'),
     # urls de devoluciones
     path('devolucion/list/', views.ListDevolucionAPIView.as_view(), name='list_devolucion'),
     path('devolucion/create/', views.CreateDevolucionAPIView.as_view(), name='create_devolucion'),
