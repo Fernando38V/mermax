@@ -521,11 +521,19 @@ INSERT INTO PROVEEDOR (codigo, nombre, correo, telefono, dirCalle, dirNumero, di
 -- LOTE_MATERIAL (num es AUTO_INCREMENT, quedan como 1,2,3... en ese orden)
 
 INSERT INTO LOTE_MATERIAL (fecha, cantidad, caducidad, numero_lote_prov, componente, almacen, estado_lote, proveedor) VALUES
-('2026-06-15', 500.00, NULL, 'LGX-MAIN-01', 'COMP-01', 'ALM-PROD', 'DISPONIBLE', 'PRV-LGX02'),
-('2026-06-18', 350.00, NULL, 'FOX-FUENTE-02', 'COMP-02', 'ALM-PROD', 'DISPONIBLE', 'PRV-FOX01'),
-('2026-06-20', 200.00, '2027-06-20', 'SAM-PANEL-03', 'COMP-03', 'ALM-PROD', 'DISPONIBLE', 'PRV-SAM03'),
-('2026-06-22', 1000.00, NULL, 'FOX-GAB-04', 'COMP-04', 'ALM-PROD', 'DISPONIBLE', 'PRV-FOX01'),
-('2026-06-25', 1200.00, NULL, 'LGX-ARNES-05', 'COMP-05', 'ALM-PROD', 'DISPONIBLE', 'PRV-LGX02');
+-- Los lotes se dimensionan acorde a la produccion del trimestre (~19,700
+-- piezas). Con lotes de 200-1200 unidades, toda la merma del periodo se
+-- cargaba a un solo lote y el RF-11 reportaba 78% de merma por lote.
+('2026-04-28', 5000.00, NULL, 'LGX-MAIN-01', 'COMP-01', 'ALM-PROD', 'DISPONIBLE', 'PRV-LGX02'),
+('2026-04-29', 5000.00, NULL, 'FOX-FUENTE-02', 'COMP-02', 'ALM-PROD', 'DISPONIBLE', 'PRV-FOX01'),
+('2026-04-30', 5000.00, '2027-04-30', 'SAM-PANEL-03', 'COMP-03', 'ALM-PROD', 'DISPONIBLE', 'PRV-SAM03'),
+('2026-05-02', 5000.00, NULL, 'FOX-GAB-04', 'COMP-04', 'ALM-PROD', 'DISPONIBLE', 'PRV-FOX01'),
+('2026-05-02', 5000.00, NULL, 'LGX-ARNES-05', 'COMP-05', 'ALM-PROD', 'DISPONIBLE', 'PRV-LGX02'),
+('2026-06-15', 5000.00, NULL, 'LGX-MAIN-06', 'COMP-01', 'ALM-PROD', 'DISPONIBLE', 'PRV-LGX02'),
+('2026-06-16', 5000.00, NULL, 'FOX-FUENTE-07', 'COMP-02', 'ALM-PROD', 'DISPONIBLE', 'PRV-FOX01'),
+('2026-06-17', 5000.00, '2027-06-17', 'SAM-PANEL-08', 'COMP-03', 'ALM-PROD', 'DISPONIBLE', 'PRV-SAM03'),
+('2026-06-18', 5000.00, NULL, 'FOX-GAB-09', 'COMP-04', 'ALM-PROD', 'DISPONIBLE', 'PRV-FOX01'),
+('2026-06-18', 5000.00, NULL, 'LGX-ARNES-10', 'COMP-05', 'ALM-PROD', 'DISPONIBLE', 'PRV-LGX02');
 
 -- RF-15: cada linea de produccion lleva configurado su maximo de scrap.
 -- La linea 3 (Panel LED) tolera mas porque es la etapa mas costosa y delicada.
@@ -748,6 +756,83 @@ END $$
 
 DELIMITER ;
 
+
+/* ==========================================================================
+   TRIGGER 3: tg_validar_y_bloquear_discrepancia          (Jona, 26/07/2026)
+   Objetivo:
+     1. Validar que la merma este en estado REGISTRADA.
+     2. Validar la cantidad reportada contra la merma original.
+     3. Generar folio automatico (DISC-YYYY-XXX).
+     4. Asignar la fecha de reporte si viene nula.
+     5. Calcular la diferencia en el servidor.
+     6. Bloquear el flujo pasando la merma a DISCREPAN.
+   ========================================================================== */
+
+DROP TRIGGER IF EXISTS tg_validar_y_bloquear_discrepancia;
+
+DELIMITER $$
+
+CREATE TRIGGER tg_validar_y_bloquear_discrepancia
+BEFORE INSERT ON DISCREPANCIA
+FOR EACH ROW
+BEGIN
+    DECLARE cantidad_original DECIMAL(10,2);
+    DECLARE estado_actual VARCHAR(50);
+    DECLARE ultimo INT DEFAULT 0;
+
+    -- 1. Consultar cantidad y estado actual de la merma original
+    SELECT cantidad, edo_flujo_merma
+    INTO cantidad_original, estado_actual
+    FROM REGISTRO_MERMA
+    WHERE folio = NEW.registro_merma;
+
+    -- 1.1 Validar que la merma este en estado 'REGISTRADA'
+    IF estado_actual <> 'REGISTRADA' THEN
+        SIGNAL SQLSTATE '45000'
+        SET MESSAGE_TEXT = 'Error: No se puede crear una discrepancia. La merma no se encuentra en estado REGISTRADA.';
+    END IF;
+
+    -- 1.2 Validar cantidad reportada contra el registro original
+    IF NEW.cantidad_reportada <> cantidad_original THEN
+        SIGNAL SQLSTATE '45000'
+        SET MESSAGE_TEXT = 'Error: La cantidad reportada no coincide con el registro original de la merma.';
+    END IF;
+
+    -- 2. Autocompletar la fecha de reporte si viene vacia
+    IF NEW.fecha_reporte IS NULL THEN
+        SET NEW.fecha_reporte = CURDATE();
+    END IF;
+
+    -- 3. Autogenerar folio (DISC-YYYY-XXX) si no se especifica
+    IF NEW.folio IS NULL OR NEW.folio = '' THEN
+        SELECT IFNULL(
+            MAX(CAST(SUBSTRING(folio, 11) AS UNSIGNED)),
+            0
+        )
+        INTO ultimo
+        FROM DISCREPANCIA
+        WHERE folio LIKE CONCAT('DISC-', YEAR(CURDATE()), '-%');
+
+        SET NEW.folio = CONCAT(
+            'DISC-',
+            YEAR(CURDATE()),
+            '-',
+            LPAD(ultimo + 1, 3, '0')
+        );
+    END IF;
+
+    -- 4. Calcular la diferencia en el servidor
+    SET NEW.diferencia = NEW.cantidad_recibida - NEW.cantidad_reportada;
+
+    -- 5. Bloquear el flujo
+    UPDATE REGISTRO_MERMA
+    SET edo_flujo_merma = 'DISCREPAN'
+    WHERE folio = NEW.registro_merma;
+
+END $$
+
+DELIMITER ;
+
 -- ======================================================
 -- Tablas satélite de disposición final (Axel, 21/07/2026)
 -- ======================================================
@@ -925,84 +1010,5 @@ BEGIN
     END IF;
 
 END$$
-
-DELIMITER ;
-
-
-DELIMITER ;
-
-/* ==========================================================================
-   TRIGGER UNIFICADO: tg_validar_y_bloquear_discrepancia
-   Objetivo: 
-     1. Validar que la merma esté en estado 'REGISTRADA'.
-     2. Validar cantidad reportada contra la merma original.
-     3. Generar folio automático (DISC-YYYY-XXX).
-     4. Asignar fecha de reporte si viene nula.
-     5. Calcular la diferencia (recibida - reportada).
-     6. Actualizar el estado del registro de merma a 'DISCREPAN'.
-   ========================================================================== */
-
-DROP TRIGGER IF EXISTS tg_validar_y_bloquear_discrepancia;
-
-DELIMITER $$
-
-CREATE TRIGGER tg_validar_y_bloquear_discrepancia
-BEFORE INSERT ON DISCREPANCIA
-FOR EACH ROW
-BEGIN
-    DECLARE cantidad_original DECIMAL(10,2);
-    DECLARE estado_actual VARCHAR(50);
-    DECLARE ultimo INT DEFAULT 0;
-
-    -- 1. Consultar cantidad y estado actual de la merma original
-    SELECT cantidad, edo_flujo_merma 
-    INTO cantidad_original, estado_actual
-    FROM REGISTRO_MERMA
-    WHERE folio = NEW.registro_merma;
-
-    -- 1.1 Validar que la merma esté en estado 'REGISTRADA'
-    IF estado_actual <> 'REGISTRADA' THEN
-        SIGNAL SQLSTATE '45000'
-        SET MESSAGE_TEXT = 'Error: No se puede crear una discrepancia. La merma no se encuentra en estado REGISTRADA.';
-    END IF;
-
-    -- 1.2 Validar cantidad reportada contra el registro original
-    IF NEW.cantidad_reportada <> cantidad_original THEN
-        SIGNAL SQLSTATE '45000'
-        SET MESSAGE_TEXT = 'Error: La cantidad reportada no coincide con el registro original de la merma.';
-    END IF;
-
-    -- 2. Autocompletar la fecha de reporte si viene vacía
-    IF NEW.fecha_reporte IS NULL THEN
-        SET NEW.fecha_reporte = CURDATE();
-    END IF;
-
-    -- 3. Autogenerar folio (DISC-YYYY-XXX) si no se especifica
-    IF NEW.folio IS NULL OR NEW.folio = '' THEN
-        SELECT IFNULL(
-            MAX(CAST(SUBSTRING(folio, 11) AS UNSIGNED)),
-            0
-        )
-        INTO ultimo
-        FROM DISCREPANCIA
-        WHERE folio LIKE CONCAT('DISC-', YEAR(CURDATE()), '-%');
-
-        SET NEW.folio = CONCAT(
-            'DISC-',
-            YEAR(CURDATE()),
-            '-',
-            LPAD(ultimo + 1, 3, '0')
-        );
-    END IF;
-
-    -- 4. Calcular la diferencia
-    SET NEW.diferencia = NEW.cantidad_recibida - NEW.cantidad_reportada;
-
-    -- 5. Cambiar el estado en la tabla REGISTRO_MERMA
-    UPDATE REGISTRO_MERMA
-    SET edo_flujo_merma = 'DISCREPAN'
-    WHERE folio = NEW.registro_merma;
-
-END $$
 
 DELIMITER ;
