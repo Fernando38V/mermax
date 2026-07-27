@@ -7,7 +7,13 @@ from mermas.models import RegistroMerma, Discrepancia
 # ======================================================
 
 class ListRegistroMermaSerializer(serializers.ModelSerializer):
-
+    tipo_merma_nombre = serializers.CharField(source="tipo_merma.nombre", read_only=True)
+    edo_merma_nombre = serializers.CharField(source="edo_flujo_merma.nombre", read_only=True)
+    causa_raiz_nombre = serializers.CharField(source="causa_raiz.nombre", read_only=True)
+    componente_nombre = serializers.CharField(source="componente.nombre", read_only=True)
+    linea_produccion = serializers.CharField(source="estacion_trabajo.linea_produccion.num", read_only=True)
+    linea_produccion_nombre = serializers.CharField(source="estacion_trabajo.linea_produccion.nombre", read_only=True)
+    estacion_trabajo_nombre = serializers.CharField(source="estacion_trabajo.nombre", read_only=True) 
     class Meta:
         model = RegistroMerma
         fields = [
@@ -15,9 +21,19 @@ class ListRegistroMermaSerializer(serializers.ModelSerializer):
             "fecha",
             "cantidad",
             "unidad",
+            "componente",
+            "componente_nombre",
             "tipo_merma",
-            "usuario",
+            "tipo_merma_nombre",
+            "causa_raiz",
+            "causa_raiz_nombre",
+            "estacion_trabajo",
+            "estacion_trabajo_nombre",
+            "linea_produccion",
+            "linea_produccion_nombre",
             "edo_flujo_merma",
+            "edo_merma_nombre",
+            "usuario",
         ]
 
 

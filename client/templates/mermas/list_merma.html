@@ -1,0 +1,110 @@
+{% extends "base/layout_app.html" %}
+
+{% block nav_merma %}active{% endblock nav_merma %}
+
+{% block page_title %}Mermas{% endblock page_title %}
+{% block page_subtitle %}Listado de merma{% endblock page_subtitle %}
+
+{% block app_content %}
+    
+        
+    <div class="mb-4 d-flex justify-content-end">
+        <button class="mx-btn-primary">
+            <span class="material-symbols-outlined">add</span> 
+            Registrar Merma
+        </button>
+    </div>
+    
+    <!-- Filtros -->
+    <div class="row g-3 mb-4">
+        <div class="col">
+            <label class="form-label">Linea de producción</label>
+            <select class="form-select">
+                <option value="">Seleccione</option>
+                {% for linea in mermas %}
+                <option value="{{ linea.linea_produccion }}">{{ linea.linea_produccion_nombre }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="col">
+            <label class="form-label">Tipo de merma</label>
+            <select class="form-select">
+                <option value="">Seleccione</option>
+                {% for merma in mermas %}
+                <option value="{{ merma.tipo_merma }}">{{ merma.tipo_merma_nombre }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="col">
+            <label class="form-label">Componente</label>
+            <select class="form-select">
+                <option value="">Seleccione</option>
+                {% for merma in mermas %}
+                <option value="{{ merma.componente }}">{{ merma.componente_nombre }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        
+        <div class="col">
+            <label class="form-label">Estado</label>
+            <select class="form-select">
+                <option value="">Seleccione</option>
+                {% for merma in mermas %}
+                <option value="{{ merma.edo_flujo_merma }}">{{ merma.edo_merma_nombre }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="col">
+            <label class="form-label">Fecha</label>
+            <input type="date" class="form-control">
+        </div>
+    </div>
+    
+    <table class="table ">
+        <thead>
+            <th>Folio</th>
+            <th>Fecha</th>
+            <th>Cantidad</th>
+            <th>Componente</th>
+            <th>Linea</th>
+            <th>Estacion</th>
+            <th>Tipo</th>
+            <th>Causa Raiz</th>
+            <th>Estado</th>
+            
+            <th>Acciones</th>
+        </thead>
+        <tbody>
+            {% for merma in mermas %}
+            <tr>
+                <td>{{ merma.folio }}</td>
+                <td>{{ merma.fecha }}</td>
+                <td>{{ merma.cantidad|floatformat:0 }} {{ merma.unidad }}s</td>
+                <td>{{ merma.componente_nombre }}</td>
+                <td>{{ merma.linea_produccion_nombre }}</td>
+                <td>{{ merma.estacion_trabajo_nombre }}</td>
+                <td>{{ merma.tipo_merma_nombre }}</td>
+                <td>{{ merma.causa_raiz_nombre }}</td>
+                <td>{{ merma.edo_merma_nombre }}</td>
+                
+                <td>Pendiente</td>
+                    
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <!-- Footer -->
+    <div class="d-flex justify-content-center">
+        <nav aria-label="Page navigation example">
+            <ul class="pagination">
+                <li class="page-item"><a class="page-link" href="#">Anterior</a></li>
+                <li class="page-item"><a class="page-link" href="#">1</a></li>
+                <li class="page-item"><a class="page-link" href="#">2</a></li>
+                <li class="page-item"><a class="page-link" href="#">3</a></li>
+                <li class="page-item"><a class="page-link" href="#">Siguiente</a></li>
+            </ul>
+        </nav>
+    </div>
+
+{% endblock app_content %}

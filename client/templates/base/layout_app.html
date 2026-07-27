@@ -31,12 +31,12 @@
 
         <nav class="flex-grow-1">
 
-            <a href="" class="mx-sidebar-link {% block nav_dashboard %}{% endblock nav_dashboard %}">
+            <a href="{% url 'usuarios:dashboard' %}" class="mx-sidebar-link {% block nav_dashboard %}{% endblock nav_dashboard %}">
                 <span class="material-symbols-outlined">dashboard</span> Dashboard
             </a>
 
             {% if usuario.rol == 'SUPER' %}
-            <a href="" class="mx-sidebar-link {% block nav_merma %}{% endblock nav_merma %}">
+            <a href="{% url 'mermas:list_mermas' %}" class="mx-sidebar-link {% block nav_merma %}{% endblock nav_merma %}">
                 <span class="material-symbols-outlined">inventory_2</span> Merma
             </a>
             {% endif %}
