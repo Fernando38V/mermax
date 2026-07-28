@@ -7,55 +7,71 @@
 
 {% block app_content %}
 
-    <div class="mb-4 d-flex justify-content-end">
+    <div class="mb-4 d-flex justify-content-end gap-2">
+        {% if filtros_activos %}
+            <a href="{% url 'mermas:list_mermas' %}" class="btn btn-secondary">
+                <span class="material-symbols-outlined">clear</span>
+                Limpiar filtros
+            </a>
+        {% endif %}
+        
         <button class="mx-btn-primary">
             <span class="material-symbols-outlined">add</span>
             Registrar Merma
         </button>
     </div>
+    <form method="get">
+        <div class="row g-3 mb-4">
+            <div class="col">
+                <label class="form-label">Linea de producción</label>
+                <select class="form-select" name="linea">
+                    <option value="">Todas</option>
+                    {% for linea in lineas %}
+                    <option value="{{ linea.num }}" {% if filtros.linea == linea.num|stringformat:"s" %}selected{% endif %}>{{ linea.nombre }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col">
+                <label class="form-label">Tipo de merma</label>
+                <select class="form-select" name="tipo_merma">
+                    <option value="">Todos</option>
+                    {% for tipo in tipos_merma %}
+                    <option value="{{ tipo.codigo }}" {% if filtros.tipo_merma == tipo.codigo|stringformat:"s" %}selected{% endif %}>{{ tipo.nombre }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col">
+                <label class="form-label">Componente</label>
+                <select class="form-select" name="componente">
+                    <option value="">Todos</option>
+                    {% for componente in componentes %}
+                    <option value="{{ componente.codigo }}" {% if filtros.componente == componente.codigo|stringformat:"s" %}selected{% endif %}>{{ componente.nombre }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col">
+                <label class="form-label">Estado</label>
+                <select class="form-select" name="estado">
+                    <option value="">Todos</option>
+                    {% for estado in estados %}
+                    <option value="{{ estado.codigo }}" {% if filtros.estado == estado.codigo|stringformat:"s" %}selected{% endif %}>{{ estado.nombre }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col">
+                <label class="form-label">Fecha</label>
+                <input type="date" class="form-control" name="fecha" value="{{ filtros.fecha|default:'' }}">
+            </div>
 
-    <div class="row g-3 mb-4">
-        <div class="col">
-            <label class="form-label">Linea de producción</label>
-            <select class="form-select" name="linea">
-                <option value="">Todas</option>
-                {% for linea in lineas %}
-                <option value="{{ linea.num }}">{{ linea.nombre }}</option>
-                {% endfor %}
-            </select>
+            <div class="col-auto d-flex align-items-end">
+                <button type="submit" class="btn btn-secondary">
+                    <span class="material-symbols-outlined">filter_alt</span>
+                    Filtrar
+                </button>
+            </div>
+
         </div>
-        <div class="col">
-            <label class="form-label">Tipo de merma</label>
-            <select class="form-select" name="tipo_merma">
-                <option value="">Todos</option>
-                {% for tipo in tipos_merma %}
-                <option value="{{ tipo.codigo }}">{{ tipo.nombre }}</option>
-                {% endfor %}
-            </select>
-        </div>
-        <div class="col">
-            <label class="form-label">Componente</label>
-            <select class="form-select" name="componente">
-                <option value="">Todos</option>
-                {% for componente in componentes %}
-                <option value="{{ componente.codigo }}">{{ componente.nombre }}</option>
-                {% endfor %}
-            </select>
-        </div>
-        <div class="col">
-            <label class="form-label">Estado</label>
-            <select class="form-select" name="estado">
-                <option value="">Todos</option>
-                {% for estado in estados %}
-                <option value="{{ estado.codigo }}">{{ estado.nombre }}</option>
-                {% endfor %}
-            </select>
-        </div>
-        <div class="col">
-            <label class="form-label">Fecha</label>
-            <input type="date" class="form-control" name="fecha">
-        </div>
-    </div>
+    </form>
 
     <table class="table">
         <thead>
@@ -96,13 +112,20 @@
 
     <!-- Footer -->
     <div class="d-flex justify-content-center">
-        <nav aria-label="Page navigation example">
+        <nav aria-label="Paginación de mermas">
             <ul class="pagination">
-                <li class="page-item"><a class="page-link" href="#">Anterior</a></li>
-                <li class="page-item"><a class="page-link" href="#">1</a></li>
-                <li class="page-item"><a class="page-link" href="#">2</a></li>
-                <li class="page-item"><a class="page-link" href="#">3</a></li>
-                <li class="page-item"><a class="page-link" href="#">Siguiente</a></li>
+                <li class="page-item {% if pagina_actual <= 1 %}disabled{% endif %}">
+                    <a class="page-link" href="?{{ querystring_filtros }}{% if querystring_filtros %}&{% endif %}page={{ pagina_actual|add:'-1' }}">Anterior</a>
+                </li>
+
+                {% for n in rango_paginas %}
+                <li class="page-item {% if n == pagina_actual %}active{% endif %}">
+                    <a class="page-link" href="?{{ querystring_filtros }}{% if querystring_filtros %}&{% endif %}page={{ n }}">{{ n }}</a>
+                </li>
+                {% endfor %}
+                <li class="page-item {% if pagina_actual >= total_paginas %}disabled{% endif %}">
+                    <a class="page-link" href="?{{ querystring_filtros }}{% if querystring_filtros %}&{% endif %}page={{ pagina_actual|add:"1" }}">Siguiente</a>
+                </li>
             </ul>
         </nav>
     </div>
