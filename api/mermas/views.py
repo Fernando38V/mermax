@@ -7,6 +7,7 @@ from rest_framework.response import Response
 from rest_framework import generics, status
 from django.db import IntegrityError, DatabaseError, transaction
 from django.utils import timezone
+from rest_framework.pagination import PageNumberPagination
 
 from mermas import serializers, models
 from usuarios.permissions import (
@@ -15,23 +16,51 @@ from usuarios.permissions import (
     LecturaTodosEscrituraSupervisor,
 )
 
+# ======================================================
+# Paginacion
+# ======================================================
+
+class MermasPagination(PageNumberPagination):
+    page_size = 10
+    page_size_query_param = 'page_size'
+    max_page_size = 100
 
 # ======================================================
 # Registro de Merma
 # ======================================================
 
-class ListRegistroMermaAPIView(APIView):
+class ListRegistroMermaAPIView(generics.ListAPIView):
     permission_classes = [LecturaTodosEscrituraSupervisor]
-
-    def get(self, request):
+    serializer_class = serializers.ListRegistroMermaSerializer
+    pagination_class = MermasPagination
+    
+    def get_queryset(self):
         queryset = models.RegistroMerma.objects.all()
-        data = serializers.ListRegistroMermaSerializer(
-            queryset,
-            many=True
-        ).data
-        return Response(data)
+        params = self.request.query_params
+        
+        linea = params.get('linea')
+        tipo = params.get('tipo_merma')
+        componente = params.get('componente')
+        estado = self.request.query_params.get("estado")
+        fecha = self.request.query_params.get("fecha")
+        
+        if linea:
+            queryset = queryset.filter(estacion_trabajo__linea_produccion=linea)
 
+        if tipo:
+            queryset = queryset.filter(tipo_merma=tipo)
 
+        if componente:
+            queryset = queryset.filter(componente=componente)
+
+        if estado:
+            queryset = queryset.filter(edo_flujo_merma=estado)
+
+        if fecha:
+            queryset = queryset.filter(fecha=fecha)
+            
+        return queryset.order_by('-fecha', '-folio')
+        
 class CreateRegistroMermaAPIView(generics.CreateAPIView):
     permission_classes = [LecturaTodosEscrituraSupervisor]
     queryset = models.RegistroMerma.objects.all()
