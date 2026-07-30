@@ -17,6 +17,13 @@ urlpatterns = [
     path('discrepancias/list/', views.ListDiscrepanciaAPIView.as_view(), name='list-discrepancias'),
     path("discrepancias/create/", views.DiscrepanciaCreateAPIView.as_view(), name="create_discrepancia"),
     path('discrepancias/resolver/<str:folio>/', views.ResolverDiscrepanciaAPIView.as_view(), name='resolver-discrepancia'),
-    path("recepcion/confirmar/<str:folio>/", views.ConfirmarRecepcionAPIView.as_view(), name="confirmar_recepcion")
+    path("recepcion/confirmar/<str:folio>/", views.ConfirmarRecepcionAPIView.as_view(), name="confirmar_recepcion"),
+    
+    # ======================================================
+    # Estaciones por linea (Para registro de nueva merma | Axel)
+    # ======================================================
+    path("estaciones-por-linea/", views.ListEstacionesPorLineaAPIView.as_view(), name="estaciones-por-linea"),
+    path("lotes-por-componente/", views.ListLotesPorComponenteAPIView.as_view(), name="lotes-por-componente"),
+    path("ordenes-por-estacion/", views.ListOrdenesPorEstacionAPIView.as_view(), name="ordenes-por-estacion"),
 
 ]   

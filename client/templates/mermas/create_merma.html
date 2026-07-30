@@ -1,0 +1,357 @@
+{% extends "base/layout_app.html" %}
+
+{% block nav_merma %}active{% endblock nav_merma %}
+
+{% block page_title %}Mermas{% endblock page_title %}
+{% block page_subtitle %}Registrar merma{% endblock page_subtitle %}
+
+{% block app_content %}
+
+<!-- btn para regresar -->
+<div class="mb-4">
+    <a href="{% url 'mermas:list_mermas' %}" class="btn btn-secondary">
+        <span class="material-symbols-outlined">arrow_back</span>
+        Regresar
+    </a>
+</div>
+<!-- Formulario -->
+<div class="container-fluid">
+    <form method="post">
+
+        {% csrf_token %}
+        <div class="card mb-4">
+            <div class="card-header">
+                <strong>Datos generales</strong>
+            </div>
+            <div class="card-body">
+                <div class="row g-3">
+
+                    <div class="col-md-4">
+                        <label class="form-label" for="linea">Línea de producción</label>
+                        <select class="form-select {% if errores.linea %}is-invalid{% endif %}" name="linea" id="linea" required>
+                            <option value="">-- Seleccionar línea --</option>
+                            {% for linea in lineas %}
+                            <option value="{{ linea.num }}"{% if valores.linea == linea.num|stringformat:"s" %}selected{% endif %}>
+                                {{ linea.nombre }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                        {% if errores.linea %}
+                        <div class="invalid-feedback">{{ errores.linea|join:", " }}</div>
+                        {% endif %}
+                    </div>
+
+                    <div class="col-md-4">
+                        <label class="form-label" for="estacion">Estación de trabajo</label>
+                        <select class="form-select {% if errores.estacion %}is-invalid{% endif %}" name="estacion" id="estacion" required disabled>
+                            <option value="">-- Selecciona primero una linea --</option>
+                        </select>
+                        {% if errores.estacion %}
+                        <div class="invalid-feedback">{{ errores.estacion|join:", " }}</div>
+                        {% endif %}
+                        <div class="form-text">Se actualiza según la línea seleccionada</div>
+                    </div>
+
+                    <div class="col-md-4">
+                        <label class="form-label" for="orden_produccion">Orden de producción</label>
+                        <select class="form-select {% if errores.orden_produccion %}is-invalid{% endif %}"
+                                name="orden_produccion" id="orden_produccion" required disabled>
+                            <option value="">-- Selecciona primero una estación --</option>
+                        </select>
+                        {% if errores.orden_produccion %}
+                        <div class="invalid-feedback">{{ errores.orden_produccion|join:", " }}</div>
+                        {% endif %}
+                        <div class="form-text">Solo órdenes de la estación seleccionada</div>
+                    </div>
+
+                    <div class="col-md-4">
+                        <label class="form-label" for="fecha">Fecha de registro</label>
+                        <input type="date" class="form-control {% if errores.fecha %}is-invalid{% endif %}"
+                               name="fecha" id="fecha"
+                               value="{{ valores.fecha|default:fecha_hoy|date:'Y-m-d' }}" readonly>
+                        {% if errores.fecha %}
+                        <div class="invalid-feedback">{{ errores.fecha|join:", " }}</div>
+                        {% endif %}
+                        <div class="form-text">Se registra automáticamente la fecha de hoy</div>
+                    </div>
+
+                    <div class="col-md-4">
+                        <label class="form-label" for="componente">Componente</label>
+                        <select class="form-select {% if errores.componente %}is-invalid{% endif %}" name="componente" id="componente" required>
+                            <option value="">-- Seleccionar componente --</option>
+                            {% for componente in componentes %}
+                            <option value="{{ componente.codigo }}" {% if valores.componente == componente.codigo|stringformat:"s" %}selected{% endif %}>
+                                {{ componente.nombre }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                        {% if errores.componente %}
+                            <div class="invalid-feedback">{{ errores.componente|join:", " }}</div>
+                        {% endif %}
+                    </div>
+
+                    <div class="col-md-4">
+                        <label class="form-label" for="lote_material">Lote de material</label>
+                        <select class="form-select {% if errores.lote_material %}is-invalid{% endif %}"
+                                name="lote_material" id="lote_material" required disabled>
+                            <option value="">-- Selecciona primero un componente --</option>
+                        </select>
+                        {% if errores.lote_material %}
+                        <div class="invalid-feedback">{{ errores.lote_material|join:", " }}</div>
+                        {% endif %}
+                        <div class="form-text">Solo lotes del componente seleccionado</div>
+                    </div>
+
+                    <div class="col-md-4">
+                        <label class="form-label" for="tipos_merma">Tipo de merma</label>
+                        <select class="form-select {% if errores.tipos_merma %}is-invalid{% endif %}" name="tipos_merma" id="tipos_merma">
+                            <option value="">-- Seleccionar un tipo --</option>
+                            {% for tipo in tipos_merma %}
+                            <option value="{{ tipo.codigo }}" {% if valores.tipo == tipo.codigo|stringformat:"s" %}selected{% endif %}>
+                                {{ tipo.nombre }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                        {% if errores.tipo %}
+                            <div class="invalid-feedback">{{ errores.componente|join:", " }}</div>
+                        {% endif %}
+                    </div>
+
+                    <div class="col-md-4">
+                        <label class="form-label" for="causa_raiz">Causa raíz</label>
+                        <select class="form-select {% if errores.causa_raiz %}is-invalid{% endif %}"
+                                name="causa_raiz" id="causa_raiz" required>
+                            <option value="">-- Seleccionar una causa --</option>
+                            {% for causa in causa_raiz %}
+                            <option value="{{ causa.codigo }}"
+                                {% if valores.causa_raiz == causa.codigo|stringformat:"s" %}selected{% endif %}>
+                                {{ causa.nombre }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                        {% if errores.causa_raiz %}
+                        <div class="invalid-feedback">{{ errores.causa_raiz|join:", " }}</div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="card mb-4">
+            <div class="card-header">
+                <strong>Cantidad</strong>
+            </div>
+
+            <div class="card-body">
+                <div class="row g-3">
+                    
+                    <div class="col-md-4">
+                        <label class="form-label" for="cantidad">Cantidad</label>
+
+                        <div class="input-group">
+                            <input type="number" class="form-control {% if errores.cantidad %}is-invalid{% endif %}" 
+                                step="1" min="1" name="cantidad" id="cantidad" value="{{ valores.cantidad|default:'1' }}" required>
+                            <span class="input-group-text">Piezas</span>
+                        </div>
+
+                        <input type="hidden" name="unidad" value="pieza">
+
+                        {% if errores.cantidad %}
+                            <div class="invalid-feedback">{{ errores.cantidad|join:", " }}"</div>
+                        {% endif %}
+                    </div>
+
+                </div>
+            </div>
+        </div>
+
+        <div class="card mb-4">
+            <div class="card-header">
+                <strong>Observaciones</strong>
+            </div>
+
+            <div class="card-body">
+                <div class="row g-3">
+
+                    <div class="col-12">
+                        <label class="form-label">Descripción</label>
+                        <textarea name="descripcion" id="descripcion" class="form-control" rows="3" placeholder="Detalles adicionales sobre la merma"></textarea>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="d-flex justify-content-end gap-2">
+            <a href="{% url 'mermas:list_mermas' %}" class="btn btn-secondary">Cancelar</a>
+            <button type="submit" class="mx-btn-primary">
+                <span class="material-symbols-outlined">add</span>
+                Registrar Merma
+            </button>
+        </div>
+    </form>
+</div>
+{% endblock app_content %}
+
+{% block extra_js %}
+
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const selectLinea = document.getElementById('linea');
+        const selectEstacion = document.getElementById('estacion');
+        const selectOrden = document.getElementById('orden_produccion');
+        const selectComponente = document.getElementById('componente');
+        const selectLote = document.getElementById('lote_material');
+        const form = document.querySelector('form');
+
+        const estacionInicial = "{{ valores.estacion|default:'' }}";
+        const ordenInicial = "{{ valores.orden_produccion|default:'' }}";
+        const loteInicial = "{{ valores.lote_material|default:'' }}";
+
+        function cargarOpciones(select, url, paramName, paramValue, seleccionarValor, etiquetaVacia, etiquetaLista, formatearOpcion) {
+            select.disabled = true;
+            select.innerHTML = '<option value="">' + etiquetaVacia + '</option>';
+
+            if (!paramValue) {
+                return Promise.resolve();
+            }
+
+            select.innerHTML = '<option value="">Cargando...</option>';
+
+            return fetch(url + '?' + encodeURIComponent(paramName) + '=' + encodeURIComponent(paramValue), {
+                headers: { 'X-Requested-With': 'XMLHttpRequest' }
+            })
+                .then(function (response) {
+                    if (!response.ok) {
+                        throw new Error('Error al cargar opciones');
+                    }
+                    return response.json();
+                })
+                .then(function (items) {
+                    select.innerHTML = '<option value="">' + etiquetaLista + '</option>';
+                    items.forEach(function (item) {
+                        const option = document.createElement('option');
+                        const formatted = formatearOpcion(item);
+                        option.value = formatted.value;
+                        option.textContent = formatted.label;
+                        if (formatted.dataset) {
+                            Object.keys(formatted.dataset).forEach(function (key) {
+                                option.dataset[key] = formatted.dataset[key];
+                            });
+                        }
+                        if (String(formatted.value) === seleccionarValor) {
+                            option.selected = true;
+                        }
+                        select.appendChild(option);
+                    });
+                    select.disabled = items.length === 0;
+                })
+                .catch(function () {
+                    select.innerHTML = '<option value="">Error al cargar opciones</option>';
+                });
+        }
+
+        function cargarEstaciones(lineaNum, seleccionarValor) {
+            return cargarOpciones(
+                selectEstacion,
+                '/mermas/estaciones-por-linea/',
+                'linea',
+                lineaNum,
+                seleccionarValor,
+                'Selecciona primero una línea',
+                'Selecciona una estación',
+                function (estacion) {
+                    return { value: estacion.codigo, label: estacion.nombre };
+                }
+            );
+        }
+
+        function cargarOrdenes(estacionCodigo, seleccionarValor) {
+            return cargarOpciones(
+                selectOrden,
+                '/mermas/ordenes-por-estacion/',
+                'estacion',
+                estacionCodigo,
+                seleccionarValor,
+                'Selecciona primero una estación',
+                'Selecciona una orden',
+                function (orden) {
+                    const detalle = orden.fecha_inicio ? ' (inicio: ' + orden.fecha_inicio + ')' : '';
+                    return {
+                        value: orden.numero,
+                        label: 'Orden ' + orden.numero + detalle,
+                        dataset: { estacion: orden.estacion_trabajo_codigo || orden.estacion_trabajo },
+                    };
+                }
+            );
+        }
+
+        function cargarLotes(componenteCodigo, seleccionarValor) {
+            return cargarOpciones(
+                selectLote,
+                '/mermas/lotes-por-componente/',
+                'componente',
+                componenteCodigo,
+                seleccionarValor,
+                'Selecciona primero un componente',
+                'Selecciona un lote',
+                function (lote) {
+                    const prov = lote.numero_lote_prov ? ' - ' + lote.numero_lote_prov : '';
+                    return {
+                        value: lote.num,
+                        label: 'Lote ' + lote.num + prov,
+                        dataset: { componente: lote.componente_codigo || lote.componente },
+                    };
+                }
+            );
+        }
+
+        function reiniciarDependiente(select, mensaje) {
+            select.disabled = true;
+            select.innerHTML = '<option value="">' + mensaje + '</option>';
+        }
+
+        selectLinea.addEventListener('change', function () {
+            reiniciarDependiente(selectOrden, 'Selecciona primero una estación');
+            cargarEstaciones(this.value, '');
+        });
+
+        selectEstacion.addEventListener('change', function () {
+            cargarOrdenes(this.value, '');
+        });
+
+        selectComponente.addEventListener('change', function () {
+            cargarLotes(this.value, '');
+        });
+
+        form.addEventListener('submit', function (event) {
+            const componente = selectComponente.value;
+            const estacion = selectEstacion.value;
+            const loteOption = selectLote.selectedOptions[0];
+            const ordenOption = selectOrden.selectedOptions[0];
+
+            if (componente && selectLote.value && loteOption && loteOption.dataset.componente && loteOption.dataset.componente !== componente) {
+                event.preventDefault();
+                alert('El lote seleccionado no corresponde al componente indicado.');
+                return;
+            }
+
+            if (estacion && selectOrden.value && ordenOption && ordenOption.dataset.estacion && ordenOption.dataset.estacion !== estacion) {
+                event.preventDefault();
+                alert('La orden seleccionada no corresponde a la estación de trabajo indicada.');
+            }
+        });
+
+        if (selectLinea.value) {
+            cargarEstaciones(selectLinea.value, estacionInicial).then(function () {
+                if (selectEstacion.value) {
+                    cargarOrdenes(selectEstacion.value, ordenInicial);
+                }
+            });
+        }
+
+        if (selectComponente.value) {
+            cargarLotes(selectComponente.value, loteInicial);
+        }
+    });
+</script>
+{% endblock extra_js %}

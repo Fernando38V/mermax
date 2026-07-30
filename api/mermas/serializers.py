@@ -1,5 +1,6 @@
 from rest_framework import serializers
-from mermas.models import RegistroMerma, Discrepancia
+from mermas.models import OrdenProduccion, RegistroMerma, Discrepancia
+from recepciones.models import LoteMaterial
 
 
 # ======================================================
@@ -94,6 +95,22 @@ class UpdateRegistroMermaSerializer(serializers.ModelSerializer):
             )
         return value
     
+class LoteMaterialComboSerializer(serializers.ModelSerializer):
+    componente_codigo = serializers.CharField(source='componente_id', read_only=True)
+
+    class Meta:
+        model = LoteMaterial
+        fields = ['num', 'numero_lote_prov', 'componente', 'componente_codigo', 'fecha', 'cantidad']
+
+
+class OrdenProduccionComboSerializer(serializers.ModelSerializer):
+    estacion_trabajo_codigo = serializers.CharField(source='estacion_trabajo_id', read_only=True)
+
+    class Meta:
+        model = OrdenProduccion
+        fields = ['numero', 'estacion_trabajo', 'estacion_trabajo_codigo', 'fecha_inicio', 'estado_orden']
+
+
 # ======================================================
 # Discrepancias
 # ======================================================
