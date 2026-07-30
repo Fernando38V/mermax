@@ -9,7 +9,10 @@ from django.db import IntegrityError, DatabaseError, transaction
 from django.utils import timezone
 from rest_framework.pagination import PageNumberPagination
 
+from catalogos.models import EstacionTrabajo
+from catalogos.serializers import EstacionTrabajoSerializer
 from mermas import serializers, models
+from recepciones.models import LoteMaterial
 from usuarios.permissions import (
     EsAlmacenista,
     LecturaTodosEscrituraAlmacenista,
@@ -82,6 +85,67 @@ class UpdateRegistroMermaAPIView(generics.UpdateAPIView):
     permission_classes = [LecturaTodosEscrituraSupervisor]
     queryset = models.RegistroMerma.objects.all()
     serializer_class = serializers.UpdateRegistroMermaSerializer
+
+
+# ======================================================
+# Estaciones por linea
+# ======================================================
+
+class ListEstacionesPorLineaAPIView(APIView):
+    permission_classes = [LecturaTodosEscrituraSupervisor]
+    
+    def get(self, request):
+        linea = request.GET.get('linea')
+        
+        if not linea:
+            return Response(
+                {"error": "El parametro 'linea' es requerido"},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+            
+        queryset = EstacionTrabajo.objects.filter(
+            linea_produccion=linea,
+            activo=True,
+        )
+
+        data = EstacionTrabajoSerializer(queryset, many=True).data
+        return Response(data)
+
+
+class ListLotesPorComponenteAPIView(APIView):
+    permission_classes = [LecturaTodosEscrituraSupervisor]
+
+    def get(self, request):
+        componente = request.GET.get('componente')
+
+        if not componente:
+            return Response(
+                {"error": "El parametro 'componente' es requerido"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        queryset = LoteMaterial.objects.filter(componente=componente).order_by('-fecha', '-num')
+        data = serializers.LoteMaterialComboSerializer(queryset, many=True).data
+        return Response(data)
+
+
+class ListOrdenesPorEstacionAPIView(APIView):
+    permission_classes = [LecturaTodosEscrituraSupervisor]
+
+    def get(self, request):
+        estacion = request.GET.get('estacion')
+
+        if not estacion:
+            return Response(
+                {"error": "El parametro 'estacion' es requerido"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        queryset = models.OrdenProduccion.objects.filter(
+            estacion_trabajo=estacion,
+        ).order_by('-fecha_inicio', '-numero')
+        data = serializers.OrdenProduccionComboSerializer(queryset, many=True).data
+        return Response(data)
 
 
 # ======================================================

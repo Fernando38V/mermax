@@ -1,9 +1,10 @@
 import math
-from django.shortcuts import render
+from django.shortcuts import render, redirect
+from django.utils import timezone
 from django.utils.decorators import method_decorator
 from django.views import generic
 from usuarios.decorators import login_required_api
-from usuarios.wrappers import ApiError, api_get
+from usuarios.wrappers import ApiError, api_get, api_post
 
 @method_decorator(login_required_api, name='dispatch')
 class ListMermas(generic.View):
@@ -71,3 +72,148 @@ class ListMermas(generic.View):
         if isinstance(datos, dict):
             return datos.get('results', [])
         return datos
+    
+@method_decorator(login_required_api, name='dispatch')
+class CreateMermas(generic.View):
+    template_name = 'mermas/create_merma.html'
+    context = {}
+    url_base = '/mermas/registro/create/'
+    response = None
+    
+    def get(self, request):
+        token = request.session.get('api_token')
+        
+        self.context = {
+            'lineas': self._catalogo('/catalogos/lineas/', token),
+            'tipos_merma': self._catalogo('/catalogos/tipos-merma/', token),
+            'componentes': self._catalogo('/catalogos/componentes/', token),
+            'estados': self._catalogo('/catalogos/lookup/estados-flujo/', token),
+            'causa_raiz': self._catalogo('/catalogos/causas-raiz/', token),
+            'fecha_hoy': timezone.localdate(),
+            'valores': {},
+            'errores': {},
+        }
+        return render(request, self.template_name, self.context)
+        
+    def _catalogo(self, ruta, token):
+        try:
+            datos = api_get(ruta, token=token)
+        except ApiError:
+            return []
+        if isinstance(datos, dict):
+            return datos.get('results', [])
+        return datos
+    
+    def post(self, request):
+        token = request.session.get('api_token')
+        
+        payload = {
+            'cantidad': request.POST.get('cantidad'),
+            'unidad': request.POST.get('unidad'),
+            'descripcion': request.POST.get('descripcion'),
+            'lote_material': request.POST.get('lote_material'),
+            'componente': request.POST.get('componente'),
+            'tipo_merma': request.POST.get('tipos_merma'),
+            'causa_raiz': request.POST.get('causa_raiz'),
+            'estacion_trabajo': request.POST.get('estacion'),
+            'orden_produccion': request.POST.get('orden_produccion'),
+        }
+        
+        try:
+            respuesta = api_post(self.url_base, payload, token=token)
+            
+            return redirect('mermas:list_mermas')
+            
+        except ApiError as e:
+            self.context = {
+                'lineas': self._catalogo('/catalogos/lineas/', token),
+                'tipos_merma': self._catalogo('/catalogos/tipos-merma/', token),
+                'componentes': self._catalogo('/catalogos/componentes/', token),
+                'estados': self._catalogo('/catalogos/lookup/estados-flujo/', token),
+                'causa_raiz': self._catalogo('/catalogos/causas-raiz/', token),
+                'fecha_hoy': timezone.localdate(),
+                'valores': payload,
+                'errores': getattr(e, 'data', {}),
+            }
+            
+            return render(request, self.template_name, self.context)
+    
+@method_decorator(login_required_api, name='dispatch')
+class EstacionesPorLinea(generic.View):
+
+    def get(self, request):
+        from django.http import JsonResponse
+
+        token = request.session.get('api_token')
+        linea = request.GET.get('linea')
+
+        if not linea:
+            return JsonResponse([], safe=False)
+
+        try:
+            estaciones = api_get(
+                '/mermas/estaciones-por-linea/',
+                token=token,
+                params={'linea': linea}
+            )
+        except ApiError:
+            return JsonResponse([], safe=False)
+
+        if isinstance(estaciones, dict):
+            estaciones = estaciones.get('results', [])
+
+        return JsonResponse(estaciones, safe=False)
+
+
+@method_decorator(login_required_api, name='dispatch')
+class LotesPorComponente(generic.View):
+
+    def get(self, request):
+        from django.http import JsonResponse
+
+        token = request.session.get('api_token')
+        componente = request.GET.get('componente')
+
+        if not componente:
+            return JsonResponse([], safe=False)
+
+        try:
+            lotes = api_get(
+                '/mermas/lotes-por-componente/',
+                token=token,
+                params={'componente': componente},
+            )
+        except ApiError:
+            return JsonResponse([], safe=False)
+
+        if isinstance(lotes, dict):
+            lotes = lotes.get('results', [])
+
+        return JsonResponse(lotes, safe=False)
+
+
+@method_decorator(login_required_api, name='dispatch')
+class OrdenesPorEstacion(generic.View):
+
+    def get(self, request):
+        from django.http import JsonResponse
+
+        token = request.session.get('api_token')
+        estacion = request.GET.get('estacion')
+
+        if not estacion:
+            return JsonResponse([], safe=False)
+
+        try:
+            ordenes = api_get(
+                '/mermas/ordenes-por-estacion/',
+                token=token,
+                params={'estacion': estacion},
+            )
+        except ApiError:
+            return JsonResponse([], safe=False)
+
+        if isinstance(ordenes, dict):
+            ordenes = ordenes.get('results', [])
+
+        return JsonResponse(ordenes, safe=False)
