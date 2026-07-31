@@ -34,7 +34,10 @@ class SolicitudInspeccion(models.Model):
         db_column='registro_merma', blank=True, null=True
     )
     usuario = models.ForeignKey(Usuario, on_delete=models.PROTECT, db_column='usuario')
-
+    usuario_atencion = models.ForeignKey(
+            Usuario, on_delete=models.PROTECT, db_column='usuario_atencion',
+            related_name='solicitudes_atendidas', blank=True, null=True,
+    )
     class Meta:
         managed = False
         db_table = 'solicitud_inspeccion'
