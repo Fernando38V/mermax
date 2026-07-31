@@ -1013,4 +1013,7 @@ BEGIN
 
 END$$
 
+CREATE INDEX idx_solicitud_edo_fecha 
+ON solicitud_inspeccion (edo_solicitud, fecha_generacion DESC, hora_generacion DESC);
+
 DELIMITER ;

@@ -1,0 +1,187 @@
+{% extends "base/layout_app.html" %}
+{% load static %}
+
+{% block nav_inspecciones %}active{% endblock nav_inspecciones %}
+
+{% block page_title %}Dictaminar Inspección{% endblock page_title %}
+{% block page_subtitle %}Emitir dictamen de disposición final para solicitudes de merma{% endblock page_subtitle %}
+
+{% block app_content %}
+<div class="container-fluid p-0">
+
+    {% if errores.error %}
+    <div class="alert alert-danger d-flex align-items-center mb-4" role="alert">
+        <span class="material-symbols-outlined me-2">error</span>
+        <div>{{ errores.error }}</div>
+    </div>
+    {% endif %}
+
+    <div class="card border-0 shadow-sm rounded-3">
+        <div class="card-body p-4">
+            <form method="POST" action="{% if codigo_solicitud_param %}{% url 'inspecciones:dictaminar_inspeccion_codigo' codigo_solicitud_param %}{% else %}{% url 'inspecciones:dictaminar_inspeccion' %}{% endif %}">
+                {% csrf_token %}
+
+                <!-- Selección / Visualización de Solicitud -->
+                <div class="mb-4">
+                    <label class="form-label fw-bold">Solicitud de Inspección Pendiente <span class="text-danger">*</span></label>
+                    {% if codigo_solicitud_param %}
+                        <input type="text" class="form-control form-control-lg bg-light" name="codigo" value="{{ codigo_solicitud_param }}" readonly>
+                    {% else %}
+                        <select name="codigo" class="form-select form-select-lg {% if errores.codigo or errores.codigo_solicitud %}is-invalid{% endif %}" required>
+                            <option value="" disabled {% if not valores.codigo %}selected{% endif %}>-- Selecciona una solicitud de la lista --</option>
+                            {% for sol in solicitudes_pendientes %}
+                                <option value="{{ sol.codigo }}" {% if valores.codigo == sol.codigo %}selected{% endif %}>
+                                    {{ sol.codigo }} — 
+                                    {% if sol.registro_merma_folio %}
+                                        Merma: {{ sol.registro_merma_folio }}
+                                    {% elif sol.registro_merma %}
+                                        Merma: {{ sol.registro_merma }}
+                                    {% else %}
+                                        Merma s/n
+                                    {% endif %}
+                                    ({% if sol.edo_solicitud_nombre %}{{ sol.edo_solicitud_nombre }}{% else %}{{ sol.edo_solicitud }}{% endif %})
+                                </option>
+                            {% endfor %}
+                        </select>
+                        {% if errores.codigo or errores.codigo_solicitud %}
+                            <div class="invalid-feedback">
+                                {{ errores.codigo.0|default:errores.codigo_solicitud.0 }}
+                            </div>
+                        {% endif %}
+                    {% endif %}
+                </div>
+
+                <!-- Selección del Dictamen Final (Limpio para RNF-06) -->
+                <div class="mb-4">
+                    <label class="form-label fw-bold">Disposición Final (Dictamen) <span class="text-danger">*</span></label>
+                    <select name="disposicion_final" id="select_dictamen" class="form-select form-select-lg {% if errores.disposicion_final %}is-invalid{% endif %}" required onchange="cambiarDictamen()">
+                        <option value="" disabled {% if not valores.disposicion_final %}selected{% endif %}>-- Selecciona el tipo de disposición --</option>
+                        <option value="RTN_PROV" {% if valores.disposicion_final == 'RTN_PROV' %}selected{% endif %}>Devolución a Proveedor</option>
+                        <option value="RECICLAJE" {% if valores.disposicion_final == 'RECICLAJE' %}selected{% endif %}>Reciclaje</option>
+                        <option value="DESTR_CTRL" {% if valores.disposicion_final == 'DESTR_CTRL' %}selected{% endif %}>Desecho Controlado</option>
+                    </select>
+                    {% if errores.disposicion_final %}
+                        <div class="invalid-feedback">{{ errores.disposicion_final.0 }}</div>
+                    {% endif %}
+                </div>
+
+                <!-- SECCIÓN: DEVOLUCIÓN A PROVEEDOR -->
+                <div id="seccion_RTN_PROV" class="seccion-dictamen p-3 mb-4 rounded-3 bg-light border" style="display: none;">
+                    <div class="d-flex align-items-center gap-2 text-primary fw-bold mb-3">
+                        <span class="material-symbols-outlined">local_shipping</span>
+                        <h6 class="mb-0 fw-bold">Datos de Devolución a Proveedor</h6>
+                    </div>
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Proveedor <span class="text-danger">*</span></label>
+                            <select name="proveedor" class="form-select {% if errores.proveedor %}is-invalid{% endif %}">
+                                <option value="">-- Seleccionar Proveedor --</option>
+                                {% for p in proveedores %}
+                                    <option value="{{ p.codigo }}" {% if valores.proveedor == p.codigo %}selected{% endif %}>{{ p.nombre }}</option>
+                                {% endfor %}
+                            </select>
+                            {% if errores.proveedor %}<div class="invalid-feedback">{{ errores.proveedor.0 }}</div>{% endif %}
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Motivo de Rechazo <span class="text-danger">*</span></label>
+                            <input type="text" name="motivo_rechazo" class="form-control {% if errores.motivo_rechazo %}is-invalid{% endif %}" value="{{ valores.motivo_rechazo|default:'' }}" placeholder="Describa la causa del rechazo">
+                            {% if errores.motivo_rechazo %}<div class="invalid-feedback">{{ errores.motivo_rechazo.0 }}</div>{% endif %}
+                        </div>
+                    </div>
+                </div>
+
+                <!-- SECCIÓN: RECICLAJE -->
+                <div id="seccion_RECICLAJE" class="seccion-dictamen p-3 mb-4 rounded-3 bg-light border" style="display: none;">
+                    <div class="d-flex align-items-center gap-2 text-success fw-bold mb-3">
+                        <span class="material-symbols-outlined">recycling</span>
+                        <h6 class="mb-0 fw-bold">Datos de Reciclaje</h6>
+                    </div>
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Empresa Recicladora <span class="text-danger">*</span></label>
+                            <select name="empresa_recicladora" class="form-select {% if errores.empresa_recicladora %}is-invalid{% endif %}">
+                                <option value="">-- Seleccionar Recicladora --</option>
+                                {% for r in empresas_recicladoras %}
+                                    <option value="{{ r.codigo }}" {% if valores.empresa_recicladora == r.codigo %}selected{% endif %}>{{ r.nombre }}</option>
+                                {% endfor %}
+                            </select>
+                            {% if errores.empresa_recicladora %}<div class="invalid-feedback">{{ errores.empresa_recicladora.0 }}</div>{% endif %}
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Peso Neto (kg) <span class="text-danger">*</span></label>
+                            <input type="number" step="0.01" name="peso_neto" class="form-control {% if errores.peso_neto %}is-invalid{% endif %}" value="{{ valores.peso_neto|default:'' }}" placeholder="0.00">
+                            {% if errores.peso_neto %}<div class="invalid-feedback">{{ errores.peso_neto.0 }}</div>{% endif %}
+                        </div>
+                    </div>
+                </div>
+
+                <!-- SECCIÓN: DESECHO CONTROLADO -->
+                <div id="seccion_DESTR_CTRL" class="seccion-dictamen p-3 mb-4 rounded-3 bg-light border" style="display: none;">
+                    <div class="d-flex align-items-center gap-2 text-danger fw-bold mb-3">
+                        <span class="material-symbols-outlined">delete</span>
+                        <h6 class="mb-0 fw-bold">Datos de Destrucción Controlada</h6>
+                    </div>
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Método de Destrucción <span class="text-danger">*</span></label>
+                            <select name="metodo_destruccion" class="form-select {% if errores.metodo_destruccion %}is-invalid{% endif %}">
+                                <option value="">-- Seleccionar Método --</option>
+                                {% for m in metodos_destruccion %}
+                                    <option value="{{ m.codigo }}" {% if valores.metodo_destruccion == m.codigo %}selected{% endif %}>{{ m.nombre }}</option>
+                                {% endfor %}
+                            </select>
+                            {% if errores.metodo_destruccion %}<div class="invalid-feedback">{{ errores.metodo_destruccion.0 }}</div>{% endif %}
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Folio Probatorio <span class="text-danger">*</span></label>
+                            <input type="text" name="folio_probatorio" class="form-control {% if errores.folio_probatorio %}is-invalid{% endif %}" value="{{ valores.folio_probatorio|default:'' }}" placeholder="Número de acta o folio de destrucción">
+                            {% if errores.folio_probatorio %}<div class="invalid-feedback">{{ errores.folio_probatorio.0 }}</div>{% endif %}
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row g-3 mb-4">
+                    <div class="col-md-6">
+                        <label class="form-label fw-semibold">Cantidad Ejecutada (Opcional)</label>
+                        <input type="number" step="0.01" name="cantidad_ejecutada" class="form-control" value="{{ valores.cantidad_ejecutada|default:'' }}" placeholder="Dejar en blanco para usar el total de la merma">
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label fw-semibold">Observaciones Generales</label>
+                        <input type="text" name="observaciones" class="form-control" value="{{ valores.observaciones|default:'' }}" placeholder="Observaciones adicionales sobre la inspección">
+                    </div>
+                </div>
+
+                <!-- Botones de Acción -->
+                <div class="d-flex justify-content-end gap-2 pt-3 border-top">
+                    <a href="{% url 'inspecciones:alertas' %}" class="btn btn-light border">Volver a Solicitudes Pendientes</a>
+                    <button type="submit" class="btn btn-primary d-flex align-items-center gap-1 px-4">
+                        <span class="material-symbols-outlined fs-5">task_alt</span> Guardar Dictamen
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+function cambiarDictamen() {
+    var seleccion = document.getElementById('select_dictamen').value;
+    var secciones = document.querySelectorAll('.seccion-dictamen');
+    
+    secciones.forEach(function(sec) {
+        sec.style.display = 'none';
+    });
+
+    if (seleccion) {
+        var seccionActiva = document.getElementById('seccion_' + seleccion);
+        if (seccionActiva) {
+            seccionActiva.style.display = 'block';
+        }
+    }
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+    cambiarDictamen();
+});
+</script>
+{% endblock app_content %}
