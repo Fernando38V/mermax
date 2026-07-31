@@ -1,0 +1,174 @@
+{% extends "base/layout_app.html" %}
+
+{% block nav_merma %}active{% endblock nav_merma %}
+
+{% block page_title %}Mermas{% endblock page_title %}
+{% block page_subtitle %}Detalles de merma - {{ merma.folio }}{% endblock page_subtitle %}
+
+{% block app_content %}
+
+<div class="container-fluid">
+
+    <div class="d-flex justify-content-between align-items-center mb-4">
+
+        <div>
+            <a href="{% url 'mermas:list_mermas' %}" class="btn btn-secondary mb-3 d-inline-flex align-items-center gap-1">
+                <span class="material-symbols-outlined">arrow_back</span> 
+                Regresar
+            </a> 
+        </div>
+        
+        <div>
+            {% if merma.edo_flujo_merma == 'REGISTRADA' %}
+            <a href="{% url 'mermas:update_mermas' merma.folio %}" class="btn btn-primary mx-btn-primary">
+                <span class="material-symbols-outlined">edit</span> 
+                Editar merma
+            </a>
+            {% endif %}
+        </div>
+    </div>
+
+    <div class="card mb-4">
+        <div class="card-header">
+            <strong>Datos del Registro</strong>
+        </div>
+        <div class="card-body">
+            <div class="row g-4">
+
+                <div class="col-md-3">
+                    <div class="text-muted small">Folio</div>
+                    <div class="fw-semibold">{{ merma.folio }}</div>
+                </div>
+
+                <div class="col-md-3">
+                    <div class="text-muted small">Fecha</div>
+                    <div class="fw-semibold">{{ merma.fecha }}</div>
+                </div>
+
+                <div class="col-md-3">
+                    <div class="text-muted small">Estado</div>
+                    <div class="fw-semibold">{{ merma.edo_merma_nombre }}</div>
+                </div>
+
+                <div class="col-md-3">
+                    <div class="text-muted small">Usuario</div>
+                    <div class="fw-semibold">{{ merma.usuario_nombre_completo }}</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="card mb-4">
+
+        <div class="card-header">
+            <strong>Información de producción</strong>
+        </div>
+
+        <div class="card-body">
+
+            <div class="row g-4">
+
+                <div class="col-md-4">
+                    <div class="text-muted small">Línea de producción</div>
+                    <div class="fw-semibold">{{ merma.linea_produccion_nombre }}</div>
+                </div>
+
+                <div class="col-md-4">
+                    <div class="text-muted small">Estación de trabajo</div>
+                    <div class="fw-semibold">{{ merma.estacion_trabajo_nombre }}</div>
+                </div>
+
+                <div class="col-md-4">
+                    <div class="text-muted small">Orden de producción</div>
+                    <div class="fw-semibold">Orden {{ merma.orden_produccion }} (Inicio: {{ merma.orden_fecha_inicio }})</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="card mb-4">
+
+        <div class="card-header">
+            <strong>Material y cantidad</strong>
+        </div>
+
+        <div class="card-body">
+
+            <div class="row g-4">
+
+                <div class="col-md-4">
+                    <div class="text-muted small">
+                        Componente
+                    </div>
+                    <div class="fw-semibold">
+                        {{ merma.componente_nombre }}
+                    </div>
+                </div>
+
+                <div class="col-md-4">
+                    <div class="text-muted small">Lote de material</div>
+                    <div class="fw-semibold">Lote {{ merma.lote_material }} - {{ merma.lote_numero_prov }}</div>
+                </div>
+
+                <div class="col-md-2">
+                    <div class="text-muted small">Cantidad</div>
+                    <div class="fw-semibold">{{ merma.cantidad|floatformat:0 }} {{ merma.unidad }}s</div>
+                </div>
+
+                <div class="col-md-2">
+                    <div class="text-muted small">Costo total</div>
+                    <div class="fw-semibold">${{ merma.costo_total }}</div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <div class="card mb-4">
+
+        <div class="card-header">
+            <strong>Clasificación de la merma</strong>
+        </div>
+
+        <div class="card-body">
+
+            <div class="row g-4">
+
+                <div class="col-md-6">
+                    <div class="text-muted small">Tipo de merma</div>
+                    <div class="fw-semibold">{{ merma.tipo_merma_nombre }}</div>
+                </div>
+
+                <div class="col-md-6">
+                    <div class="text-muted small">Causa raíz</div>
+                    <div class="fw-semibold">{{ merma.causa_raiz_nombre }}</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="card mb-4">
+
+        <div class="card-header">
+            <strong>Descripción</strong>
+        </div>
+
+        <div class="card-body">
+
+            {% if merma.descripcion %}
+                <p class="mb-0">
+                    {{ merma.descripcion }}
+                </p>
+            {% else %}
+                <span class="text-muted">
+                    Sin descripción registrada.
+                </span>
+            {% endif %}
+
+        </div>
+
+    </div>
+</div>
+
+
+{% endblock app_content %}

@@ -1,0 +1,106 @@
+{% extends "base/layout_app.html" %}
+
+{% block nav_merma %}active{% endblock nav_merma %}
+
+{% block page_title %}Mermas{% endblock page_title %}
+{% block page_subtitle %}Editar merma - {{ merma.folio }}{% endblock page_subtitle %}
+
+{% block app_content %}
+
+<div class="container-fluid">
+
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <a href="{% url 'mermas:detail_mermas' pk=merma.folio %}" class="btn btn-secondary d-inline-flex align-items-center gap-1">
+            <span class="material-symbols-outlined">arrow_back</span>
+            Regresar
+        </a>
+    </div>
+
+    <form method="post">
+        {% csrf_token %}
+
+        <div class="card mb-4">
+            <div class="card-header">
+                <strong>Datos del Registro</strong>
+            </div>
+            <div class="card-body">
+                <div class="row g-4">
+                    <div class="col-md-3">
+                        <div class="text-muted small">Folio</div>
+                        <div class="fw-semibold">{{ merma.folio }}</div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="text-muted small">Estado</div>
+                        <div class="fw-semibold">{{ merma.edo_merma_nombre }}</div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="text-muted small">Línea</div>
+                        <div class="fw-semibold">{{ merma.linea_produccion_nombre }}</div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="text-muted small">Componente</div>
+                        <div class="fw-semibold">{{ merma.componente_nombre }}</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="card mb-4">
+            <div class="card-header">
+                <strong>Campos editables</strong>
+            </div>
+            <div class="card-body">
+                <div class="row g-4">
+
+                    <div class="col-md-4">
+                        <label class="form-label">Cantidad</label>
+                        <input type="number" step="1" name="cantidad" class="form-control {% if errores.cantidad %}is-invalid{% endif %}" value="{{ merma.cantidad|floatformat:0 }}">
+                        {% if errores.cantidad %}
+                            <div class="invalid-feedback">{{ errores.cantidad.0 }}</div>
+                        {% endif %}
+                    </div>
+
+                    <div class="col-md-4">
+                        <label class="form-label">Tipo de merma</label>
+                        <select name="tipo_merma" class="form-select {% if errores.tipo_merma %}is-invalid{% endif %}">
+                            {% for tipo in tipo_merma %}
+                                <option value="{{ tipo.codigo }}" {% if tipo.codigo == merma.tipo_merma %}selected{% endif %}>
+                                    {{ tipo.nombre }}
+                                </option>
+                            {% endfor %}
+                        </select>
+                        {% if errores.tipo_merma %}
+                            <div class="invalid-feedback">{{ errores.tipo_merma.0 }}</div>
+                        {% endif %}
+                    </div>
+
+                    <div class="col-md-4">
+                        <label class="form-label">Causa raíz</label>
+                        <select name="causa_raiz" class="form-select {% if errores.causa_raiz %}is-invalid{% endif %}">
+                            {% for causa in causa_raiz %}
+                                <option value="{{ causa.codigo }}" {% if causa.codigo == merma.causa_raiz %}selected{% endif %}>
+                                    {{ causa.nombre }}
+                                </option>
+                            {% endfor %}
+                        </select>
+                        {% if errores.causa_raiz %}
+                            <div class="invalid-feedback">{{ errores.causa_raiz.0 }}</div>
+                        {% endif %}
+                    </div>
+
+                </div>
+
+                {% if errores.non_field_errors %}
+                    <div class="alert alert-danger mt-3 mb-0">
+                        {{ errores.non_field_errors.0 }}
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <button type="submit" class="btn btn-primary mx-btn-primary">Guardar cambios</button>
+    </form>
+
+</div>
+
+{% endblock app_content %}

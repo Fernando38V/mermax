@@ -66,6 +66,45 @@ class CreateRegistroMermaSerializer(serializers.ModelSerializer):
         return value
 
 class DetailRegistroMermaSerializer(serializers.ModelSerializer):
+    componente_nombre = serializers.CharField(
+        source="componente.nombre",
+        read_only=True
+    )
+    tipo_merma_nombre = serializers.CharField(
+        source="tipo_merma.nombre",
+        read_only=True
+    )
+    causa_raiz_nombre = serializers.CharField(
+        source="causa_raiz.nombre",
+        read_only=True
+    )
+    edo_merma_nombre = serializers.CharField(
+        source="edo_flujo_merma.nombre",
+        read_only=True
+    )
+    estacion_trabajo_nombre = serializers.CharField(
+        source="estacion_trabajo.nombre",
+        read_only=True
+    )
+    linea_produccion_nombre = serializers.CharField(
+        source="estacion_trabajo.linea_produccion.nombre",
+        read_only=True
+    )
+    
+    usuario_nombre_completo = serializers.CharField(
+        source="usuario.empleado.nombre_completo",
+        read_only=True
+    )
+    
+    lote_numero_prov = serializers.CharField(
+        source="lote_material.numero_lote_prov",
+        read_only=True
+    )
+    
+    orden_fecha_inicio = serializers.CharField(
+        source="orden_produccion.fecha_inicio",
+        read_only=True
+    )
 
     class Meta:
         model = RegistroMerma
@@ -78,15 +117,8 @@ class UpdateRegistroMermaSerializer(serializers.ModelSerializer):
         model = RegistroMerma
         fields = [
             "cantidad",
-            "unidad",
-            "descripcion",
-            "edo_flujo_merma",
-            "lote_material",
-            "componente",
             "tipo_merma",
             "causa_raiz",
-            "estacion_trabajo",
-            "orden_produccion",
         ]
 
     def validate_cantidad(self, value):
@@ -96,6 +128,16 @@ class UpdateRegistroMermaSerializer(serializers.ModelSerializer):
             )
         return value
     
+    def validate(self, data):
+        instance = self.instance
+        estado_actual = getattr(instance.edo_flujo_merma, 'pk', instance.edo_flujo_merma)
+        if estado_actual != 'REGISTRADA':
+            raise serializers.ValidationError(
+                f"No se puede modificar la merma '{instance.folio}' porque su estado actual "
+                f"es '{estado_actual}'. Solo se permiten modificaciones en estado 'REGISTRADA'."
+            )
+        return data
+        
 class LoteMaterialComboSerializer(serializers.ModelSerializer):
     componente_codigo = serializers.CharField(source='componente_id', read_only=True)
 
