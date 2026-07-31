@@ -162,10 +162,13 @@ class SolicitudInspeccion(models.Model):
     hora_generacion = models.TimeField(auto_now_add=True)
     fecha_atencion = models.DateField(blank=True, null=True)
     hora_atencion = models.TimeField(blank=True, null=True)
-    
     edo_solicitud = models.ForeignKey(EdoSolicitud, on_delete=models.PROTECT, db_column='edo_solicitud')
     registro_merma = models.ForeignKey(RegistroMerma, on_delete=models.CASCADE, db_column='registro_merma', related_name='solicitudes_mermas')
-    usuario = models.ForeignKey(Usuario, on_delete=models.PROTECT, db_column='usuario', blank=True, null=True, related_name='solicitudes_usuario_mermas') 
+    usuario = models.ForeignKey(Usuario, on_delete=models.PROTECT, db_column='usuario', blank=True, null=True, related_name='solicitudes_usuario_mermas')
+    usuario_atencion = models.ForeignKey(
+        Usuario, on_delete=models.PROTECT, db_column='usuario_atencion',
+        related_name='solicitudes_atendidas_mermas', blank=True, null=True,
+    )
 
     class Meta:
         managed = False
