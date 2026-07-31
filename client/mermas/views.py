@@ -217,3 +217,21 @@ class OrdenesPorEstacion(generic.View):
             ordenes = ordenes.get('results', [])
 
         return JsonResponse(ordenes, safe=False)
+    
+class DetailMermas(generic.View):
+    template_name = "mermas/detail_merma.html"
+    context = {}
+    url_base = '/mermas/registro/detail/'
+    response = None
+
+    def get(self, request, pk):
+        token = request.session.get('api_token')
+        
+        self.url_base += str(pk) + '/'
+        try:
+            self.response = api_get(self.url_base, token=token)
+        except ApiError:
+            return redirect('mermas:list_mermas')
+        
+        self.context = {'merma': self.response}
+        return render(request, self.template_name, self.context)

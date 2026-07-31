@@ -64,7 +64,7 @@
             </div>
 
             <div class="col-auto d-flex align-items-end">
-                <button type="submit" class="btn btn-secondary">
+                <button type="submit" class="btn btn-secondary d-inline-flex align-items-center gap-1">
                     <span class="material-symbols-outlined">filter_alt</span>
                     Filtrar
                 </button>
@@ -98,7 +98,11 @@
                 <td>{{ merma.tipo_merma_nombre }}</td>
                 <td>{{ merma.causa_raiz_nombre }}</td>
                 <td>{{ merma.edo_merma_nombre }}</td>
-                <td>Pendiente</td>
+                <td>
+                    <a href="{% url 'mermas:detail_mermas' merma.folio %}" class="btn btn-secondary text-nowrap">
+                        <span>Ver Detalles</span>
+                    </a>
+                </td>
             </tr>
             {% empty %}
             <tr>

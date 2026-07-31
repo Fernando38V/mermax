@@ -65,6 +65,45 @@ class CreateRegistroMermaSerializer(serializers.ModelSerializer):
         return value
 
 class DetailRegistroMermaSerializer(serializers.ModelSerializer):
+    componente_nombre = serializers.CharField(
+        source="componente.nombre",
+        read_only=True
+    )
+    tipo_merma_nombre = serializers.CharField(
+        source="tipo_merma.nombre",
+        read_only=True
+    )
+    causa_raiz_nombre = serializers.CharField(
+        source="causa_raiz.nombre",
+        read_only=True
+    )
+    edo_merma_nombre = serializers.CharField(
+        source="edo_flujo_merma.nombre",
+        read_only=True
+    )
+    estacion_trabajo_nombre = serializers.CharField(
+        source="estacion_trabajo.nombre",
+        read_only=True
+    )
+    linea_produccion_nombre = serializers.CharField(
+        source="estacion_trabajo.linea_produccion.nombre",
+        read_only=True
+    )
+    
+    usuario_nombre_completo = serializers.CharField(
+        source="usuario.empleado.nombre_completo",
+        read_only=True
+    )
+    
+    lote_numero_prov = serializers.CharField(
+        source="lote_material.numero_lote_prov",
+        read_only=True
+    )
+    
+    orden_fecha_inicio = serializers.CharField(
+        source="orden_produccion.fecha_inicio",
+        read_only=True
+    )
 
     class Meta:
         model = RegistroMerma
