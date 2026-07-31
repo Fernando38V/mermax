@@ -19,12 +19,10 @@ class AlertasInspeccion(generic.View):
     def get(self, request):
         token = request.session.get('api_token')
 
-        # 1. Obtener filtros y número de página
         estado_filtro = request.GET.get('estado', 'TODAS').strip().upper()
         busqueda = request.GET.get('q', '').strip()
         numero_pagina = request.GET.get('page', 1)
 
-        # 2. Armar URL de la API
         endpoint = '/inspecciones/solicitudes/list/'
         params = []
         
@@ -36,13 +34,11 @@ class AlertasInspeccion(generic.View):
         if params:
             endpoint += '?' + '&'.join(params)
 
-        # 3. Solicitar datos a la API
         try:
             respuesta = api_get(endpoint, token=token)
         except Exception:
             respuesta = []
 
-        # Aseguramos que respuesta sea una lista
         if isinstance(respuesta, dict):
             solicitudes_list = respuesta.get('results', [])
         elif isinstance(respuesta, list):
@@ -50,7 +46,6 @@ class AlertasInspeccion(generic.View):
         else:
             solicitudes_list = []
 
-        # 4. Paginación nativa de Django (10 elementos por página)
         paginator = Paginator(solicitudes_list, 10)
         
         try:
@@ -60,7 +55,6 @@ class AlertasInspeccion(generic.View):
         except EmptyPage:
             page_obj = paginator.page(paginator.num_pages)
 
-        # 5. Renderizar
         return render(request, self.template_name, {
             'page_obj': page_obj,
             'solicitudes': page_obj.object_list,
