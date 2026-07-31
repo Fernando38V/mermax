@@ -1,0 +1,86 @@
+{% extends "base/layout_app.html" %}
+
+{% block nav_almacen %}active{% endblock nav_almacen %}
+
+{% block page_title %}Almacén{% endblock page_title %}
+{% block page_subtitle %}Historial de movimientos{% endblock page_subtitle %}
+
+{% block app_content %}
+
+{% if messages %}
+    {% for message in messages %}
+    <div class="alert alert-{{ message.tags }}">{{ message }}</div>
+    {% endfor %}
+{% endif %}
+
+<h5 class="mb-3">Mermas recibidas</h5>
+<table class="table">
+    <thead>
+        <tr>
+            <th>Folio</th>
+            <th>Fecha</th>
+            <th>Cantidad</th>
+            <th>Componente</th>
+            <th>Línea</th>
+            <th>Estación</th>
+            <th>Registró</th>
+            <th>Estado</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for merma in mermas %}
+        <tr>
+            <td>{{ merma.folio }}</td>
+            <td>{{ merma.fecha }}</td>
+            <td>{{ merma.cantidad|floatformat:0 }} {{ merma.unidad }}s</td>
+            <td>{{ merma.componente_nombre }}</td>
+            <td>{{ merma.linea_produccion_nombre }}</td>
+            <td>{{ merma.estacion_trabajo_nombre }}</td>
+            <td>{{ merma.usuario_nombre }}</td>
+            <td><span class="badge bg-success">{{ merma.edo_merma_nombre }}</span></td>
+        </tr>
+        {% empty %}
+        <tr>
+            <td colspan="7" class="text-center mx-text-muted py-4">No hay mermas recibidas todavía.</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+
+<h5 class="mb-3 mt-5">Discrepancias resueltas</h5>
+<table class="table">
+    <thead>
+        <tr>
+            <th>Folio</th>
+            <th>Merma</th>
+            <th>Cant. reportada</th>
+            <th>Cant. recibida</th>
+            <th>Diferencia</th>
+            <th>Motivo</th>
+            <th>Resolución</th>
+            <th>Fecha resolución</th>
+            <th>Resolvió</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for disc in discrepancias %}
+        <tr>
+            <td>{{ disc.folio }}</td>
+            <td>{{ disc.merma_folio }}</td>
+            <td>{{ disc.cantidad_reportada }}</td>
+            <td>{{ disc.cantidad_recibida }}</td>
+            <td>{{ disc.diferencia }}</td>
+            <td>{{ disc.motivo_reporte }}</td>
+            <td>{{ disc.motivo_resolucion }}</td>
+            <td>{{ disc.fecha_resolucion }}</td>
+            <td>{{ disc.usuario_resolucion_nombre }}</td>
+        </tr>
+        {% empty %}
+        <tr>
+            <td colspan="9" class="text-center mx-text-muted py-4">No hay discrepancias resueltas todavía.</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+
+{% endblock app_content %}
