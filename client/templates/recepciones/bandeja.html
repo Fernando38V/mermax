@@ -1,0 +1,129 @@
+{% extends "base/layout_app.html" %}
+
+{% block nav_almacen %}active{% endblock nav_almacen %}
+
+{% block page_title %}Almacén{% endblock page_title %}
+{% block page_subtitle %}Bandeja de recepción{% endblock page_subtitle %}
+
+{% block app_content %}
+
+{% if messages %}
+    {% for message in messages %}
+    <div class="alert alert-{{ message.tags }}">{{ message }}</div>
+    {% endfor %}
+{% endif %}
+
+<div class="mb-4 d-flex justify-content-end gap-2">
+    {% if filtros_activos %}
+        <a href="{% url 'recepciones:bandeja' %}" class="btn btn-secondary">
+            <span class="material-symbols-outlined">clear</span>
+            Limpiar filtros
+        </a>
+    {% endif %}
+</div>
+
+<form method="get">
+    <div class="row g-3 mb-4">
+        <div class="col">
+            <label class="form-label">Línea de producción</label>
+            <select class="form-select" name="linea">
+                <option value="">Todas</option>
+                {% for linea in lineas %}
+                <option value="{{ linea.num }}" {% if filtros.linea == linea.num|stringformat:"s" %}selected{% endif %}>{{ linea.nombre }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="col">
+            <label class="form-label">Tipo de merma</label>
+            <select class="form-select" name="tipo_merma">
+                <option value="">Todos</option>
+                {% for tipo in tipos_merma %}
+                <option value="{{ tipo.codigo }}" {% if filtros.tipo_merma == tipo.codigo|stringformat:"s" %}selected{% endif %}>{{ tipo.nombre }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="col">
+            <label class="form-label">Componente</label>
+            <select class="form-select" name="componente">
+                <option value="">Todos</option>
+                {% for componente in componentes %}
+                <option value="{{ componente.codigo }}" {% if filtros.componente == componente.codigo|stringformat:"s" %}selected{% endif %}>{{ componente.nombre }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="col">
+            <label class="form-label">Fecha</label>
+            <input type="date" class="form-control" name="fecha" value="{{ filtros.fecha|default:'' }}">
+        </div>
+        <div class="col-auto d-flex align-items-end">
+            <button type="submit" class="btn btn-secondary">
+                <span class="material-symbols-outlined">filter_alt</span>
+                Filtrar
+            </button>
+        </div>
+    </div>
+</form>
+
+<table class="table">
+    <thead>
+        <tr>
+            <th>Folio</th>
+            <th>Fecha</th>
+            <th>Cantidad</th>
+            <th>Componente</th>
+            <th>Línea</th>
+            <th>Estación</th>
+            <th>Estado</th>
+            <th>Acciones</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for merma in mermas %}
+        <tr>
+            <td>{{ merma.folio }}</td>
+            <td>{{ merma.fecha }}</td>
+            <td>{{ merma.cantidad|floatformat:0 }} {{ merma.unidad }}s</td>
+            <td>{{ merma.componente_nombre }}</td>
+            <td>{{ merma.linea_produccion_nombre }}</td>
+            <td>{{ merma.estacion_trabajo_nombre }}</td>
+            <td><span class="badge bg-danger">Pendiente de recepción</span></td>
+            <td>
+                <a href="{% url 'recepciones:confirmar' folio=merma.folio %}" class="btn mx-btn-primary btn-sm">
+                    Recibir
+                </a>
+            </td>
+        </tr>
+        {% empty %}
+        <tr>
+            <td colspan="8" class="text-center mx-text-muted py-4">No hay mermas pendientes de recepción.</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+
+<div class="d-flex justify-content-center">
+    <nav aria-label="Paginación de bandeja">
+        <ul class="pagination">
+            <li class="page-item {% if pagina_actual <= 1 %}disabled{% endif %}">
+                <a class="page-link" href="?{{ querystring_filtros }}{% if querystring_filtros %}&{% endif %}page={{ pagina_actual|add:'-1' }}">Anterior</a>
+            </li>
+            {% for n in rango_paginas %}
+            <li class="page-item {% if n == pagina_actual %}active{% endif %}">
+                <a class="page-link" href="?{{ querystring_filtros }}{% if querystring_filtros %}&{% endif %}page={{ n }}">{{ n }}</a>
+            </li>
+            {% endfor %}
+            <li class="page-item {% if pagina_actual >= total_paginas %}disabled{% endif %}">
+                <a class="page-link" href="?{{ querystring_filtros }}{% if querystring_filtros %}&{% endif %}page={{ pagina_actual|add:'1' }}">Siguiente</a>
+            </li>
+        </ul>
+    </nav>
+</div>
+
+<div class="mt-3">
+    <a href="{% url 'recepciones:discrepancias' %}" class="btn btn-secondary">
+        <span class="material-symbols-outlined">report</span>
+        Ver discrepancias abiertas
+    </a>
+</div>
+
+{% endblock app_content %}

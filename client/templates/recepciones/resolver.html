@@ -1,0 +1,99 @@
+{% extends "base/layout_app.html" %}
+
+{% block nav_almacen %}active{% endblock nav_almacen %}
+
+{% block page_title %}Almacén{% endblock page_title %}
+{% block page_subtitle %}Resolver discrepancia — {{ folio }}{% endblock page_subtitle %}
+
+{% block app_content %}
+
+{% if messages %}
+    {% for message in messages %}
+    <div class="alert alert-{{ message.tags }}">{{ message }}</div>
+    {% endfor %}
+{% endif %}
+
+<div class="card">
+    <div class="card-body">
+        <form method="post" id="form-resolver">
+            {% csrf_token %}
+            <div class="form-group">
+                <label class="form-label" for="motivo_resolucion">Motivo de la resolución</label>
+
+                <div class="mb-2 d-flex flex-wrap gap-2">
+                    <button type="button" class="btn btn-sm btn-outline-secondary btn-motivo-rapido"
+                            data-texto="Se verificó conteo físico, faltante confirmado y ajustado.">Faltante confirmado</button>
+                    <button type="button" class="btn btn-sm btn-outline-secondary btn-motivo-rapido"
+                            data-texto="Error de conteo visual por parte del almacenista, cantidades correctas.">Error de conteo</button>
+                    <button type="button" class="btn btn-sm btn-outline-secondary btn-motivo-rapido"
+                            data-texto="Se localizó el material faltante en el área de recepción.">Material localizado</button>
+                    <button type="button" class="btn btn-sm btn-outline-secondary btn-motivo-rapido"
+                            data-texto="Se recibió confirmación del supervisor de línea sobre la cantidad real.">Confirmado por supervisor</button>
+                </div>
+
+                <textarea class="form-control" id="motivo_resolucion" name="motivo_resolucion"
+                          rows="3" maxlength="100" required>{{ valores.motivo_resolucion|default:'' }}</textarea>
+                <div class="form-text text-end">
+                    <span id="contador_motivo_resolucion">0</span>/100 caracteres
+                </div>
+            </div>
+            <div class="mt-4 d-flex gap-2">
+                <button type="button" class="btn mx-btn-primary" id="btn-abrir-confirmacion">Confirmar resolución</button>
+                <a href="{% url 'recepciones:discrepancias' %}" class="btn btn-secondary">Cancelar</a>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div id="modal-confirmar-resolucion" class="mx-modal-overlay">
+    <div class="mx-modal-card-light">
+        <h5 class="mb-3">Confirmar resolución</h5>
+        <p class="mx-text-muted">
+            Esta acción es irreversible. ¿Confirmar la resolución de la discrepancia
+            <strong>{{ folio }}</strong>?
+        </p>
+        <div class="d-flex justify-content-end gap-2 mt-4">
+            <button type="button" class="btn btn-secondary" id="btn-cancelar-modal">Cancelar</button>
+            <button type="button" class="btn mx-btn-primary" id="btn-aceptar-modal">Aceptar</button>
+        </div>
+    </div>
+</div>
+
+{% endblock app_content %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const textarea = document.getElementById('motivo_resolucion');
+    const contador = document.getElementById('contador_motivo_resolucion');
+
+    function actualizarContador() {
+        contador.textContent = textarea.value.length;
+    }
+
+    if (textarea) {
+        textarea.addEventListener('input', actualizarContador);
+        actualizarContador();
+
+        document.querySelectorAll('.btn-motivo-rapido').forEach(function (btn) {
+            btn.addEventListener('click', function () {
+                textarea.value = btn.dataset.texto;
+                actualizarContador();
+            });
+        });
+    }
+
+    const modal = document.getElementById('modal-confirmar-resolucion');
+    const form = document.getElementById('form-resolver');
+    document.getElementById('btn-abrir-confirmacion').addEventListener('click', function () {
+        modal.classList.add('mx-modal-open');
+    });
+    document.getElementById('btn-cancelar-modal').addEventListener('click', function () {
+        modal.classList.remove('mx-modal-open');
+    });
+    document.getElementById('btn-aceptar-modal').addEventListener('click', function () {
+        form.requestSubmit();
+    });
+});
+</script>
+{% endblock extra_js %}
