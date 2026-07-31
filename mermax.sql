@@ -355,10 +355,12 @@ CREATE TABLE SOLICITUD_INSPECCION (
     edo_solicitud VARCHAR(10) NOT NULL,
     registro_merma VARCHAR(20),
     usuario INT NOT NULL,
+    usuario_atencion INT DEFAULT NULL,
     PRIMARY KEY (codigo),
     CONSTRAINT fk_solicitud_inspeccion_edo_solicitud FOREIGN KEY (edo_solicitud) REFERENCES EDO_SOLICITUD(codigo),
     CONSTRAINT fk_solicitud_inspeccion_registro_merma FOREIGN KEY (registro_merma) REFERENCES REGISTRO_MERMA(folio),
-    CONSTRAINT fk_solicitud_inspeccion_usuario FOREIGN KEY (usuario) REFERENCES USUARIO(num)
+    CONSTRAINT fk_solicitud_inspeccion_usuario FOREIGN KEY (usuario) REFERENCES USUARIO(num),
+    CONSTRAINT fk_solicitud_inspeccion_usuario_atencion FOREIGN KEY (usuario_atencion) REFERENCES USUARIO(num)
 );
 
 CREATE TABLE REGISTRO_DISPOSICION (
