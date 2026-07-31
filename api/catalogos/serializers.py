@@ -22,6 +22,7 @@ Nota sobre la baja lógica: ningún catálogo se borra físicamente. Los RF-18,
 22, 26, 30, 38 y 42 piden conservar el histórico, así que la baja cambia
 'activo' a False (o 'estado_linea' a INACTIVA en el caso de las líneas).
 """
+import re
 from rest_framework import serializers
 
 from .models import (
@@ -134,6 +135,18 @@ class EmpresaRecicladoraSerializer(serializers.ModelSerializer):
         model = EmpresaRecicladora
         fields = ('codigo', 'nombre', 'telefono', 'correo', 'activo')
 
+    def validate_correo(self, value):
+        if value and not re.match(r'^[^@\s]+@[^@\s]+\.[^@\s]+$', value):
+            raise serializers.ValidationError('Ingresa un correo electrónico válido.')
+        return value
+
+    def validate_telefono(self, value):
+        if value:
+            limpio = value.replace('-', '').replace(' ', '')
+            if not limpio.isdigit() or not (7 <= len(limpio) <= 15):
+                raise serializers.ValidationError('El teléfono debe contener solo números (7 a 15 dígitos).')
+        return value
+
 
 class MetodoDestruccionSerializer(serializers.ModelSerializer):
     """Catálogo de apoyo del dictamen de desecho controlado (RF-10)."""
@@ -196,9 +209,20 @@ class ProveedorSerializer(serializers.ModelSerializer):
                   'direccion_calle', 'direccion_numero', 'direccion_colonia',
                   'rfc', 'activo')
         extra_kwargs = {
-            # RF-23: el correo de contacto es obligatorio al dar de alta
             'correo': {'required': True, 'allow_null': False, 'allow_blank': False},
         }
+
+    def validate_correo(self, value):
+        if value and not re.match(r'^[^@\s]+@[^@\s]+\.[^@\s]+$', value):
+            raise serializers.ValidationError('Ingresa un correo electrónico válido.')
+        return value
+
+    def validate_telefono(self, value):
+        if value:
+            limpio = value.replace('-', '').replace(' ', '')
+            if not limpio.isdigit() or not (7 <= len(limpio) <= 15):
+                raise serializers.ValidationError('El teléfono debe contener solo números (7 a 15 dígitos).')
+        return value
 
 
 # ======================================================
@@ -232,3 +256,5 @@ class TipoMermaSerializer(serializers.ModelSerializer):
     class Meta:
         model = TipoMerma
         fields = ('codigo', 'nombre', 'descripcion', 'activo')
+
+
