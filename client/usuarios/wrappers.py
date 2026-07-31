@@ -74,3 +74,19 @@ def api_patch(path, data=None, token=None):
         raise ApiError(resp.status_code, detail)
 
     return resp.json()
+
+def api_delete(path, token=None):
+    url = f'{_base_url()}{path}'
+    try:
+        resp = requests.delete(url, headers=_headers(token), timeout=5)
+    except requests.exceptions.ConnectionError:
+        raise ApiError(503, 'No se pudo conectar con el servidor')
+
+    if resp.status_code >= 400:
+        try:
+            detail = resp.json()
+        except ValueError:
+            detail = resp.text
+        raise ApiError(resp.status_code, detail)
+
+    return resp.json() if resp.content else None
