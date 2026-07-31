@@ -188,7 +188,13 @@ class ResolverDiscrepanciaAPIView(APIView):
                 status=status.HTTP_400_BAD_REQUEST
             )
 
-        motivo_resolucion = request.data.get('motivo_resolucion', 'Sin comentarios')
+        motivo_resolucion = request.data.get('motivo_resolucion', '').strip()
+
+        if not motivo_resolucion:
+            return Response(
+                {"motivo_resolucion": ["Este campo es obligatorio y no puede estar vacío."]},
+                status=status.HTTP_400_BAD_REQUEST
+            )
 
         # Los dos cambios van juntos o no van. Si el segundo fallara por su
         # cuenta, la discrepancia quedaría resuelta pero la merma seguiría
