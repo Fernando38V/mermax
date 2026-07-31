@@ -217,3 +217,36 @@ class ResolverDiscrepancia(generic.View):
             mensaje = errores.get('motivo_resolucion', [str(e.detail)])[0] if isinstance(errores, dict) else str(e.detail)
             messages.error(request, mensaje)
             return render(request, self.template_name, {'folio': folio, 'valores': request.POST})
+
+@method_decorator(login_required_api, name='dispatch')
+class HistorialMovimientos(generic.View):
+    template_name = 'recepciones/historial.html'
+
+    def get(self, request):
+        token = request.session.get('api_token')
+
+        try:
+            respuesta_mermas = api_get(
+                '/mermas/registro/list/',
+                token=token,
+                params={'estado': 'RECIBIDA', 'page': request.GET.get('page', '1')},
+            )
+        except ApiError:
+            respuesta_mermas = {'results': [], 'count': 0}
+
+        try:
+            discrepancias_resueltas = api_get(
+                '/mermas/discrepancias/list/',
+                token=token,
+                params={'estado': 'RESUELTA'},
+            )
+        except ApiError:
+            discrepancias_resueltas = []
+
+        mermas = respuesta_mermas.get('results', []) if isinstance(respuesta_mermas, dict) else respuesta_mermas
+        discrepancias = discrepancias_resueltas.get('results', []) if isinstance(discrepancias_resueltas, dict) else discrepancias_resueltas
+
+        return render(request, self.template_name, {
+            'mermas': mermas,
+            'discrepancias': discrepancias,
+        })

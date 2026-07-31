@@ -8,4 +8,5 @@ urlpatterns = [
     path('confirmar/<str:folio>/', views.ConfirmarRecepcion.as_view(), name='confirmar'),
     path('discrepancias/', views.DiscrepanciasAbiertas.as_view(), name='discrepancias'),
     path('discrepancias/resolver/<str:folio>/', views.ResolverDiscrepancia.as_view(), name='resolver_discrepancia'),
+    path('historial/', views.HistorialMovimientos.as_view(), name='historial'),
 ]
