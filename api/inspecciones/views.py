@@ -4,7 +4,7 @@ from rest_framework.response import Response
 from rest_framework import generics
 from inspecciones import serializers, models
 from rest_framework import status
-
+from django.db.models import Q
 from django.db import transaction
 from datetime import date, datetime
 
@@ -21,8 +21,25 @@ class ListSolicitudInspeccionAPIView(generics.ListAPIView):
     serializer_class = serializers.SolicitudInspeccionSerializer
 
     def get_queryset(self):
-        return models.SolicitudInspeccion.objects.filter(edo_solicitud_id='PENDIENTE')
+        # 1. Traer solicitudes ordenadas por fecha/hora reciente
+        queryset = models.SolicitudInspeccion.objects.all().order_by('-fecha_generacion', '-hora_generacion')
+        
+        # 2. Parámetros de la URL
+        estado = self.request.query_params.get('estado')
+        q = self.request.query_params.get('q')
 
+        # 3. Filtro por estado
+        if estado and estado.upper() != 'TODAS':
+            queryset = queryset.filter(edo_solicitud_id=estado.upper())
+
+        # 4. Buscador
+        if q:
+            queryset = queryset.filter(
+                Q(codigo__icontains=q) | 
+                Q(registro_merma_id__icontains=q)
+            )
+
+        return queryset
 
 class IniciarInspeccionAPIView(APIView):
     permission_classes = [EsCalidad]

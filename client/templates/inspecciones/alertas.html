@@ -1,13 +1,14 @@
 {% extends "base/layout_app.html" %}
+{% load static %}
 
-{% block nav_alertas %}active{% endblock nav_alertas %}
+{% block nav_inspecciones %}active{% endblock nav_inspecciones %}
 
-{% block page_title %}Alertas de Inspección{% endblock page_title %}
-{% block page_subtitle %}Solicitudes de inspección pendientes de atención por el equipo de Calidad{% endblock page_subtitle %}
+{% block page_title %}Solicitudes de Inspección{% endblock page_title %}
+{% block page_subtitle %}Gestión y seguimiento general de solicitudes de inspección{% endblock page_subtitle %}
 
 {% block app_content %}
 
-<!-- Feedback de Alertas (Exito / Error) -->
+<!-- Alertas / Feedback -->
 {% if messages %}
     <div class="row mb-3">
         <div class="col-12">
@@ -24,18 +25,62 @@
     </div>
 {% endif %}
 
-<!-- Tarjeta Principal de Alertas -->
+<!-- Tarjeta Principal -->
 <div class="card shadow-sm border-0">
-    <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center border-bottom">
-        <h5 class="card-title mb-0 fw-bold d-flex align-items-center gap-2">
-            <span class="material-symbols-outlined text-warning">notifications_active</span>
-            Solicitudes Pendientes
-        </h5>
-        <span class="badge bg-warning text-dark px-3 py-2 rounded-pill fw-semibold">
-            {{ solicitudes|length }} Petición(es)
-        </span>
+    
+    <!-- Encabezado: Título (Izq), Filtros (Centro), Buscador Compacto (Der) -->
+    <div class="card-header bg-white py-3 border-bottom">
+        <div class="d-flex flex-column flex-lg-row align-items-lg-center justify-content-between gap-3">
+            
+            <!-- 1. Izquierda: Título y Contador -->
+            <div class="text-nowrap">
+                <h5 class="card-title mb-0 fw-bold d-flex align-items-center gap-2">
+                    <span class="material-symbols-outlined text-primary">fact_check</span>
+                    Solicitudes de Inspección
+                </h5>
+                <small class="text-muted">Total: {{ page_obj.paginator.count }} registro(s)</small>
+            </div>
+
+            <!-- 2. Centro: Botones de Filtro -->
+            <div class="btn-group btn-group-sm" role="group" aria-label="Filtro por estado">
+                <a href="?estado=TODAS{% if busqueda_actual %}&q={{ busqueda_actual }}{% endif %}" 
+                   class="btn btn-outline-primary {% if estado_actual == 'TODAS' or not estado_actual %}active{% endif %}">
+                    Todas
+                </a>
+                <a href="?estado=PENDIENTE{% if busqueda_actual %}&q={{ busqueda_actual }}{% endif %}" 
+                   class="btn btn-outline-warning text-dark {% if estado_actual == 'PENDIENTE' %}active{% endif %}">
+                    Pendientes
+                </a>
+                <a href="?estado=ATENDIDA{% if busqueda_actual %}&q={{ busqueda_actual }}{% endif %}" 
+                   class="btn btn-outline-success {% if estado_actual == 'ATENDIDA' %}active{% endif %}">
+                    Atendidas
+                </a>
+            </div>
+
+            <!-- 3. Derecha: Buscador Compacto -->
+            <form method="GET" action="" style="max-width: 280px;" class="w-100">
+                <input type="hidden" name="estado" value="{{ estado_actual }}">
+                <div class="input-group input-group-sm">
+                    <span class="input-group-text bg-light border-end-0">
+                        <span class="material-symbols-outlined fs-6 text-muted">search</span>
+                    </span>
+                    <input type="text" 
+                           name="q" 
+                           value="{{ busqueda_actual }}" 
+                           class="form-control bg-light border-start-0" 
+                           placeholder="Buscar código o folio...">
+                    {% if busqueda_actual %}
+                        <a href="?estado={{ estado_actual }}" class="btn btn-outline-secondary d-flex align-items-center" title="Limpiar búsqueda">
+                            <span class="material-symbols-outlined fs-6">close</span>
+                        </a>
+                    {% endif %}
+                </div>
+            </form>
+
+        </div>
     </div>
 
+    <!-- Tabla -->
     <div class="card-body p-0">
         <div class="table-responsive">
             <table class="table table-hover align-middle mb-0">
@@ -62,61 +107,77 @@
                             <td>
                                 <div class="small">
                                     <div><span class="fw-semibold">{{ solicitud.fecha_generacion }}</span></div>
-                                    <div class="mx-text-muted fs-7">{{ solicitud.hora_generacion|default:"" }}</div>
+                                    <div class="text-muted fs-7">{{ solicitud.hora_generacion|default:"" }}</div>
                                 </div>
                             </td>
                             <td>
-                                <span class="badge bg-warning text-dark border border-warning">
-                                    {{ solicitud.edo_solicitud }}
-                                </span>
+                                {% if solicitud.edo_solicitud == 'PENDIENTE' or solicitud.edo_solicitud_id == 'PENDIENTE' %}
+                                    <span class="badge bg-warning text-dark border border-warning">PENDIENTE</span>
+                                {% else %}
+                                    <span class="badge bg-success text-white border border-success">ATENDIDA</span>
+                                {% endif %}
                             </td>
                             <td class="text-end pe-4">
-                                <!-- Botón que activa el Modal moderno -->
-                                <button type="button" 
-                                        class="btn mx-btn-primary btn-sm d-inline-flex align-items-center gap-1 shadow-sm"
-                                        data-bs-toggle="modal" 
-                                        data-bs-target="#modalIniciar-{{ solicitud.codigo }}">
-                                    <span class="material-symbols-outlined fs-6">play_arrow</span>
-                                    <span>Iniciar Inspección</span>
-                                </button>
+                                {% if solicitud.edo_solicitud == 'ATENDIDA' or solicitud.edo_solicitud_id == 'ATENDIDA' %}
+                                    <span class="badge bg-light text-muted border px-3 py-2 fw-semibold d-inline-flex align-items-center gap-1">
+                                        <span class="material-symbols-outlined fs-6 text-success">check_circle</span>
+                                        Atendida
+                                    </span>
+                                {% else %}
+                                    <div class="d-flex justify-content-end gap-2">
+                                        <button type="button" 
+                                                class="btn btn-outline-secondary btn-sm d-inline-flex align-items-center gap-1 shadow-sm"
+                                                data-bs-toggle="modal" 
+                                                data-bs-target="#modalIniciar-{{ solicitud.codigo }}">
+                                            <span class="material-symbols-outlined fs-6">play_arrow</span>
+                                            <span>Iniciar</span>
+                                        </button>
 
-                                <!-- Modal de Confirmación Estilizado -->
-                                <div class="modal fade text-start" id="modalIniciar-{{ solicitud.codigo }}" tabindex="-1" aria-hidden="true">
-                                    <div class="modal-dialog modal-dialog-centered">
-                                        <div class="modal-content border-0 shadow-lg" style="border-radius: 12px;">
-                                            <div class="modal-header border-0 pb-0">
-                                                <h5 class="modal-title fw-bold">Confirmar Inicio</h5>
-                                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                                            </div>
-                                            <div class="modal-body text-center py-4">
-                                                <span class="material-symbols-outlined text-warning display-3 mb-2">info</span>
-                                                <h6 class="fw-bold fs-5 text-dark">¿Deseas iniciar la inspección?</h6>
-                                                <p class="text-muted mb-0">
-                                                    La solicitud <strong>{{ solicitud.codigo }}</strong> y la merma asociada cambiarán su estado a <em>EN INSPECCIÓN</em>.
-                                                </p>
-                                            </div>
-                                            <div class="modal-footer border-0 pt-0 justify-content-center gap-2">
-                                                <button type="button" class="btn btn-light rounded-pill px-4" data-bs-dismiss="modal">Cancelar</button>
-                                                <form method="POST" action="{% url 'inspecciones:iniciar_inspeccion' solicitud.codigo %}">
-                                                    {% csrf_token %}
-                                                    <button type="submit" class="btn btn-warning text-dark fw-bold rounded-pill px-4 d-inline-flex align-items-center gap-1">
-                                                        <span class="material-symbols-outlined fs-6">play_arrow</span>
-                                                        <span>Iniciar</span>
-                                                    </button>
-                                                </form>
+                                        <a href="{% url 'inspecciones:dictaminar_inspeccion_codigo' solicitud.codigo %}" 
+                                           class="btn btn-primary btn-sm d-inline-flex align-items-center gap-1 shadow-sm">
+                                            <span class="material-symbols-outlined fs-6">gavel</span>
+                                            <span>Dictaminar</span>
+                                        </a>
+                                    </div>
+
+                                    <!-- Modal Confirmar Inicio -->
+                                    <div class="modal fade text-start" id="modalIniciar-{{ solicitud.codigo }}" tabindex="-1" aria-hidden="true">
+                                        <div class="modal-dialog modal-dialog-centered">
+                                            <div class="modal-content border-0 shadow-lg" style="border-radius: 12px;">
+                                                <div class="modal-header border-0 pb-0">
+                                                    <h5 class="modal-title fw-bold">Confirmar Inicio</h5>
+                                                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                                </div>
+                                                <div class="modal-body text-center py-4">
+                                                    <span class="material-symbols-outlined text-warning display-3 mb-2">info</span>
+                                                    <h6 class="fw-bold fs-5 text-dark">¿Deseas iniciar la inspección?</h6>
+                                                    <p class="text-muted mb-0">
+                                                        La solicitud <strong>{{ solicitud.codigo }}</strong> iniciará su proceso de atención.
+                                                    </p>
+                                                </div>
+                                                <div class="modal-footer border-0 pt-0 justify-content-center gap-2">
+                                                    <button type="button" class="btn btn-light rounded-pill px-4" data-bs-dismiss="modal">Cancelar</button>
+                                                    <form method="POST" action="{% url 'inspecciones:iniciar_inspeccion' solicitud.codigo %}">
+                                                        {% csrf_token %}
+                                                        <button type="submit" class="btn btn-warning text-dark fw-bold rounded-pill px-4 d-inline-flex align-items-center gap-1">
+                                                            <span class="material-symbols-outlined fs-6">play_arrow</span>
+                                                            <span>Iniciar</span>
+                                                        </button>
+                                                    </form>
+                                                </div>
                                             </div>
                                         </div>
                                     </div>
-                                </div>
+                                {% endif %}
                             </td>
                         </tr>
                     {% empty %}
                         <tr>
                             <td colspan="5" class="text-center py-5">
-                                <div class="d-flex flex-column align-items-center mx-text-muted">
+                                <div class="d-flex flex-column align-items-center text-muted">
                                     <span class="material-symbols-outlined display-4 mb-2 text-secondary">verified</span>
-                                    <h6 class="fw-bold text-dark">Sin inspecciones pendientes</h6>
-                                    <p class="mb-0 small">Todas las solicitudes de inspección han sido atendidas.</p>
+                                    <h6 class="fw-bold text-dark">Sin registros encontrados</h6>
+                                    <p class="mb-0 small">No hay solicitudes que coincidan con el filtro seleccionado.</p>
                                 </div>
                             </td>
                         </tr>
@@ -125,6 +186,44 @@
             </table>
         </div>
     </div>
+
+    <!-- Paginador Bootstrap -->
+    {% if page_obj.paginator.num_pages > 1 %}
+        <div class="card-footer bg-white py-3 border-top">
+            <div class="d-flex flex-column flex-md-row justify-content-between align-items-center gap-2">
+                <small class="text-muted">
+                    Página <strong>{{ page_obj.number }}</strong> de <strong>{{ page_obj.paginator.num_pages }}</strong>
+                </small>
+                
+                <nav aria-label="Navegación de solicitudes">
+                    <ul class="pagination pagination-sm mb-0">
+                        <li class="page-item {% if not page_obj.has_previous %}disabled{% endif %}">
+                            <a class="page-link" 
+                               href="?page={% if page_obj.has_previous %}{{ page_obj.previous_page_number }}{% else %}1{% endif %}&estado={{ estado_actual }}&q={{ busqueda_actual }}">
+                                Anterior
+                            </a>
+                        </li>
+
+                        {% for i in page_obj.paginator.page_range %}
+                            <li class="page-item {% if i == page_obj.number %}active{% endif %}">
+                                <a class="page-link" 
+                                   href="?page={{ i }}&estado={{ estado_actual }}&q={{ busqueda_actual }}">
+                                    {{ i }}
+                                </a>
+                            </li>
+                        {% endfor %}
+
+                        <li class="page-item {% if not page_obj.has_next %}disabled{% endif %}">
+                            <a class="page-link" 
+                               href="?page={% if page_obj.has_next %}{{ page_obj.next_page_number }}{% else %}{{ page_obj.paginator.num_pages }}{% endif %}&estado={{ estado_actual }}&q={{ busqueda_actual }}">
+                                Siguiente
+                            </a>
+                        </li>
+                    </ul>
+                </nav>
+            </div>
+        </div>
+    {% endif %}
 </div>
 
 {% endblock app_content %}

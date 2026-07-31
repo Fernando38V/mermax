@@ -43,7 +43,12 @@ class SolicitudInspeccion(models.Model):
         db_table = 'solicitud_inspeccion'
         verbose_name = 'Solicitud de inspección'
         verbose_name_plural = 'Solicitudes de inspección'
-
+        indexes = [
+            models.Index(
+                fields=['edo_solicitud', '-fecha_generacion', '-hora_generacion'],
+                name='idx_solicitud_edo_fecha'
+            ),
+        ]
     def __str__(self):
         return self.codigo
 

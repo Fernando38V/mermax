@@ -259,6 +259,7 @@ class Componente(models.Model):
 class Proveedor(models.Model):
     codigo = models.CharField(primary_key=True, max_length=10)
     nombre = models.CharField(max_length=150, unique=True)
+    correo = models.CharField(max_length=100, blank=True, null=True)
     telefono = models.CharField(max_length=20, blank=True, null=True)
     direccion_calle = models.CharField(db_column='dirCalle', max_length=150, blank=True, null=True)
     direccion_numero = models.CharField(db_column='dirNumero', max_length=10, blank=True, null=True)
