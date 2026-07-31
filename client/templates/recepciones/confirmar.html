@@ -1,0 +1,108 @@
+{% extends "base/layout_app.html" %}
+
+{% block nav_almacen %}active{% endblock nav_almacen %}
+
+{% block page_title %}Almacén{% endblock page_title %}
+{% block page_subtitle %}Confirmar recepción — {{ folio }}{% endblock page_subtitle %}
+
+{% block app_content %}
+
+{% if messages %}
+    {% for message in messages %}
+    <div class="alert alert-{{ message.tags }}">{{ message }}</div>
+    {% endfor %}
+{% endif %}
+
+{% if errores %}
+<div class="alert alert-danger">
+    {% for campo, error in errores.items %}
+    <div>{{ campo }}: {{ error|join:", " }}</div>
+    {% endfor %}
+</div>
+{% endif %}
+
+<div class="card">
+    <div class="card-body">
+        <form method="post">
+            {% csrf_token %}
+            <input type="hidden" name="cantidad_reportada" value="{{ cantidad_reportada }}">
+
+            <div class="row g-3">
+                <div class="col-md-4">
+                    <label class="form-label">Cantidad reportada (sistema)</label>
+                    <input type="text" class="form-control" value="{{ cantidad_reportada }}" readonly>
+                </div>
+
+                <div class="col-md-4">
+                    <label class="form-label" for="cantidad_recibida">Cantidad física recibida</label>
+                    <input type="number" step="0.01" min="0" class="form-control" id="cantidad_recibida"
+                           name="cantidad_recibida" value="{{ valores.cantidad_recibida|default:'' }}" required>
+                </div>
+            </div>
+
+            {% if requiere_motivo %}
+            <div class="card border-warning mt-3">
+                <div class="card-body">
+                    <h5 class="card-title text-warning">Discrepancia detectada</h5>
+                    <p class="card-text">
+                        La cantidad recibida no coincide con la reportada por el supervisor.
+                        Registra el motivo para generar la discrepancia.
+                    </p>
+                    <div class="form-group">
+                        <label class="form-label" for="motivo_reporte">Motivo de la discrepancia</label>
+
+                        <div class="mb-2 d-flex flex-wrap gap-2">
+                            <button type="button" class="btn btn-sm btn-outline-secondary btn-motivo-rapido"
+                                    data-texto="Faltante detectado en el conteo físico de recepción.">Faltante en conteo</button>
+                            <button type="button" class="btn btn-sm btn-outline-secondary btn-motivo-rapido"
+                                    data-texto="Material incompleto al momento de la entrega.">Material incompleto</button>
+                            <button type="button" class="btn btn-sm btn-outline-secondary btn-motivo-rapido"
+                                    data-texto="Una pieza no llegó al contenedor de scrap.">Pieza no llegó</button>
+                            <button type="button" class="btn btn-sm btn-outline-secondary btn-motivo-rapido"
+                                    data-texto="Error de conteo visual por parte del almacenista.">Error de conteo</button>
+                        </div>
+
+                        <textarea class="form-control" id="motivo_reporte" name="motivo_reporte"
+                                rows="3" maxlength="100" required>{{ valores.motivo_reporte|default:'' }}</textarea>
+                        <div class="form-text text-end">
+                            <span id="contador_motivo_reporte">0</span>/100 caracteres
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+
+            <div class="mt-4 d-flex gap-2">
+                <button type="submit" class="btn mx-btn-primary">
+                    {% if requiere_motivo %}Registrar discrepancia{% else %}Confirmar recepción{% endif %}
+                </button>
+                <a href="{% url 'recepciones:bandeja' %}" class="btn btn-secondary">Cancelar</a>
+            </div>
+        </form>
+    </div>
+</div>
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const textarea = document.getElementById('motivo_reporte');
+    const contador = document.getElementById('contador_motivo_reporte');
+    if (!textarea) return;
+
+    function actualizarContador() {
+        contador.textContent = textarea.value.length;
+    }
+    textarea.addEventListener('input', actualizarContador);
+    actualizarContador();
+
+    document.querySelectorAll('.btn-motivo-rapido').forEach(function (btn) {
+        btn.addEventListener('click', function () {
+            textarea.value = btn.dataset.texto;
+            actualizarContador();
+        });
+    });
+});
+</script>
+{% endblock extra_js %}
+
+{% endblock app_content %}

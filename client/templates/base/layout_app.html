@@ -42,7 +42,7 @@
             {% endif %}
 
             {% if usuario.rol == 'ALMAC' %}
-            <a href="" class="mx-sidebar-link {% block nav_almacen %}{% endblock nav_almacen %}">
+            <a href="{% url 'recepciones:bandeja' %}" class="mx-sidebar-link {% block nav_almacen %}{% endblock nav_almacen %}">
                 <span class="material-symbols-outlined">warehouse</span> Almacen
             </a>
             {% endif %}

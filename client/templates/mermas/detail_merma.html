@@ -19,7 +19,12 @@
         </div>
         
         <div>
-            <a href="#" class="btn btn-primary mx-btn-primary"><span class="material-symbols-outlined">edit</span> Editar merma</a>
+            {% if merma.edo_flujo_merma == 'REGISTRADA' %}
+            <a href="{% url 'mermas:update_mermas' merma.folio %}" class="btn btn-primary mx-btn-primary">
+                <span class="material-symbols-outlined">edit</span> 
+                Editar merma
+            </a>
+            {% endif %}
         </div>
     </div>
 

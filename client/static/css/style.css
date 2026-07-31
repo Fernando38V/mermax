@@ -257,3 +257,35 @@ body {
   padding: 0.25rem 0.6rem;
   border-radius: 0.4rem;
 }
+
+/* =========================================================
+   Modal propio de confirmación (sin depender de Bootstrap JS)
+   ========================================================= */
+
+.mx-modal-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(11, 18, 32, 0.55);
+  z-index: 1050;
+  align-items: center;
+  justify-content: center;
+}
+
+.mx-modal-overlay.mx-modal-open {
+  display: flex;
+}
+
+.mx-modal-card-light {
+  background-color: #ffffff;
+  color: var(--mx-text-dark);
+  border-radius: var(--mx-radius);
+  box-shadow: var(--mx-shadow-card);
+  max-width: 420px;
+  width: 90%;
+  padding: 1.75rem;
+}
+
+.mx-modal-card-light .mx-text-muted {
+  color: #6b7280 !important;
+}

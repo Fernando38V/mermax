@@ -4,7 +4,7 @@ from django.utils import timezone
 from django.utils.decorators import method_decorator
 from django.views import generic
 from usuarios.decorators import login_required_api
-from usuarios.wrappers import ApiError, api_get, api_post
+from usuarios.wrappers import ApiError, api_get, api_post, api_patch
 
 @method_decorator(login_required_api, name='dispatch')
 class ListMermas(generic.View):
@@ -235,3 +235,55 @@ class DetailMermas(generic.View):
         
         self.context = {'merma': self.response}
         return render(request, self.template_name, self.context)
+    
+@method_decorator(login_required_api, name='dispatch')
+class UpdateMermas(generic.View):
+    template_name = "mermas/update_merma.html"
+    url_base = '/mermas/registro/update/'
+    
+    def get(self, request, pk):
+        token = request.session.get('api_token')
+        try:
+            merma = api_get(f'/mermas/registro/detail/{pk}/', token=token)
+        except ApiError:
+            return redirect('mermas:list_mermas')
+        
+        context = {
+            'merma': merma,
+            'tipo_merma': self._catalogo('/catalogos/tipos-merma/', token),
+            'causa_raiz': self._catalogo('/catalogos/causas-raiz/', token),
+            'errores': {},
+        }
+        return render(request, self.template_name, context)
+    
+    def post(self, request, pk):
+        token = request.session.get('api_token')
+        payload = {
+            'cantidad': request.POST.get('cantidad'),
+            'tipo_merma': request.POST.get('tipo_merma'),
+            'causa_raiz': request.POST.get('causa_raiz'),
+        }
+        try:
+            api_patch(f'/mermas/registro/update/{pk}/', payload, token=token)
+            return redirect('mermas:detail_mermas', pk=pk)
+
+        except ApiError as e:
+            try:
+                merma = api_get(f'/mermas/registro/detail/{pk}/', token=token)
+            except ApiError:
+                return redirect('mermas:list_mermas')
+            
+            context = {
+                'merma': merma, 
+                'tipo_merma': self._catalogo('/catalogos/tipos-merma/', token),
+                'causa_raiz': self._catalogo('/catalogos/causas-raiz/', token),
+                'errores': getattr(e, 'data', {}),
+            }
+            return render(request, self.template_name, context)
+    
+    def _catalogo(self, ruta, token):
+        try:
+            datos = api_get(ruta, token=token)
+        except ApiError:
+            return []
+        return datos.get('results', []) if isinstance(datos, dict) else datos
