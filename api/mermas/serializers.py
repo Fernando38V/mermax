@@ -15,6 +15,7 @@ class ListRegistroMermaSerializer(serializers.ModelSerializer):
     linea_produccion = serializers.CharField(source="estacion_trabajo.linea_produccion.num", read_only=True)
     linea_produccion_nombre = serializers.CharField(source="estacion_trabajo.linea_produccion.nombre", read_only=True)
     estacion_trabajo_nombre = serializers.CharField(source="estacion_trabajo.nombre", read_only=True) 
+    usuario_nombre = serializers.CharField(source="usuario.username", read_only=True)
     class Meta:
         model = RegistroMerma
         fields = [
@@ -34,7 +35,7 @@ class ListRegistroMermaSerializer(serializers.ModelSerializer):
             "linea_produccion_nombre",
             "edo_flujo_merma",
             "edo_merma_nombre",
-            "usuario",
+            "usuario_nombre",
         ]
 
 
@@ -150,6 +151,7 @@ class DiscrepanciaSerializer(serializers.ModelSerializer):
     
 class ListDiscrepanciaSerializer(serializers.ModelSerializer):
     usuario_reporte_nombre = serializers.CharField(source="usuario_reporte.username", read_only=True)
+    usuario_resolucion_nombre = serializers.CharField(source="usuario_resolucion.username", read_only=True)
     merma_folio = serializers.CharField(source="registro_merma.folio", read_only=True)
     estado_nombre = serializers.CharField(source="edo_discrepancia.nombre", read_only=True) # Si aplica
 
@@ -170,5 +172,6 @@ class ListDiscrepanciaSerializer(serializers.ModelSerializer):
             "estado_nombre",
             "fecha_resolucion",
             "motivo_resolucion",
-            "usuario_resolucion"
+            "usuario_resolucion",
+            "usuario_resolucion_nombre",
         ]
