@@ -8,7 +8,7 @@ from rest_framework import status
 from django.db import transaction
 from datetime import date, datetime
 
-from usuarios.permissions import EsCalidad, LecturaTodosEscrituraCalidad
+from usuarios.permissions import EsCalidad, LecturaTodosEscrituraCalidad, EsAlmacenista
 
 # Create your views here.
 
@@ -305,7 +305,7 @@ class EjecutarDisposicionAPIView(APIView):
     proveedor, se entregó a la recicladora o se destruyó. Es lo que separa
     "ya se decidió qué hacer" de "ya se hizo".
     """
-    permission_classes = [EsCalidad]
+    permission_classes = [EsAlmacenista]
 
     def post(self, request, folio):
         disposicion = get_object_or_404(models.RegistroDisposicion, folio=folio)
