@@ -1,0 +1,119 @@
+{% extends "base/layout_app.html" %}
+
+{% block nav_almacen %}active{% endblock nav_almacen %}
+
+{% block page_title %}Almacén{% endblock page_title %}
+{% block page_subtitle %}Disposiciones pendientes de ejecutar{% endblock page_subtitle %}
+
+{% block app_content %}
+
+{% if messages %}
+    {% for message in messages %}
+    <div class="alert alert-{{ message.tags }}">{{ message }}</div>
+    {% endfor %}
+{% endif %}
+
+<div class="mb-4 d-flex justify-content-end gap-2">
+    {% if filtros_activos %}
+        <a href="{% url 'recepciones:disposiciones' %}" class="btn btn-secondary">
+            <span class="material-symbols-outlined">clear</span>
+            Limpiar filtros
+        </a>
+    {% endif %}
+</div>
+
+<form method="get">
+    <div class="row g-3 mb-4">
+        <div class="col-md-3">
+            <label class="form-label">Tipo de disposición</label>
+            <select class="form-select" name="dictamen">
+                <option value="">Todos</option>
+                <option value="RTN_PROV" {% if filtros.dictamen == 'RTN_PROV' %}selected{% endif %}>Devolución a Proveedor</option>
+                <option value="RECICLAJE" {% if filtros.dictamen == 'RECICLAJE' %}selected{% endif %}>Reciclaje</option>
+                <option value="DESTR_CTRL" {% if filtros.dictamen == 'DESTR_CTRL' %}selected{% endif %}>Desecho Controlado</option>
+            </select>
+        </div>
+        <div class="col-auto d-flex align-items-end">
+            <button type="submit" class="btn btn-secondary">
+                <span class="material-symbols-outlined">filter_alt</span>
+                Filtrar
+            </button>
+        </div>
+    </div>
+</form>
+
+<table class="table">
+    <thead>
+        <tr>
+            <th>Folio</th>
+            <th>Merma</th>
+            <th>Dictamen</th>
+            <th>Fecha determinación</th>
+            <th>Emitió</th>
+            <th>Acciones</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for disp in disposiciones %}
+        <tr>
+            <td>{{ disp.folio }}</td>
+            <td>{{ disp.registro_merma }}</td>
+            <td>{{ disp.dictamen_nombre }}</td>
+            <td>{{ disp.fecha_determinacion }}</td>
+            <td>{{ disp.emitido_por }}</td>
+            <td>
+                <button type="button" class="btn mx-btn-primary btn-sm btn-abrir-ejecutar"
+                        data-folio="{{ disp.folio }}">
+                    Ejecutar
+                </button>
+            </td>
+        </tr>
+        {% empty %}
+        <tr>
+            <td colspan="6" class="text-center mx-text-muted py-4">No hay disposiciones pendientes de ejecutar.</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+
+<div id="modal-confirmar-ejecucion" class="mx-modal-overlay">
+    <div class="mx-modal-card-light">
+        <h5 class="mb-3">Confirmar ejecución</h5>
+        <p class="mx-text-muted">
+            Esta acción es irreversible. ¿Confirmar que el material de la disposición
+            <strong id="folio-a-ejecutar"></strong> ya salió físicamente de la planta?
+        </p>
+        <form method="post" id="form-ejecutar">
+            {% csrf_token %}
+            <div class="d-flex justify-content-end gap-2 mt-4">
+                <button type="button" class="btn btn-secondary" id="btn-cancelar-modal">Cancelar</button>
+                <button type="submit" class="btn mx-btn-primary">Confirmar</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+{% endblock app_content %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const modal = document.getElementById('modal-confirmar-ejecucion');
+    const form = document.getElementById('form-ejecutar');
+    const folioSpan = document.getElementById('folio-a-ejecutar');
+
+    document.querySelectorAll('.btn-abrir-ejecutar').forEach(function (btn) {
+        btn.addEventListener('click', function () {
+            const folio = btn.dataset.folio;
+            folioSpan.textContent = folio;
+            form.action = '/recepciones/disposiciones/ejecutar/' + folio + '/';
+            modal.classList.add('mx-modal-open');
+        });
+    });
+
+    document.getElementById('btn-cancelar-modal').addEventListener('click', function () {
+        modal.classList.remove('mx-modal-open');
+    });
+});
+</script>
+{% endblock extra_js %}

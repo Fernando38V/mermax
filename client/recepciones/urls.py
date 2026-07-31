@@ -9,4 +9,6 @@ urlpatterns = [
     path('discrepancias/', views.DiscrepanciasAbiertas.as_view(), name='discrepancias'),
     path('discrepancias/resolver/<str:folio>/', views.ResolverDiscrepancia.as_view(), name='resolver_discrepancia'),
     path('historial/', views.HistorialMovimientos.as_view(), name='historial'),
+    path('disposiciones/', views.DisposicionesPendientes.as_view(), name='disposiciones'),           # ← nueva
+    path('disposiciones/ejecutar/<str:folio>/', views.EjecutarDisposicion.as_view(), name='ejecutar_disposicion'),  # ← nueva
 ]

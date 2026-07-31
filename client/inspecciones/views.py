@@ -84,7 +84,7 @@ class IniciarInspeccion(generic.View):
             messages.success(request, mensaje)
 
         except ApiError as e:
-            data = getattr(e, 'data', {})
+            data = getattr(e, 'detail', {})
             mensaje_error = (
                 data.get('error', 'No se pudo iniciar la inspección.')
                 if isinstance(data, dict) else 'No se pudo iniciar la inspección.'
@@ -172,7 +172,7 @@ class DictaminarInspeccion(generic.View):
             return redirect('inspecciones:dictaminar_inspeccion')
 
         except ApiError as e:
-            errores = getattr(e, 'data', {})
+            errores = getattr(e, 'detail', {})
             print(">>> DETALLE ERROR BACKEND:", errores)
             
             context = self._obtener_contexto_base(request, token)

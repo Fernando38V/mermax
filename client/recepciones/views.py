@@ -250,3 +250,43 @@ class HistorialMovimientos(generic.View):
             'mermas': mermas,
             'discrepancias': discrepancias,
         })
+
+@method_decorator(login_required_api, name='dispatch')
+class DisposicionesPendientes(generic.View):
+    template_name = 'recepciones/disposiciones.html'
+
+    def get(self, request):
+        token = request.session.get('api_token')
+
+        filtros = {'estado': 'PENDIENTE'}
+        dictamen = request.GET.get('dictamen')
+        if dictamen:
+            filtros['dictamen'] = dictamen
+
+        try:
+            respuesta = api_get('/inspecciones/disposicion/list/', token=token, params=filtros)
+        except ApiError:
+            respuesta = []
+
+        disposiciones = respuesta.get('results', []) if isinstance(respuesta, dict) else respuesta
+
+        return render(request, self.template_name, {
+            'disposiciones': disposiciones,
+            'filtros': request.GET,
+            'filtros_activos': bool(dictamen),
+        })
+
+
+@method_decorator(login_required_api, name='dispatch')
+class EjecutarDisposicion(generic.View):
+
+    def post(self, request, folio):
+        token = request.session.get('api_token')
+        try:
+            api_post(f'/inspecciones/disposicion/ejecutar/{folio}/', {}, token=token)
+            messages.success(request, f'Disposición {folio} marcada como ejecutada.')
+        except ApiError as e:
+            errores = e.detail if isinstance(e.detail, dict) else {'error': [str(e.detail)]}
+            mensaje = errores.get('error', [str(e.detail)])[0] if isinstance(errores, dict) else str(e.detail)
+            messages.error(request, mensaje)
+        return redirect('recepciones:disposiciones')
