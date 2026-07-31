@@ -21,22 +21,18 @@ class ListSolicitudInspeccionAPIView(generics.ListAPIView):
     serializer_class = serializers.SolicitudInspeccionSerializer
 
     def get_queryset(self):
-        # 1. Traer solicitudes ordenadas por fecha/hora reciente
         queryset = models.SolicitudInspeccion.objects.all().order_by('-fecha_generacion', '-hora_generacion')
         
-        # 2. Parámetros de la URL
         estado = self.request.query_params.get('estado')
         q = self.request.query_params.get('q')
 
-        # 3. Filtro por estado
         if estado and estado.upper() != 'TODAS':
             queryset = queryset.filter(edo_solicitud_id=estado.upper())
 
-        # 4. Buscador
         if q:
             queryset = queryset.filter(
                 Q(codigo__icontains=q) | 
-                Q(registro_merma_id__icontains=q)
+                Q(registro_merma__folio__icontains=q)  
             )
 
         return queryset
