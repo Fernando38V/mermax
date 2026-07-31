@@ -1,0 +1,130 @@
+{% extends "base/layout_app.html" %}
+
+{% block nav_alertas %}active{% endblock nav_alertas %}
+
+{% block page_title %}Alertas de Inspección{% endblock page_title %}
+{% block page_subtitle %}Solicitudes de inspección pendientes de atención por el equipo de Calidad{% endblock page_subtitle %}
+
+{% block app_content %}
+
+<!-- Feedback de Alertas (Exito / Error) -->
+{% if messages %}
+    <div class="row mb-3">
+        <div class="col-12">
+            {% for message in messages %}
+                <div class="alert alert-{% if message.tags == 'error' %}danger{% else %}{{ message.tags }}{% endif %} alert-dismissible fade show d-flex align-items-center gap-2" role="alert">
+                    <span class="material-symbols-outlined">
+                        {% if message.tags == 'error' %}error{% else %}check_circle{% endif %}
+                    </span>
+                    <div>{{ message }}</div>
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+            {% endfor %}
+        </div>
+    </div>
+{% endif %}
+
+<!-- Tarjeta Principal de Alertas -->
+<div class="card shadow-sm border-0">
+    <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center border-bottom">
+        <h5 class="card-title mb-0 fw-bold d-flex align-items-center gap-2">
+            <span class="material-symbols-outlined text-warning">notifications_active</span>
+            Solicitudes Pendientes
+        </h5>
+        <span class="badge bg-warning text-dark px-3 py-2 rounded-pill fw-semibold">
+            {{ solicitudes|length }} Petición(es)
+        </span>
+    </div>
+
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th scope="col" class="ps-3">Código Solicitud</th>
+                        <th scope="col">Folio Merma</th>
+                        <th scope="col">Fecha / Hora Solicitud</th>
+                        <th scope="col">Estado</th>
+                        <th scope="col" class="text-end pe-4">Acción</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for solicitud in solicitudes %}
+                        <tr>
+                            <td class="ps-3 fw-bold text-dark">
+                                {{ solicitud.codigo }}
+                            </td>
+                            <td>
+                                <span class="badge bg-light text-dark border">
+                                    {{ solicitud.registro_merma.folio|default:solicitud.registro_merma }}
+                                </span>
+                            </td>
+                            <td>
+                                <div class="small">
+                                    <div><span class="fw-semibold">{{ solicitud.fecha_generacion }}</span></div>
+                                    <div class="mx-text-muted fs-7">{{ solicitud.hora_generacion|default:"" }}</div>
+                                </div>
+                            </td>
+                            <td>
+                                <span class="badge bg-warning text-dark border border-warning">
+                                    {{ solicitud.edo_solicitud }}
+                                </span>
+                            </td>
+                            <td class="text-end pe-4">
+                                <!-- Botón que activa el Modal moderno -->
+                                <button type="button" 
+                                        class="btn mx-btn-primary btn-sm d-inline-flex align-items-center gap-1 shadow-sm"
+                                        data-bs-toggle="modal" 
+                                        data-bs-target="#modalIniciar-{{ solicitud.codigo }}">
+                                    <span class="material-symbols-outlined fs-6">play_arrow</span>
+                                    <span>Iniciar Inspección</span>
+                                </button>
+
+                                <!-- Modal de Confirmación Estilizado -->
+                                <div class="modal fade text-start" id="modalIniciar-{{ solicitud.codigo }}" tabindex="-1" aria-hidden="true">
+                                    <div class="modal-dialog modal-dialog-centered">
+                                        <div class="modal-content border-0 shadow-lg" style="border-radius: 12px;">
+                                            <div class="modal-header border-0 pb-0">
+                                                <h5 class="modal-title fw-bold">Confirmar Inicio</h5>
+                                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                            </div>
+                                            <div class="modal-body text-center py-4">
+                                                <span class="material-symbols-outlined text-warning display-3 mb-2">info</span>
+                                                <h6 class="fw-bold fs-5 text-dark">¿Deseas iniciar la inspección?</h6>
+                                                <p class="text-muted mb-0">
+                                                    La solicitud <strong>{{ solicitud.codigo }}</strong> y la merma asociada cambiarán su estado a <em>EN INSPECCIÓN</em>.
+                                                </p>
+                                            </div>
+                                            <div class="modal-footer border-0 pt-0 justify-content-center gap-2">
+                                                <button type="button" class="btn btn-light rounded-pill px-4" data-bs-dismiss="modal">Cancelar</button>
+                                                <form method="POST" action="{% url 'inspecciones:iniciar_inspeccion' solicitud.codigo %}">
+                                                    {% csrf_token %}
+                                                    <button type="submit" class="btn btn-warning text-dark fw-bold rounded-pill px-4 d-inline-flex align-items-center gap-1">
+                                                        <span class="material-symbols-outlined fs-6">play_arrow</span>
+                                                        <span>Iniciar</span>
+                                                    </button>
+                                                </form>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </td>
+                        </tr>
+                    {% empty %}
+                        <tr>
+                            <td colspan="5" class="text-center py-5">
+                                <div class="d-flex flex-column align-items-center mx-text-muted">
+                                    <span class="material-symbols-outlined display-4 mb-2 text-secondary">verified</span>
+                                    <h6 class="fw-bold text-dark">Sin inspecciones pendientes</h6>
+                                    <p class="mb-0 small">Todas las solicitudes de inspección han sido atendidas.</p>
+                                </div>
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+{% endblock app_content %}

@@ -1,0 +1,9 @@
+from django.urls import path
+from . import views
+
+app_name = 'inspecciones'
+
+urlpatterns = [
+    path('alertas/', views.AlertasInspeccion.as_view(), name='alertas'),
+    path('solicitudes/iniciar/<str:codigo_solicitud>/', views.IniciarInspeccion.as_view(), name='iniciar_inspeccion'),
+]

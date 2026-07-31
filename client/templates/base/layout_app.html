@@ -58,7 +58,7 @@
             </a>
 
             {% if usuario.rol == 'CALID' %}
-            <a href="" class="mx-sidebar-link {% block nav_alertas %}{% endblock nav_alertas %}">
+            <a href="{% url 'inspecciones:alertas' %}" class="mx-sidebar-link {% block nav_alertas %}{% endblock nav_alertas %}">
                 <span class="material-symbols-outlined">warning</span> Alertas
             </a>
             {% endif %}
