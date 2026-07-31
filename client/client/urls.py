@@ -23,4 +23,5 @@ urlpatterns = [
     path('mermas/', include('mermas.urls')),
     path('recepciones/', include('recepciones.urls')),  
     path('inspecciones/', include('inspecciones.urls')),
+    path('administrador/', include('administrador.urls')),
 ]
