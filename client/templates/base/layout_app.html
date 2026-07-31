@@ -68,7 +68,7 @@
                 <span class="material-symbols-outlined">description</span> Bitácora
             </a>
 
-            <a href="" class="mx-sidebar-link {% block nav_catalogos %}{% endblock nav_catalogos %}">
+            <a href="{% url 'administrador:catalogos_indice' %}" class="mx-sidebar-link {% block nav_catalogos %}{% endblock nav_catalogos %}">
                 <span class="material-symbols-outlined">view_list</span> Catalogos
             </a>
             {% endif %}

@@ -1,0 +1,17 @@
+{% extends "base/layout_app.html" %}
+
+{% block nav_catalogos %}active{% endblock nav_catalogos %}
+{% block page_title %}Catálogos{% endblock page_title %}
+{% block page_subtitle %}Selecciona un catálogo para administrar{% endblock page_subtitle %}
+
+{% block app_content %}
+<div class="row g-3">
+    {% for slug, cfg in catalogos.items %}
+    <div class="col-md-3">
+        <a href="{% url 'administrador:catalogo_list' slug=slug %}" class="btn mx-btn-primary w-100 py-3">
+            {{ cfg.nombre }}
+        </a>
+    </div>
+    {% endfor %}
+</div>
+{% endblock app_content %}

@@ -1,0 +1,62 @@
+{% extends "base/layout_app.html" %}
+{% load administrador_extras %}
+
+{% block nav_catalogos %}active{% endblock nav_catalogos %}
+{% block page_title %}Catálogos{% endblock page_title %}
+{% block page_subtitle %}{{ config.nombre }} — {% if pk %}Editar{% else %}Nuevo{% endif %}{% endblock page_subtitle %}
+
+{% block app_content %}
+
+{% if errores %}
+<div class="alert alert-danger">
+    {% for campo, error in errores.items %}
+    <div>{{ campo }}: {{ error|join:", " }}</div>
+    {% endfor %}
+</div>
+{% endif %}
+
+<div class="card">
+    <div class="card-body">
+        <form method="post">
+            {% csrf_token %}
+            <div class="row g-3">
+                {% for campo in campos %}
+                <div class="col-md-6">
+                    <label class="form-label">{{ campo.label }}{% if campo.required %} *{% endif %}</label>
+
+                    {% if campo.solo_creacion and pk %}
+                        <input type="text" class="form-control" value="{{ valores|dictkey:campo.name }}" readonly>
+                    {% elif campo.auto %}
+                        <input type="text" name="{{ campo.name }}" class="form-control bg-light" value="{{ valores|dictkey:campo.name }}" readonly>
+                        <div class="form-text">Se genera automáticamente</div>
+                    {% elif campo.type == 'select' %}
+                        <select name="{{ campo.name }}" class="form-select" {% if campo.required %}required{% endif %}>
+                            <option value="">-- Seleccionar --</option>
+                            {% for opcion in campo.opciones %}
+                            <option value="{{ opcion|dictkey:campo.value_key }}"
+                                    {% if valores|dictkey:campo.name == opcion|dictkey:campo.value_key %}selected{% endif %}>
+                                {{ opcion|dictkey:campo.label_key }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                    {% else %}
+                        <input type="{% if campo.name == 'correo' %}email{% elif campo.name == 'telefono' %}tel{% elif campo.type == 'number' %}number{% else %}text{% endif %}"
+                            {% if campo.name == 'telefono' %}pattern="[0-9\- ]{7,15}"{% endif %}
+                            {% if campo.step %}step="{{ campo.step }}"{% endif %}
+                            name="{{ campo.name }}" class="form-control"
+                            value="{{ valores|dictkey:campo.name|default:'' }}"
+                            {% if campo.required %}required{% endif %}>
+                    {% endif %}
+                </div>
+                {% endfor %}
+            </div>
+
+            <div class="mt-4 d-flex gap-2">
+                <button type="submit" class="btn mx-btn-primary">Guardar</button>
+                <a href="{% url 'administrador:catalogo_list' slug=slug %}" class="btn btn-secondary">Cancelar</a>
+            </div>
+        </form>
+    </div>
+</div>
+
+{% endblock app_content %}
