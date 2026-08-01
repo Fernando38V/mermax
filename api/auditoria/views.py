@@ -32,7 +32,7 @@ class SoloAdministrador(permissions.BasePermission):
 
 
 class BitacoraPaginacion(PageNumberPagination):
-    page_size = 50
+    page_size = 5
     page_size_query_param = 'tamano'
     max_page_size = 500
 
@@ -110,12 +110,26 @@ class BitacoraResumenView(APIView):
         from django.db.models import Count
 
         base = BitacoraAuditoria.objects.all()
+
+        modulo = request.query_params.get('modulo')
+        if modulo:
+            base = base.filter(modulo__iexact=modulo)
+        desde = request.query_params.get('desde')
+        if desde:
+            try:
+                base = base.filter(fecha_hora__date__gte=datetime.strptime(desde, '%Y-%m-%d').date())
+            except ValueError:
+                pass
+        hasta = request.query_params.get('hasta')
+        if hasta:
+            try:
+                base = base.filter(fecha_hora__date__lte=datetime.strptime(hasta, '%Y-%m-%d').date())
+            except ValueError:
+                pass
+
         return Response({
             'total': base.count(),
-            'por_modulo': list(base.values('modulo')
-                               .annotate(n=Count('num')).order_by('-n')),
-            'por_accion': list(base.values('accion')
-                               .annotate(n=Count('num')).order_by('-n')),
-            'por_usuario': list(base.values('usuario', 'usuario__username')
-                                .annotate(n=Count('num')).order_by('-n')),
+            'por_modulo': list(base.values('modulo').annotate(n=Count('num')).order_by('-n')),
+            'por_accion': list(base.values('accion').annotate(n=Count('num')).order_by('-n')),
+            'por_usuario': list(base.values('usuario', 'usuario__username').annotate(n=Count('num')).order_by('-n')),
         })
