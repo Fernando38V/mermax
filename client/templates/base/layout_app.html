@@ -71,6 +71,10 @@
             <a href="{% url 'administrador:catalogos_indice' %}" class="mx-sidebar-link {% block nav_catalogos %}{% endblock nav_catalogos %}">
                 <span class="material-symbols-outlined">view_list</span> Catalogos
             </a>
+
+            <a href="{% url 'administrador:usuarios_list' %}" class="mx-sidebar-link {% block nav_usuarios %}{% endblock nav_usuarios %}">
+                <span class="material-symbols-outlined">group</span> Usuarios
+            </a>
             {% endif %}
 
         </nav>
