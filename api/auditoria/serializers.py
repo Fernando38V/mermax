@@ -18,7 +18,6 @@ class BitacoraSerializer(serializers.ModelSerializer):
         fields = ('num', 'fecha_hora', 'usuario', 'usuario_nombre', 'rol',
                   'modulo', 'accion', 'accion_nombre',
                   'valor_anterior', 'valor_nuevo', 'motivo')
-        read_only_fields = fields
 
     def get_accion_nombre(self, obj):
         return dict(BitacoraAuditoria.ACCIONES).get(obj.accion, obj.accion)
