@@ -142,8 +142,13 @@
 
                 <div class="row g-3 mb-4">
                     <div class="col-md-6">
-                        <label class="form-label fw-semibold">Cantidad Ejecutada (Opcional)</label>
-                        <input type="number" step="0.01" name="cantidad_ejecutada" class="form-control" value="{{ valores.cantidad_ejecutada|default:'' }}" placeholder="Dejar en blanco para usar el total de la merma">
+                        <label class="form-label fw-semibold">Cantidad Ejecutada</label>
+                        <input type="number" 
+                            step="0.01" 
+                            name="cantidad_ejecutada" 
+                            class="form-control bg-light" 
+                            value="{{ valores.cantidad_ejecutada|default:'' }}" 
+                            readonly>
                     </div>
                     <div class="col-md-6">
                         <label class="form-label fw-semibold">Observaciones Generales</label>

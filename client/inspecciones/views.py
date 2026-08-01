@@ -118,15 +118,57 @@ class DictaminarInspeccion(generic.View):
 
     def get(self, request, codigo_solicitud=None):
         token = request.session.get('api_token')
+        solicitudes = self._catalogo('/inspecciones/solicitudes/list/', token)
+
+        valores = {}
+        cant = ''
+
+        if codigo_solicitud:
+            valores['codigo'] = codigo_solicitud
+
+            sol_encontrada = next(
+                (s for s in solicitudes if isinstance(s, dict) and str(codigo_solicitud) in [str(s.get('codigo')), str(s.get('codigo_solicitud'))]), 
+                None
+            )
+
+            if sol_encontrada:
+                folio_merma = sol_encontrada.get('registro_merma')
+
+                if folio_merma:
+                    merma_data = None
+
+                    try:
+                        res = api_get(f'/mermas/registro/detail/{folio_merma}/', token=token)
+                        if res and isinstance(res, dict) and 'detail' not in res:
+                            merma_data = res
+                    except Exception:
+                        pass
+
+                    if not merma_data:
+                        lista_mermas = self._catalogo('/mermas/registro/list/', token) or []
+                        merma_data = next(
+                            (m for m in lista_mermas if isinstance(m, dict) and str(m.get('folio')) == str(folio_merma)), 
+                            None
+                        )
+
+                    if merma_data:
+                        cant = (
+                            merma_data.get('cantidad') or
+                            merma_data.get('cantidad_registrada') or
+                            merma_data.get('peso') or
+                            merma_data.get('peso_neto') or ''
+                        )
+
+            valores['cantidad_ejecutada'] = str(cant) if cant else ''
 
         context = {
             'codigo_solicitud_param': codigo_solicitud,
-            'solicitudes_pendientes': self._catalogo('/inspecciones/solicitudes/list/', token),
+            'solicitudes_pendientes': solicitudes,
             'proveedores': self._catalogo('/catalogos/proveedores/', token),
             'empresas_recicladoras': self._catalogo('/catalogos/empresas-recicladoras/', token),
             'metodos_destruccion': self._catalogo('/catalogos/metodos-destruccion/', token),
             'fecha_hoy': timezone.localdate(),
-            'valores': {'codigo': codigo_solicitud} if codigo_solicitud else {},
+            'valores': valores,
             'errores': {},
         }
         return render(request, self.template_name, context)
@@ -169,7 +211,7 @@ class DictaminarInspeccion(generic.View):
             respuesta = api_post(f'/inspecciones/dictaminar/{codigo}/', payload_limpio, token=token)
             mensaje = respuesta.get('mensaje', 'Dictamen emitido exitosamente.') if isinstance(respuesta, dict) else 'Dictamen emitido.'
             messages.success(request, mensaje)
-            return redirect('inspecciones:dictaminar_inspeccion')
+            return redirect('inspecciones:alertas')
 
         except ApiError as e:
             errores = getattr(e, 'detail', {})

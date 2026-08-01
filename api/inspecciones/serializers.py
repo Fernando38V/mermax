@@ -172,6 +172,7 @@ class UpdateDesechoSerializer(serializers.ModelSerializer):
 # ======================================================
 
 class SolicitudInspeccionSerializer(serializers.ModelSerializer):
+    estado_merma = serializers.CharField(source='registro_merma.edo_flujo_merma_id', read_only=True)
     class Meta:
         model = models.SolicitudInspeccion
         fields = '__all__'
