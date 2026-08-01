@@ -1,0 +1,56 @@
+{% extends "base/layout_app.html" %}
+{% load administrador_extras %}
+
+{% block nav_usuarios %}active{% endblock nav_usuarios %}
+{% block page_title %}Usuarios{% endblock page_title %}
+{% block page_subtitle %}Gestión de cuentas de usuario{% endblock page_subtitle %}
+
+{% block app_content %}
+
+{% if messages %}
+    {% for message in messages %}
+    <div class="alert alert-{{ message.tags }}">{{ message }}</div>
+    {% endfor %}
+{% endif %}
+
+<div class="mb-4 d-flex justify-content-between">
+    <a href="{% url 'administrador:empleados_list' %}" class="btn btn-secondary">Ver empleados</a>
+    <a href="{% url 'administrador:personal_create' %}" class="btn mx-btn-primary">
+        <span class="material-symbols-outlined">add</span> Nuevo empleado + usuario
+    </a>
+</div>
+
+<table class="table">
+    <thead>
+        <tr>
+            <th>Usuario</th>
+            <th>Correo</th>
+            <th>Rol</th>
+            <th>Estado</th>
+            <th>Acciones</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for u in usuarios %}
+        <tr>
+            <td>{{ u.username }}</td>
+            <td>{{ u.correo }}</td>
+            <td>{{ u.rol }}</td>
+            <td>
+                {% if u.activo %}
+                    <span class="badge bg-success">Activo</span>
+                {% else %}
+                    <span class="badge bg-secondary">Inactivo</span>
+                {% endif %}
+            </td>
+            <td>
+                <a href="{% url 'administrador:usuario_edit' pk=u.num %}" class="btn btn-secondary btn-sm">Editar</a>
+            </td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="5" class="text-center mx-text-muted py-4">No hay usuarios.</td></tr>
+        {% endfor %}
+    </tbody>
+</table>
+
+{% endblock app_content %}

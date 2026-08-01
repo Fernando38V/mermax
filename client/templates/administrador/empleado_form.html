@@ -1,0 +1,83 @@
+{% extends "base/layout_app.html" %}
+{% load administrador_extras %}
+
+{% block nav_usuarios %}active{% endblock nav_usuarios %}
+{% block page_title %}Empleados{% endblock page_title %}
+{% block page_subtitle %}{% if pk %}Editar{% else %}Nuevo{% endif %} empleado{% endblock page_subtitle %}
+
+{% block app_content %}
+
+{% if errores %}
+<div class="alert alert-danger">
+    {% for campo, error in errores.items %}
+    <div>{{ campo }}: {{ error|join:", " }}</div>
+    {% endfor %}
+</div>
+{% endif %}
+
+<div class="card">
+    <div class="card-body">
+        <form method="post">
+            {% csrf_token %}
+            <div class="row g-3">
+                <div class="col-md-4">
+                    <label class="form-label">Nombre *</label>
+                    <input type="text" name="nombre" class="form-control" value="{{ valores|dictkey:'nombre'|default:'' }}" required>
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label">Primer apellido *</label>
+                    <input type="text" name="primer_apellido" class="form-control" value="{{ valores|dictkey:'primer_apellido'|default:'' }}" required>
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label">Segundo apellido</label>
+                    <input type="text" name="segundo_apellido" class="form-control" value="{{ valores|dictkey:'segundo_apellido'|default:'' }}">
+                </div>
+
+                <div class="col-md-4">
+                    <label class="form-label">Fecha de nacimiento</label>
+                    <input type="date" name="fecha_nacimiento" class="form-control" value="{{ valores|dictkey:'fecha_nacimiento'|default:'' }}">
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label">Fecha de ingreso</label>
+                    <input type="date" name="fecha_ingreso" class="form-control" value="{{ valores|dictkey:'fecha_ingreso'|default:'' }}">
+                </div>
+
+                <div class="col-md-4">
+                    <label class="form-label">Área *</label>
+                    <select name="area" class="form-select" required>
+                        <option value="">-- Seleccionar --</option>
+                        {% for a in areas %}
+                        <option value="{{ a.codigo }}" {% if valores|dictkey:'area' == a.codigo %}selected{% endif %}>{{ a.nombre }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label">Turno *</label>
+                    <select name="turno" class="form-select" required>
+                        <option value="">-- Seleccionar --</option>
+                        {% for t in turnos %}
+                        <option value="{{ t.clave }}" {% if valores|dictkey:'turno' == t.clave %}selected{% endif %}>{{ t.nombre }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                {% if pk %}
+                <div class="col-md-4 d-flex align-items-end">
+                    <div class="form-check">
+                        <input type="checkbox" name="activo" class="form-check-input" id="activo"
+                               {% if valores|dictkey:'activo' %}checked{% endif %}>
+                        <label class="form-check-label" for="activo">Empleado activo</label>
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+
+            <div class="mt-4 d-flex gap-2">
+                <button type="submit" class="btn mx-btn-primary">Guardar</button>
+                <a href="{% url 'administrador:empleados_list' %}" class="btn btn-secondary">Cancelar</a>
+            </div>
+        </form>
+    </div>
+</div>
+
+{% endblock app_content %}

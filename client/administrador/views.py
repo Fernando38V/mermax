@@ -335,3 +335,210 @@ class ReactivarCatalogo(generic.View):
         except ApiError as e:
             messages.error(request, str(e.detail))
         return redirect('administrador:catalogo_list', slug=slug)
+
+@method_decorator(login_required_api, name='dispatch')
+class ListUsuarios(generic.View):
+    def get(self, request):
+        token = request.session.get('api_token')
+        try:
+            usuarios = api_get('/usuarios/list/', token=token)
+        except ApiError:
+            usuarios = []
+        return render(request, 'administrador/usuarios_list.html', {'usuarios': usuarios})
+
+
+@method_decorator(login_required_api, name='dispatch')
+class FormUsuario(generic.View):
+    template_name = 'administrador/usuario_form.html'
+
+    def get(self, request, pk=None):
+        token = request.session.get('api_token')
+        valores = {}
+        if pk:
+            try:
+                valores = api_get(f'/usuarios/detail/{pk}/', token=token)
+            except ApiError:
+                messages.error(request, 'No se encontró el usuario.')
+                return redirect('administrador:usuarios_list')
+
+        return render(request, self.template_name, self._contexto(pk, valores, {}, token))
+
+    def post(self, request, pk=None):
+        token = request.session.get('api_token')
+
+        payload = {
+            'correo': request.POST.get('correo', '').strip(),
+            'rol': request.POST.get('rol', '').strip(),
+        }
+        if not pk:
+            payload['username'] = request.POST.get('username', '').strip()
+            payload['empleado'] = request.POST.get('empleado', '').strip()
+        password = request.POST.get('contrasena', '').strip()
+        if password:
+            payload['contrasena'] = password
+        if pk:
+            payload['activo'] = 'true' if request.POST.get('activo') == 'on' else 'false'
+
+        try:
+            if pk:
+                api_patch(f'/usuarios/update/{pk}/', payload, token=token)
+                messages.success(request, 'Usuario actualizado correctamente.')
+            else:
+                payload['activo'] = 'true'
+                api_post('/usuarios/create/', payload, token=token)
+                messages.success(request, 'Usuario creado correctamente.')
+            return redirect('administrador:usuarios_list')
+        except ApiError as e:
+            errores = e.detail if isinstance(e.detail, dict) else {'error': [str(e.detail)]}
+            errores = _traducir_errores(errores)
+            return render(request, self.template_name, self._contexto(pk, request.POST, errores, token))
+
+    def _contexto(self, pk, valores, errores, token):
+        try:
+            empleados = api_get('/usuarios/empleado/list/', token=token)
+        except ApiError:
+            empleados = []
+        try:
+            roles = api_get('/catalogos/lookup/roles/', token=token)
+            roles = roles.get('results', []) if isinstance(roles, dict) else roles
+        except ApiError:
+            roles = []
+
+        return {
+            'pk': pk,
+            'valores': valores,
+            'errores': errores,
+            'empleados': empleados,
+            'roles': roles,
+        }
+
+
+@method_decorator(login_required_api, name='dispatch')
+class ListEmpleados(generic.View):
+    def get(self, request):
+        token = request.session.get('api_token')
+        try:
+            empleados = api_get('/usuarios/empleado/list/', token=token)
+        except ApiError:
+            empleados = []
+        return render(request, 'administrador/empleados_list.html', {'empleados': empleados})
+
+
+@method_decorator(login_required_api, name='dispatch')
+class FormEmpleado(generic.View):
+    template_name = 'administrador/empleado_form.html'
+
+    def get(self, request, pk=None):
+        token = request.session.get('api_token')
+        valores = {}
+        if pk:
+            try:
+                valores = api_get(f'/usuarios/empleado/detail/{pk}/', token=token)
+            except ApiError:
+                messages.error(request, 'No se encontró el empleado.')
+                return redirect('administrador:empleados_list')
+        return render(request, self.template_name, self._contexto(pk, valores, {}, token))
+
+    def post(self, request, pk=None):
+        token = request.session.get('api_token')
+        campos = ['nombre', 'primer_apellido', 'segundo_apellido', 'fecha_nacimiento',
+                  'fecha_ingreso', 'area', 'turno']
+        payload = {c: request.POST.get(c, '').strip() for c in campos if request.POST.get(c, '').strip()}
+        payload['activo'] = 'true' if request.POST.get('activo') == 'on' or not pk else 'false'
+
+        try:
+            if pk:
+                api_patch(f'/usuarios/empleado/update/{pk}/', payload, token=token)
+                messages.success(request, 'Empleado actualizado correctamente.')
+            else:
+                api_post('/usuarios/empleado/create/', payload, token=token)
+                messages.success(request, 'Empleado creado correctamente.')
+            return redirect('administrador:empleados_list')
+        except ApiError as e:
+            errores = e.detail if isinstance(e.detail, dict) else {'error': [str(e.detail)]}
+            errores = _traducir_errores(errores)
+            return render(request, self.template_name, self._contexto(pk, request.POST, errores, token))
+
+    def _contexto(self, pk, valores, errores, token):
+        try:
+            areas = api_get('/catalogos/lookup/areas/', token=token)
+            areas = areas.get('results', []) if isinstance(areas, dict) else areas
+        except ApiError:
+            areas = []
+        try:
+            turnos = api_get('/catalogos/lookup/turnos/', token=token)
+            turnos = turnos.get('results', []) if isinstance(turnos, dict) else turnos
+        except ApiError:
+            turnos = []
+
+        return {'pk': pk, 'valores': valores, 'errores': errores, 'areas': areas, 'turnos': turnos}
+
+@method_decorator(login_required_api, name='dispatch')
+class AltaPersonal(generic.View):
+    template_name = 'administrador/personal_form.html'
+
+    def get(self, request):
+        token = request.session.get('api_token')
+        return render(request, self.template_name, self._contexto(token, {}, {}))
+
+    def post(self, request):
+        token = request.session.get('api_token')
+
+        payload_empleado = {
+            'nombre': request.POST.get('nombre', '').strip(),
+            'primer_apellido': request.POST.get('primer_apellido', '').strip(),
+            'segundo_apellido': request.POST.get('segundo_apellido', '').strip(),
+            'fecha_nacimiento': request.POST.get('fecha_nacimiento', '').strip(),
+            'fecha_ingreso': request.POST.get('fecha_ingreso', '').strip(),
+            'area': request.POST.get('area', '').strip(),
+            'turno': request.POST.get('turno', '').strip(),
+            'activo': 'true',
+        }
+        payload_empleado = {k: v for k, v in payload_empleado.items() if v}
+
+        try:
+            empleado_creado = api_post('/usuarios/empleado/create/', payload_empleado, token=token)
+        except ApiError as e:
+            errores = _traducir_errores(e.detail if isinstance(e.detail, dict) else {'error': [str(e.detail)]})
+            return render(request, self.template_name, self._contexto(token, request.POST, errores))
+
+        payload_usuario = {
+            'username': request.POST.get('username', '').strip(),
+            'correo': request.POST.get('correo', '').strip(),
+            'contrasena': request.POST.get('contrasena', '').strip(),
+            'empleado': empleado_creado.get('numero'),
+            'rol': request.POST.get('rol', '').strip(),
+            'activo': 'true',
+        }
+
+        try:
+            api_post('/usuarios/create/', payload_usuario, token=token)
+            messages.success(request, 'Empleado y usuario creados correctamente.')
+            return redirect('administrador:usuarios_list')
+        except ApiError as e:
+            try:
+                api_patch(f"/usuarios/empleado/update/{empleado_creado.get('numero')}/", {'activo': 'false'}, token=token)
+            except ApiError:
+                pass
+            errores = _traducir_errores(e.detail if isinstance(e.detail, dict) else {'error': [str(e.detail)]})
+            messages.warning(request, 'El empleado se creó pero el usuario falló; el empleado quedó desactivado automáticamente.')
+            return render(request, self.template_name, self._contexto(token, request.POST, errores))
+
+    def _contexto(self, token, valores, errores):
+        try:
+            areas = api_get('/catalogos/lookup/areas/', token=token)
+            areas = areas.get('results', []) if isinstance(areas, dict) else areas
+        except ApiError:
+            areas = []
+        try:
+            turnos = api_get('/catalogos/lookup/turnos/', token=token)
+            turnos = turnos.get('results', []) if isinstance(turnos, dict) else turnos
+        except ApiError:
+            turnos = []
+        try:
+            roles = api_get('/catalogos/lookup/roles/', token=token)
+            roles = roles.get('results', []) if isinstance(roles, dict) else roles
+        except ApiError:
+            roles = []
+
+        return {'valores': valores, 'errores': errores, 'areas': areas, 'turnos': turnos, 'roles': roles}
