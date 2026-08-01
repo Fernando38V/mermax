@@ -9,6 +9,7 @@ from rest_framework import generics
 
 from .models import Token
 from usuarios import serializers, models
+from usuarios.permissions import EsAdministrador
 
 
 class LoginView(APIView):
@@ -20,8 +21,6 @@ class LoginView(APIView):
         serializer.is_valid(raise_exception=True)
         usuario = serializer.validated_data['usuario']
 
-        # get_or_create: mismo comportamiento que rest_framework.authtoken,
-        # un solo token vivo por usuario (si ya existía, se reutiliza).
         token, _ = Token.objects.get_or_create(usuario=usuario)
 
         return Response({
@@ -47,46 +46,55 @@ class MeView(APIView):
         return Response(serializers.UsuarioPerfilSerializer(request.user).data)
 
 # ======================================================
-# Usuario View Service
+# Usuario View Service — RF-43 a RF-46: exclusivo Administrador
 # ======================================================
 
 class ListUsuarioAPIView(APIView):
+    permission_classes = [EsAdministrador]
+
     def get(self, request):
         queryset = models.Usuario.objects.all()
         data = serializers.ListUsuarioSerializer(queryset, many=True).data
         return Response(data)
 
 class CreateUsuarioAPIView(generics.CreateAPIView):
+    permission_classes = [EsAdministrador]
     queryset = models.Usuario.objects.all()
     serializer_class = serializers.CreateUsuarioSerializer
 
 class DetailUsuarioAPIView(generics.RetrieveAPIView):
+    permission_classes = [EsAdministrador]
     queryset = models.Usuario.objects.all()
     serializer_class = serializers.DetailUsuarioSerializer
 
 class UpdateUsuarioAPIView(generics.UpdateAPIView):
+    permission_classes = [EsAdministrador]
     queryset = models.Usuario.objects.all()
     serializer_class = serializers.UpdateUsuarioSerializer
     
 # ======================================================
-# Empleados View Service
+# Empleados View Service — igualmente exclusivo Administrador
 # ======================================================
 
 class ListEmpleadoAPIView(APIView):
+    permission_classes = [EsAdministrador]
+
     def get(self, request):
         queryset = models.Empleado.objects.all()
         data = serializers.ListEmpleadoSerializer(queryset, many=True).data
         return Response(data)
 
 class CreateEmpleadoAPIView(generics.CreateAPIView):
+    permission_classes = [EsAdministrador]
     queryset = models.Empleado.objects.all()
     serializer_class = serializers.CreateEmpleadoSerializer
 
 class DetailEmpleadoAPIView(generics.RetrieveAPIView):
+    permission_classes = [EsAdministrador]
     queryset = models.Empleado.objects.all()
     serializer_class = serializers.DetailEmpleadoSerializer
 
 class UpdateEmpleadoAPIView(generics.UpdateAPIView):
+    permission_classes = [EsAdministrador]
     queryset = models.Empleado.objects.all()
     serializer_class = serializers.UpdateEmpleadoSerializer
-    

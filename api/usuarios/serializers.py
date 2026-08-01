@@ -21,19 +21,18 @@ class LoginSerializer(serializers.Serializer):
     password = serializers.CharField(write_only=True, trim_whitespace=False)
 
     def validate(self, attrs):
-        identificador = attrs.get('username')
+        identificador = attrs.get('username', '').strip()
         password = attrs.get('password')
 
-        # RF-01: el acceso se permite con nombre de usuario O con correo
         usuario = (
             Usuario.objects
             .select_related('rol', 'empleado')
-            .filter(username=identificador)
+            .filter(username__iexact=identificador)
             .first()
             or
             Usuario.objects
             .select_related('rol', 'empleado')
-            .filter(correo=identificador)
+            .filter(correo__iexact=identificador)
             .first()
         )
 
@@ -46,6 +45,9 @@ class LoginSerializer(serializers.Serializer):
         # RF-46: una cuenta inactiva no debe poder iniciar sesión
         if not usuario.activo:
             raise serializers.ValidationError('Esta cuenta está inactiva. Contacta al administrador.')
+
+        if not usuario.empleado.activo:
+            raise serializers.ValidationError('El empleado asociado a esta cuenta está inactivo. Contacta al administrador.')
 
         attrs['usuario'] = usuario
         return attrs
@@ -149,13 +151,13 @@ class UpdateUsuarioSerializer(serializers.ModelSerializer):
 # ======================================================
 
 CAMPOS_EMPLEADO = [
-    "nombre",
-    "primer_apellido",
-    "segundo_apellido",
+    "nombre", 
+    "primer_apellido", 
+    "segundo_apellido", 
     "fecha_nacimiento",
-    "fecha_ingreso",
-    "area",
-    "turno",
+    "fecha_ingreso", 
+    "area", 
+    "turno", 
     "activo",
 ]
 
@@ -169,7 +171,8 @@ class ListEmpleadoSerializer(serializers.ModelSerializer):
 class CreateEmpleadoSerializer(serializers.ModelSerializer):
     class Meta:
         model = Empleado
-        fields = CAMPOS_EMPLEADO
+        fields = ["numero"] + CAMPOS_EMPLEADO
+        read_only_fields = ["numero"]
 
 class DetailEmpleadoSerializer(serializers.ModelSerializer):
     edad = serializers.IntegerField(read_only=True)   # viene de la propiedad del modelo
