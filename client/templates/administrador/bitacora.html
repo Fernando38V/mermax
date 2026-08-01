@@ -1,0 +1,97 @@
+{% extends "base/layout_app.html" %}
+{% load administrador_extras %}
+
+{% block nav_bitacora %}active{% endblock nav_bitacora %}
+{% block page_title %}Bitácora de Auditoría{% endblock page_title %}
+{% block page_subtitle %}Registro inalterable de acciones críticas del sistema{% endblock page_subtitle %}
+
+{% block app_content %}
+
+{% if messages %}
+    {% for message in messages %}
+    <div class="alert alert-{{ message.tags }}">{{ message }}</div>
+    {% endfor %}
+{% endif %}
+
+<p class="mx-text-muted">Total de registros: {{ total }}</p>
+
+<form method="get">
+    <div class="row g-3 mb-4">
+        <div class="col-md-3">
+            <label class="form-label">Módulo</label>
+            <select name="modulo" class="form-select">
+                <option value="">Todos</option>
+                {% for m in modulos %}
+                <option value="{{ m.modulo }}" {% if filtros.modulo == m.modulo %}selected{% endif %}>
+                    {{ m.modulo|espaciar }} ({{ m.n }})
+                </option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="col-md-3">
+            <label class="form-label">Acción</label>
+            <select name="accion" class="form-select">
+                <option value="">Todas</option>
+                {% for a in acciones %}
+                <option value="{{ a.accion }}" {% if filtros.accion == a.accion %}selected{% endif %}>
+                    {{ a.accion|traducir_accion }} ({{ a.n }})
+                </option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="col-md-2">
+            <label class="form-label">Desde</label>
+            <input type="date" name="desde" class="form-control" value="{{ filtros.desde|default:'' }}">
+        </div>
+        <div class="col-md-2">
+            <label class="form-label">Hasta</label>
+            <input type="date" name="hasta" class="form-control" value="{{ filtros.hasta|default:'' }}">
+        </div>
+        <div class="col-auto d-flex align-items-end">
+            <button type="submit" class="btn btn-secondary">
+                <span class="material-symbols-outlined">filter_alt</span> Filtrar
+            </button>
+        </div>
+    </div>
+</form>
+
+<table class="table">
+    <thead>
+        <tr>
+            <th class="text-center">Fecha y hora</th>
+            <th class="text-center">Usuario</th>
+            <th class="text-center">Rol</th>
+            <th class="text-center">Módulo</th>
+            <th class="text-center">Acción</th>
+            <th>Valor anterior</th>
+            <th>Valor nuevo</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for r in registros %}
+        <tr>
+            <td class="text-center align-middle">{{ r.fecha_hora|fecha_legible }}</td>
+            <td class="text-center align-middle">{{ r.usuario_nombre }}</td>
+            <td class="text-center align-middle">{{ r.rol }}</td>
+            <td class="text-center align-middle">{{ r.modulo|espaciar }}</td>
+            <td class="text-center align-middle">{{ r.accion_nombre }}</td>
+            <td>{{ r.valor_anterior|formatear_json }}</td>
+            <td>{{ r.valor_nuevo|formatear_json }}</td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="7" class="text-center mx-text-muted py-4">No hay registros.</td></tr>
+        {% endfor %}
+    </tbody>
+</table>
+
+<div class="d-flex justify-content-center gap-2">
+    {% if hay_anterior %}
+    <a class="btn btn-secondary btn-sm" href="?{{ querystring_filtros }}{% if querystring_filtros %}&{% endif %}pagina={{ pagina_actual|add:'-1' }}">Anterior</a>
+    {% endif %}
+    <span class="align-self-center">Página {{ pagina_actual }}</span>
+    {% if hay_siguiente %}
+    <a class="btn btn-secondary btn-sm" href="?{{ querystring_filtros }}{% if querystring_filtros %}&{% endif %}pagina={{ pagina_actual|add:'1' }}">Siguiente</a>
+    {% endif %}
+</div>
+
+{% endblock app_content %}
