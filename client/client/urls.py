@@ -24,5 +24,9 @@ urlpatterns = [
     path('recepciones/', include('recepciones.urls')),  
     path('inspecciones/', include('inspecciones.urls')),
     path('administrador/', include('administrador.urls')),
+<<<<<<< Updated upstream
     path('trazabilidad/', include('trazabilidad.urls')),
+=======
+    path('reportes/', include('reportes.urls')),
+>>>>>>> Stashed changes
 ]
