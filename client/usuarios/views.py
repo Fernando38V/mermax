@@ -20,8 +20,7 @@ def login_view(request):
         try:
             data = api_post('/usuarios/login/', {'username': username, 'password': password})
         except ApiError as e:
-            mensaje = 'Usuario o contraseña incorrectos' if e.status_code == 400 \
-                else 'No se pudo conectar con el servidor. Intenta de nuevo.'
+            mensaje = e.detail.get('non_field_errors', ['Usuario o contraseña incorrectos'])[0] if isinstance(e.detail, dict) else str(e.detail)
             messages.error(request, mensaje)
             return render(request, 'usuarios/login.html')
 
