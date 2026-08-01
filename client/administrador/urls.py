@@ -20,4 +20,6 @@ urlpatterns = [
     path('empleados/editar/<int:pk>/', views.FormEmpleado.as_view(), name='empleado_edit'),
 
     path('personal/nuevo/', views.AltaPersonal.as_view(), name='personal_create'),
+
+    path('bitacora/', views.Bitacora.as_view(), name='bitacora'),
 ]

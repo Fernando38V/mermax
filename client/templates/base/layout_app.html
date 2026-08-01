@@ -64,7 +64,7 @@
             {% endif %}
 
             {% if usuario.rol == 'ADMIN' %}
-            <a href="" class="mx-sidebar-link {% block nav_bitacora %}{% endblock nav_bitacora %}">
+            <a href="{% url 'administrador:bitacora' %}" class="mx-sidebar-link {% block nav_bitacora %}{% endblock nav_bitacora %}">
                 <span class="material-symbols-outlined">description</span> Bitácora
             </a>
 
