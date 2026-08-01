@@ -542,3 +542,53 @@ class AltaPersonal(generic.View):
             roles = []
 
         return {'valores': valores, 'errores': errores, 'areas': areas, 'turnos': turnos, 'roles': roles}
+
+
+@method_decorator(login_required_api, name='dispatch')
+class Bitacora(generic.View):
+    template_name = 'administrador/bitacora.html'
+
+    def get(self, request):
+        token = request.session.get('api_token')
+
+        params = {}
+        for campo in ('modulo', 'accion', 'desde', 'hasta'):
+            valor = request.GET.get(campo, '').strip()
+            if valor:
+                params[campo] = valor
+        pagina = request.GET.get('pagina', '1')
+        params['pagina'] = pagina
+
+        try:
+            respuesta = api_get('/auditoria/bitacora/', token=token, params=params)
+        except ApiError:
+            respuesta = {'results': [], 'count': 0}
+
+        registros = respuesta.get('results', [])
+        total = respuesta.get('count', 0)
+
+        try:
+            resumen = api_get('/auditoria/resumen/', token=token, params=params)
+        except ApiError:
+            resumen = {'por_modulo': [], 'por_accion': []}
+
+        try:
+            pagina_actual = int(pagina)
+        except ValueError:
+            pagina_actual = 1
+
+        filtros_sin_pagina = request.GET.copy()
+        filtros_sin_pagina.pop('pagina', None)
+        querystring_filtros = filtros_sin_pagina.urlencode()
+
+        return render(request, self.template_name, {
+            'registros': registros,
+            'total': total,
+            'modulos': resumen.get('por_modulo', []),
+            'acciones': resumen.get('por_accion', []),
+            'filtros': request.GET,
+            'pagina_actual': pagina_actual,
+            'hay_siguiente': bool(respuesta.get('next')),
+            'hay_anterior': bool(respuesta.get('previous')),
+            'querystring_filtros': querystring_filtros,
+        })
