@@ -1,0 +1,124 @@
+{% extends "base/layout_app.html" %}
+
+{% block nav_trazabilidad %}active{% endblock nav_trazabilidad %}
+{% block page_title %}Trazabilidad{% endblock page_title %}
+{% block page_subtitle %}Consulta del ciclo completo de un lote de material{% endblock page_subtitle %}
+
+{% block app_content %}
+
+<form method="get" class="mb-4" id="form-consulta">
+    <div class="row g-3 align-items-end" style="max-width: 900px;">
+        <div class="col-md-5">
+            <label class="form-label">Componente</label>
+            <select name="componente" id="select-componente" class="form-select">
+                <option value="">-- Selecciona un componente --</option>
+                {% for c in componentes %}
+                <option value="{{ c.codigo }}" {% if componente_seleccionado == c.codigo %}selected{% endif %}>{{ c.nombre }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="col-md-5">
+            <label class="form-label">Lote</label>
+            <select name="lote" id="select-lote" class="form-select" required>
+                <option value="">-- Primero selecciona un componente --</option>
+            </select>
+        </div>
+        <div class="col-md-2">
+            <button type="submit" class="btn mx-btn-primary w-100">
+                <span class="material-symbols-outlined">search</span> Buscar
+            </button>
+        </div>
+    </div>
+</form>
+
+{% if error %}
+<div class="alert alert-danger">{{ error }}</div>
+{% endif %}
+
+{% if resultado %}
+{% with r=resultado.resumen %}
+<div class="card mb-4">
+    <div class="card-header bg-white fw-bold">Resumen del lote {{ r.lote }}</div>
+    <div class="card-body">
+        <div class="row g-3">
+            <div class="col-md-4"><strong>Lote proveedor:</strong> {{ r.numero_lote_proveedor|default:"—" }}</div>
+            <div class="col-md-4"><strong>Componente:</strong> {{ r.componente_nombre }}</div>
+            <div class="col-md-4"><strong>Proveedor:</strong> {{ r.proveedor }}</div>
+            <div class="col-md-4"><strong>Fecha de recepción:</strong> {{ r.fecha_recepcion }}</div>
+            <div class="col-md-4"><strong>Cantidad recibida:</strong> {{ r.cantidad_recibida }}</div>
+            <div class="col-md-4"><strong>Cantidad mermada:</strong> {{ r.cantidad_mermada }}</div>
+            <div class="col-md-4"><strong>Cantidad aprovechada:</strong> {{ r.cantidad_aprovechada }}</div>
+            <div class="col-md-4">
+                <strong>% de merma:</strong>
+                <span class="badge {% if r.porcentaje_merma >= 5 %}bg-danger{% elif r.porcentaje_merma >= 2 %}bg-warning text-dark{% else %}bg-success{% endif %}">
+                    {{ r.porcentaje_merma }}%
+                </span>
+            </div>
+            <div class="col-md-4"><strong>Costo del desperdicio:</strong> ${{ r.costo_desperdicio }}</div>
+            <div class="col-md-4"><strong>Eventos de merma:</strong> {{ resultado.eventos_merma }}</div>
+        </div>
+    </div>
+</div>
+{% endwith %}
+
+<div class="card">
+    <div class="card-header bg-white fw-bold">Disposición final aplicada</div>
+    <div class="card-body p-0">
+        <table class="table mb-0">
+            <thead>
+                <tr><th>Dictamen</th><th>Eventos</th><th>Cantidad</th></tr>
+            </thead>
+            <tbody>
+                {% for d in resultado.disposicion_final %}
+                <tr>
+                    <td>{{ d.dictamen }}</td>
+                    <td>{{ d.eventos }}</td>
+                    <td>{{ d.cantidad }}</td>
+                </tr>
+                {% empty %}
+                <tr><td colspan="3" class="text-center mx-text-muted py-3">Aún no se ha aplicado ninguna disposición final a este lote.</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endif %}
+
+{% endblock app_content %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const selectComponente = document.getElementById('select-componente');
+    const selectLote = document.getElementById('select-lote');
+    const loteInicial = "{{ numero_lote|default:'' }}";
+
+    function cargarLotes(componente, seleccionarLote) {
+        if (!componente) {
+            selectLote.innerHTML = '<option value="">-- Primero selecciona un componente --</option>';
+            return;
+        }
+        fetch('/mermas/lotes-por-componente/?componente=' + encodeURIComponent(componente))
+            .then(r => r.json())
+            .then(datos => {
+                selectLote.innerHTML = '<option value="">-- Selecciona un lote --</option>';
+                datos.forEach(l => {
+                    const opt = document.createElement('option');
+                    opt.value = l.num;
+                    opt.textContent = 'Lote ' + l.num + ' — ' + (l.numero_lote_prov || 's/n') + ' (' + l.fecha + ')';
+                    if (String(l.num) === String(seleccionarLote)) opt.selected = true;
+                    selectLote.appendChild(opt);
+                });
+            });
+    }
+
+    selectComponente.addEventListener('change', function () {
+        cargarLotes(this.value, '');
+    });
+
+    if (selectComponente.value) {
+        cargarLotes(selectComponente.value, loteInicial);
+    }
+});
+</script>
+{% endblock extra_js %}
