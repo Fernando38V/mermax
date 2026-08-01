@@ -42,7 +42,8 @@ INSTALLED_APPS = [
     'recepciones',
     'inspecciones',
     'reportes',
-    'administrador'
+    'administrador',
+    'trazabilidad',
 ]
 
 MIDDLEWARE = [
