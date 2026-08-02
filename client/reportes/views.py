@@ -4,6 +4,43 @@ from django.shortcuts import render, redirect
 from django.contrib import messages
 from usuarios.wrappers import ApiError, api_post, api_get
 
+def dashboard_kpis(request):
+    """
+    RF-12: Muestra el Dashboard interactivo consumiendo la API de reportes.
+    Soporta filtrado opcional por fechas 'desde' y 'hasta'.
+    """
+    token = request.session.get('api_token')
+    desde = request.GET.get('desde', '')
+    hasta = request.GET.get('hasta', '')
+    
+    # Construcción dinámica de parámetros para la API
+    params = []
+    if desde:
+        params.append(f"desde={desde}")
+    if hasta:
+        params.append(f"hasta={hasta}")
+        
+    endpoint = '/reportes/dashboard/'
+    if params:
+        endpoint += '?' + '&'.join(params)
+
+    try:
+        respuesta = api_get(endpoint, token=token)
+        kpi_data = respuesta if isinstance(respuesta, dict) else {}
+    except Exception:
+        kpi_data = {
+            'resumen': {'eventos': 0, 'piezas_mermadas': 0, 'impacto_economico': 0, 'lineas_en_alerta': 0},
+            'por_linea': [],
+            'causas_raiz': []
+        }
+        messages.error(request, "Error de comunicación con la API de reportes para el Dashboard.")
+
+    return render(request, 'reportes/dashboard_kpis.html', {
+        'kpi_data': kpi_data,
+        'desde_actual': desde,
+        'hasta_actual': hasta,
+    })
+
 def lista_alertas(request):
     token = request.session.get('api_token')
     estado = request.GET.get('estado', 'ACTIVA')
@@ -101,3 +138,37 @@ def atender_alerta(request, num):
             messages.error(request, "Error de conexión al atender la alerta.")
             
     return redirect('reportes:alertas_umbral')
+
+def configurar_umbrales_view(request):
+    token = request.session.get('api_token')
+
+    if request.method == 'POST':
+        linea_id = request.POST.get('linea_produccion')
+        valor = request.POST.get('valor')
+        indicador = request.POST.get('indicador_kpi', 'PCT_SCRAP')
+
+        payload = {
+            'linea_produccion': linea_id,
+            'indicador_kpi': indicador,
+            'valor': valor,
+            'activo': True
+        }
+
+        try:
+            res = api_post('/reportes/umbrales/', payload, token=token)
+            if 'num' in res or 'valor' in res:
+                messages.success(request, "Umbral actualizado correctamente.")
+            else:
+                messages.error(request, "No se pudo actualizar el umbral.")
+        except Exception:
+            messages.error(request, "Error de comunicación con el servidor API.")
+
+        return redirect('reportes:configurar_umbrales')
+
+    umbrales = api_get('/reportes/umbrales/', token=token)
+    lineas = api_get('/catalogos/lineas/', token=token)
+
+    return render(request, 'reportes/umbrales.html', {
+        'umbrales': umbrales if isinstance(umbrales, list) else [],
+        'lineas': lineas if isinstance(lineas, list) else [],
+    })

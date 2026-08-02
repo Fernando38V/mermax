@@ -1,0 +1,113 @@
+{% extends 'base/layout_app.html' %}
+
+{% block title %}Configuración de Umbrales - Mermax{% endblock title %}
+{% block nav_alertas %}active{% endblock nav_alertas %}
+
+{% block page_title %}Configuración de Umbrales de Scrap (RF-15){% endblock page_title %}
+{% block page_subtitle %}Establece los límites tolerables de mermas por línea de producción{% endblock page_subtitle %}
+
+{% block app_content %}
+<div class="container-fluid p-0">
+
+    <div class="mb-3">
+        <a href="{% url 'reportes:alertas_umbral' %}" class="btn btn-sm btn-link text-decoration-none p-0">
+            ← Volver al panel de Alertas
+        </a>
+    </div>
+
+    <div class="row g-4">
+        <!-- FORMULARIO DE EDICIÓN / CREACIÓN -->
+        <div class="col-12 col-md-4">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-white py-3">
+                    <h6 class="fw-bold mb-0">⚙️ Establecer Umbral</h6>
+                </div>
+                <div class="card-body">
+                    <form method="POST">
+                        {% csrf_token %}
+                        <div class="mb-3">
+                            <label class="form-label small fw-bold">Línea de Producción</label>
+                            <select name="linea_produccion" class="form-select" required>
+                                <option value="">Seleccione una línea...</option>
+                                {% for l in lineas %}
+                                    <option value="{{ l.num }}">{{ l.nombre }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label small fw-bold">Indicador KPI</label>
+                            <select name="indicador_kpi" class="form-select" required>
+                                <option value="PCT_SCRAP">% Scrap Máximo Permitido</option>
+                                <option value="COSTO_MERMA">Costo Máximo en Merma (USD)</option>
+                            </select>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label small fw-bold">Valor Límite (Umbral)</label>
+                            <input type="number" step="0.01" name="valor" class="form-control" placeholder="Ej. 3.50" required>
+                            <div class="form-text small">
+                                Al rebasar este límite, el sistema disparará automáticamente una alerta.
+                            </div>
+                        </div>
+
+                        <button type="submit" class="btn btn-primary w-100">Guardar Umbral</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- TABLA DE UMBRALES CONFIGURADOS -->
+        <div class="col-12 col-md-8">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-white py-3">
+                    <h6 class="fw-bold mb-0">📋 Umbrales Vigentes</h6>
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle mb-0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Línea</th>
+                                    <th>Indicador</th>
+                                    <th>Valor Límite</th>
+                                    <th>Estado</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for u in umbrales %}
+                                <tr>
+                                    <td class="fw-bold">{{ u.linea_produccion_nombre|default:u.linea_produccion }}</td>
+                                    <td><span class="badge bg-secondary">{{ u.indicador_kpi }}</span></td>
+                                    <td class="fw-bold text-danger">
+                                        {% if u.indicador_kpi == 'PCT_SCRAP' %}
+                                            {{ u.valor }}%
+                                        {% else %}
+                                            ${{ u.valor }} USD
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if u.activo %}
+                                            <span class="badge bg-success">Activo</span>
+                                        {% else %}
+                                            <span class="badge bg-secondary">Inactivo</span>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                {% empty %}
+                                <tr>
+                                    <td colspan="4" class="text-center py-4 text-muted">
+                                        No hay umbrales configurados. Utiliza el formulario para crear el primero.
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+</div>
+{% endblock %}

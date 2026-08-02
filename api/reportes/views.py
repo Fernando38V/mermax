@@ -15,9 +15,9 @@ mantenerlos sincronizados con cada merma nueva, y el RF-12 pide que el panel
 sea en tiempo real.
 """
 from datetime import date, datetime
-
+from django.db import connection
 from django.db.models import Count, F, Sum
-from django.http import HttpResponse
+from django.http import HttpResponse, JsonResponse
 from rest_framework import permissions, status
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -132,8 +132,8 @@ class DashboardView(APIView):
             desde, hasta,
         )
         for to in qs_prod:
-            linea = to.orden_produccion.estacion_trabajo.linea_produccion_id
-            produccion[linea] = produccion.get(linea, 0) + (to.cantidad_producida or 0)
+            linea_id = to.orden_produccion.estacion_trabajo.linea_produccion_id
+            produccion[linea_id] = produccion.get(linea_id, 0) + (to.cantidad_producida or 0)
 
         # Merma: REGISTRO_MERMA -> ESTACION -> LINEA
         merma_piezas, merma_costo = {}, {}
@@ -145,9 +145,9 @@ class DashboardView(APIView):
             desde, hasta,
         )
         for m in qs_merma:
-            linea = m.estacion_trabajo.linea_produccion_id
-            merma_piezas[linea] = merma_piezas.get(linea, 0) + float(m.cantidad)
-            merma_costo[linea] = merma_costo.get(linea, 0) + float(m.costo_total or 0)
+            linea_id = m.estacion_trabajo.linea_produccion_id
+            merma_piezas[linea_id] = merma_piezas.get(linea_id, 0) + float(m.cantidad)
+            merma_costo[linea_id] = merma_costo.get(linea_id, 0) + float(m.costo_total or 0)
 
         # Umbrales configurados de porcentaje de scrap
         umbrales = {
@@ -157,10 +157,22 @@ class DashboardView(APIView):
 
         filas = []
         for linea in LineaProduccion.objects.order_by('numero_linea'):
-            producidas = produccion.get(linea.num, 0)
-            mermadas = merma_piezas.get(linea.num, 0)
-            pct = (mermadas / producidas * 100) if producidas else 0.0
-            umbral = umbrales.get(linea.num)
+            # Usar la clave primaria de la línea para buscar en los diccionarios
+            linea_key = linea.pk
+
+            producidas = produccion.get(linea_key, 0)
+            mermadas = merma_piezas.get(linea_key, 0)
+
+            # --- CORRECCIÓN DE LÓGICA SCRAP ---
+            if producidas > 0:
+                pct = (mermadas / producidas) * 100
+            elif mermadas > 0:
+                # Si hay mermas pero 0 unidades producidas, la merma es del 100% (Crítico)
+                pct = 100.0
+            else:
+                pct = 0.0
+
+            umbral = umbrales.get(linea_key)
 
             filas.append({
                 'linea': linea.num,
@@ -168,7 +180,7 @@ class DashboardView(APIView):
                 'piezas_producidas': producidas,
                 'piezas_mermadas': round(mermadas, 2),
                 'porcentaje_scrap': round(pct, 2),
-                'costo_scrap': round(merma_costo.get(linea.num, 0), 2),
+                'costo_scrap': round(merma_costo.get(linea_key, 0), 2),
                 'umbral': umbral,
                 'semaforo': self._semaforo(pct, umbral),
             })
@@ -390,14 +402,44 @@ class AtenderAlertaView(APIView):
 
 
 class UmbralListView(APIView):
-    """GET /api/reportes/umbrales/ — para que el admin vea qué hay configurado."""
-    permission_classes = [permissions.IsAuthenticated]
+    """
+    GET /api/reportes/umbrales/ — Muestra los umbrales configurados.
+    POST /api/reportes/umbrales/ — Crea o actualiza (Upsert) el umbral de una línea.
+    """
+    permission_classes = [SoloCalidadOAdmin]
 
     def get(self, request):
         qs = (UmbralAlerta.objects
               .select_related('linea_produccion', 'indicador_kpi')
               .order_by('linea_produccion__numero_linea'))
         return Response(s.UmbralAlertaSerializer(qs, many=True).data)
+
+    def post(self, request):
+        """
+        RF-13 / RF-15: Configura el porcentaje o cantidad máxima permitida.
+        Body: { "linea_produccion": 1, "indicador_kpi": "PCT_SCRAP", "valor": 5.0, "activo": true }
+        """
+        linea_id = request.data.get('linea_produccion')
+        indicador_id = request.data.get('indicador_kpi', 'PCT_SCRAP')
+        valor = request.data.get('valor')
+        activo = request.data.get('activo', True)
+
+        if not linea_id or valor is None:
+            return Response(
+                {'detail': 'Se requiere la línea de producción y el valor del umbral.'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        umbral, created = UmbralAlerta.objects.update_or_create(
+            linea_produccion_id=linea_id,
+            indicador_kpi_id=indicador_id,
+            defaults={'valor': valor, 'activo': activo}
+        )
+
+        return Response(
+            s.UmbralAlertaSerializer(umbral).data,
+            status=status.HTTP_201_CREATED if created else status.HTTP_200_OK
+        )
 
 
 # ======================================================

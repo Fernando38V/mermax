@@ -58,6 +58,12 @@
             </a>
 
             {% if usuario.rol == 'CALID' %}
+            <a href="{% url 'reportes:dashboard_kpis' %}" class="mx-sidebar-link {% block nav_kpis %}{% endblock nav_kpis %}">
+                <span class="material-symbols-outlined">analytics</span> KPIs Scrap
+            </a>
+            {% endif %}
+            
+            {% if usuario.rol == 'CALID' %}
             <a href="{% url 'reportes:alertas_umbral' %}" class="mx-sidebar-link {% block nav_alertas %}{% endblock nav_alertas %}">
                 <span class="material-symbols-outlined">warning</span> Alertas
             </a>

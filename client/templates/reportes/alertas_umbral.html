@@ -39,8 +39,8 @@
                 <small class="text-muted">Total: {{ alertas|length }} registro(s)</small>
             </div>
 
-            <!-- Botón para evaluar KPIs manualmente -->
-            <div>
+            <!-- Botones de Acción  -->
+            <div class="d-flex align-items-center gap-2">
                 <form method="POST" action="{% url 'reportes:evaluar_alertas' %}">
                     {% csrf_token %}
                     <button type="submit" class="btn btn-outline-dark btn-sm d-inline-flex align-items-center gap-1 shadow-sm">
@@ -48,6 +48,13 @@
                         <span>Evaluar KPIs</span>
                     </button>
                 </form>
+
+                {% if usuario.rol == 'CALID' or usuario.rol == 'ADMIN' %}
+                <a href="{% url 'reportes:configurar_umbrales' %}" class="btn btn-outline-primary btn-sm d-inline-flex align-items-center gap-1 shadow-sm">
+                    <span class="material-symbols-outlined fs-6">settings</span>
+                    <span>Configurar Umbrales</span>
+                </a>
+                {% endif %}
             </div>
 
             <!-- Filtros por Estado -->
