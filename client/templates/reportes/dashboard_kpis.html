@@ -1,0 +1,215 @@
+{% extends "base/layout_app.html" %}
+{% load static %}
+
+{% block title %}KPIs Scrap - Mermax{% endblock title %}
+
+{% block nav_kpis %}active{% endblock nav_kpis %}
+
+{% block page_title %}Indicadores de Scrap {% endblock page_title %}
+{% block page_subtitle %}Monitoreo de mermas, semáforo de líneas e impacto económico{% endblock page_subtitle %}
+
+{% block app_content %}
+<div class="container-fluid p-0">
+
+    <!-- FILTRO DE FECHAS -->
+    <div class="card border-0 shadow-sm mb-4">
+        <div class="card-body">
+            <form method="GET" class="row g-3 align-items-end">
+                <div class="col-auto">
+                    <label class="form-label small fw-bold mb-1">Desde</label>
+                    <input type="date" name="desde" class="form-control form-control-sm" value="{{ desde_actual }}">
+                </div>
+                <div class="col-auto">
+                    <label class="form-label small fw-bold mb-1">Hasta</label>
+                    <input type="date" name="hasta" class="form-control form-control-sm" value="{{ hasta_actual }}">
+                </div>
+                <div class="col-auto">
+                    <button type="submit" class="btn btn-sm btn-primary">Filtrar</button>
+                    <a href="{% url 'reportes:dashboard_kpis' %}" class="btn btn-sm btn-outline-secondary">Limpiar</a>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- TARJETAS RESUMEN -->
+    <div class="row g-3 mb-4">
+        <div class="col-12 col-sm-6 col-xl-3">
+            <div class="card border-0 shadow-sm border-start border-danger border-4 h-100">
+                <div class="card-body">
+                    <span class="text-muted fw-bold text-uppercase small">Impacto Económico</span>
+                    <h3 class="text-danger fw-bold my-2">${{ kpi_data.resumen.impacto_economico|floatformat:2 }} USD</h3>
+                    <p class="text-muted small mb-0">Costo total por merma</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-12 col-sm-6 col-xl-3">
+            <div class="card border-0 shadow-sm border-start border-primary border-4 h-100">
+                <div class="card-body">
+                    <span class="text-muted fw-bold text-uppercase small">Piezas Mermadas</span>
+                    <h3 class="text-primary fw-bold my-2">{{ kpi_data.resumen.piezas_mermadas|floatformat:1 }}</h3>
+                    <p class="text-muted small mb-0">Unidades perdidas</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-12 col-sm-6 col-xl-3">
+            <div class="card border-0 shadow-sm border-start border-info border-4 h-100">
+                <div class="card-body">
+                    <span class="text-muted fw-bold text-uppercase small">Eventos Registrados</span>
+                    <h3 class="text-info fw-bold my-2">{{ kpi_data.resumen.eventos }}</h3>
+                    <p class="text-muted small mb-0">Folios generados</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-12 col-sm-6 col-xl-3">
+            <div class="card border-0 shadow-sm border-start border-warning border-4 h-100">
+                <div class="card-body">
+                    <span class="text-muted fw-bold text-uppercase small">Líneas en Alerta</span>
+                    <h3 class="text-warning fw-bold my-2">{{ kpi_data.resumen.lineas_en_alerta }}</h3>
+                    <p class="text-muted small mb-0">Semáforo en rojo</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- SEMÁFORO VISUAL POR LÍNEA -->
+    <div class="card border-0 shadow-sm mb-4">
+        <div class="card-header bg-white py-3">
+            <h6 class="fw-bold mb-0">🚦 Estado de Scrap por Línea de Producción </h6>
+        </div>
+        <div class="card-body">
+            <div class="row g-3">
+                {% for item in kpi_data.por_linea %}
+                <div class="col-12 col-md-6 col-lg-4">
+                    <div class="p-3 border rounded-3 bg-light">
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <h6 class="fw-bold mb-0">{{ item.linea_nombre }}</h6>
+                            {% if item.semaforo == 'rojo' %}
+                                <span class="badge bg-danger">CRÍTICO</span>
+                            {% elif item.semaforo == 'amarillo' %}
+                                <span class="badge bg-warning text-dark">ALERTA</span>
+                            {% elif item.semaforo == 'verde' %}
+                                <span class="badge bg-success">ÓPTIMO</span>
+                            {% else %}
+                                <span class="badge bg-secondary">SIN UMBRAL</span>
+                            {% endif %}
+                        </div>
+                        <div class="d-flex justify-content-between small text-muted">
+                            <span>Scrap: <strong>{{ item.porcentaje_scrap }}%</strong></span>
+                            <span>Umbral: <strong>{% if item.umbral %}{{ item.umbral }}%{% else %}N/A{% endif %}</strong></span>
+                        </div>
+                    </div>
+                </div>
+                {% empty %}
+                <div class="col-12 text-center text-muted py-3">No hay registros para este período.</div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+
+    <!-- GRÁFICOS INTERACTIVOS -->
+    <div class="row g-4">
+        <div class="col-12 col-lg-7">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-header bg-white py-3">
+                    <h6 class="fw-bold mb-0">📊 % Scrap Real vs Umbral por Línea</h6>
+                </div>
+                <div class="card-body">
+                    <div style="height: 300px; position: relative;">
+                        <canvas id="chartScrapLineas"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-12 col-lg-5">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-header bg-white py-3">
+                    <h6 class="fw-bold mb-0">🔍 Ranking Causas Raíz</h6>
+                </div>
+                <div class="card-body">
+                    <div style="height: 300px; position: relative;">
+                        <canvas id="chartCausasRaiz"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<!-- Chart.js JS -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+{{ kpi_data|json_script:"kpi-payload" }}
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const rawElement = document.getElementById('kpi-payload');
+    if (!rawElement) return;
+
+    const data = JSON.parse(rawElement.textContent);
+    const lineas = data.por_linea || [];
+    const causas = data.causas_raiz || [];
+
+    // Chart Barras
+    const ctxLineas = document.getElementById('chartScrapLineas');
+    if (ctxLineas && lineas.length > 0) {
+        new Chart(ctxLineas, {
+            type: 'bar',
+            data: {
+                labels: lineas.map(l => l.linea_nombre),
+                datasets: [
+                    {
+                        label: '% Scrap Real',
+                        data: lineas.map(l => l.porcentaje_scrap),
+                        backgroundColor: lineas.map(l => {
+                            if (l.semaforo === 'rojo') return '#dc3545';
+                            if (l.semaforo === 'amarillo') return '#ffc107';
+                            if (l.semaforo === 'verde') return '#198754';
+                            return '#6c757d';
+                        }),
+                        borderRadius: 4
+                    },
+                    {
+                        label: 'Umbral (%)',
+                        data: lineas.map(l => l.umbral || 0),
+                        type: 'line',
+                        borderColor: '#212529',
+                        borderDash: [5, 5],
+                        borderWidth: 2,
+                        fill: false
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: { y: { beginAtZero: true, ticks: { callback: v => v + '%' } } }
+            }
+        });
+    }
+
+    // Chart Dona
+    const ctxCausas = document.getElementById('chartCausasRaiz');
+    if (ctxCausas && causas.length > 0) {
+        new Chart(ctxCausas, {
+            type: 'doughnut',
+            data: {
+                labels: causas.map(c => c.nombre),
+                datasets: [{
+                    data: causas.map(c => c.eventos),
+                    backgroundColor: ['#dc3545', '#fd7e14', '#ffc107', '#0d6efd', '#20c997', '#6c757d']
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: { legend: { position: 'bottom' } }
+            }
+        });
+    }
+});
+</script>
+{% endblock %}
