@@ -7,22 +7,32 @@
 
 {% block app_content %}
 
-    <div class="mb-4 d-flex justify-content-end gap-2">
+    <div class="mb-4 d-flex justify-content-end align-items-center gap-2">
         {% if filtros_activos %}
             <a href="{% url 'mermas:list_mermas' %}" class="btn btn-secondary">
                 <span class="material-symbols-outlined">clear</span>
                 Limpiar filtros
             </a>
         {% endif %}
-        
+
+        <div class="mx-view-toggle btn-group" role="group" aria-label="Cambiar vista" data-list-target="mermas">
+            <button type="button" class="btn btn-secondary" data-view-btn="table">
+                <span class="material-symbols-outlined">table_rows</span>
+            </button>
+            <button type="button" class="btn btn-secondary" data-view-btn="cards">
+                <span class="material-symbols-outlined">grid_view</span>
+            </button>
+        </div>
+
         <a class="btn mx-btn-primary" href="{% url 'mermas:create_mermas' %}">
             <span class="material-symbols-outlined">add</span>
             Registrar Merma
         </a>
     </div>
+
     <form method="get">
-        <div class="row g-3 mb-4">
-            <div class="col">
+        <div class="row g-3 mb-3">
+            <div class="col-12 col-md-6 col-lg">
                 <label class="form-label">Linea de producción</label>
                 <select class="form-select" name="linea">
                     <option value="">Todas</option>
@@ -31,7 +41,7 @@
                     {% endfor %}
                 </select>
             </div>
-            <div class="col">
+            <div class="col-12 col-md-6 col-lg">
                 <label class="form-label">Tipo de merma</label>
                 <select class="form-select" name="tipo_merma">
                     <option value="">Todos</option>
@@ -40,7 +50,7 @@
                     {% endfor %}
                 </select>
             </div>
-            <div class="col">
+            <div class="col-12 col-md-6 col-lg">
                 <label class="form-label">Componente</label>
                 <select class="form-select" name="componente">
                     <option value="">Todos</option>
@@ -49,7 +59,7 @@
                     {% endfor %}
                 </select>
             </div>
-            <div class="col">
+            <div class="col-12 col-md-6 col-lg">
                 <label class="form-label">Estado</label>
                 <select class="form-select" name="estado">
                     <option value="">Todos</option>
@@ -58,61 +68,100 @@
                     {% endfor %}
                 </select>
             </div>
-            <div class="col">
+        </div>
+
+        <div class="row g-3 mb-4">
+            <div class="col-12 col-md-3">
                 <label class="form-label">Fecha</label>
                 <input type="date" class="form-control" name="fecha" value="{{ filtros.fecha|default:'' }}">
             </div>
 
-            <div class="col-auto d-flex align-items-end">
-                <button type="submit" class="btn btn-secondary d-inline-flex align-items-center gap-1">
+            <div class="col-12 col-md-auto d-flex align-items-end">
+                <button type="submit" class="btn btn-secondary d-inline-flex align-items-center gap-1 w-100">
                     <span class="material-symbols-outlined">filter_alt</span>
                     Filtrar
                 </button>
             </div>
-
         </div>
     </form>
 
-    <table class="table">
-        <thead>
-            <th>Folio</th>
-            <th>Fecha</th>
-            <th>Cantidad</th>
-            <th>Componente</th>
-            <th>Linea</th>
-            <th>Estacion</th>
-            <th>Tipo</th>
-            <th>Causa Raiz</th>
-            <th>Estado</th>
-            <th>Acciones</th>
-        </thead>
-        <tbody>
-            {% for merma in mermas %}
-            <tr>
-                <td>{{ merma.folio }}</td>
-                <td>{{ merma.fecha }}</td>
-                <td>{{ merma.cantidad|floatformat:0 }} {{ merma.unidad }}s</td>
-                <td>{{ merma.componente_nombre }}</td>
-                <td>{{ merma.linea_produccion_nombre }}</td>
-                <td>{{ merma.estacion_trabajo_nombre }}</td>
-                <td>{{ merma.tipo_merma_nombre }}</td>
-                <td>{{ merma.causa_raiz_nombre }}</td>
-                <td>{{ merma.edo_merma_nombre }}</td>
-                <td>
-                    <a href="{% url 'mermas:detail_mermas' merma.folio %}" class="btn btn-secondary text-nowrap">
-                        <span>Ver Detalles</span>
-                    </a>
-                </td>
-            </tr>
-            {% empty %}
-            <tr>
-                <td colspan="10" class="text-center mx-text-muted py-4">
-                    No hay mermas registradas.
-                </td>
-            </tr>
-            {% endfor %}
-        </tbody>
-    </table>
+    <div class="mx-list-container" data-view="table" data-list-id="mermas">
+
+        <div class="mx-list-table table-responsive">
+            <table class="table">
+                <thead>
+                    <th>Folio</th>
+                    <th>Fecha</th>
+                    <th>Cantidad</th>
+                    <th>Componente</th>
+                    <th>Linea</th>
+                    <th>Estacion</th>
+                    <th>Tipo</th>
+                    <th>Causa Raiz</th>
+                    <th>Estado</th>
+                    <th>Acciones</th>
+                </thead>
+                <tbody>
+                    {% for merma in mermas %}
+                    <tr>
+                        <td>{{ merma.folio }}</td>
+                        <td>{{ merma.fecha }}</td>
+                        <td>{{ merma.cantidad|floatformat:0 }} {{ merma.unidad }}s</td>
+                        <td>{{ merma.componente_nombre }}</td>
+                        <td>{{ merma.linea_produccion_nombre }}</td>
+                        <td>{{ merma.estacion_trabajo_nombre }}</td>
+                        <td>{{ merma.tipo_merma_nombre }}</td>
+                        <td>{{ merma.causa_raiz_nombre }}</td>
+                        <td>{{ merma.edo_merma_nombre }}</td>
+                        <td>
+                            <a href="{% url 'mermas:detail_mermas' merma.folio %}" class="btn btn-secondary text-nowrap">
+                                <span>Ver Detalles</span>
+                            </a>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="10" class="text-center mx-text-muted py-4">
+                            No hay mermas registradas.
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <div class="mx-list-cards">
+            <div class="row g-3">
+                {% for merma in mermas %}
+                <div class="col-12 col-sm-6 col-lg-4">
+                    <div class="mx-list-card h-100 d-flex flex-column">
+                        <div class="d-flex justify-content-between align-items-start mb-2">
+                            <span class="fw-semibold">{{ merma.folio }}</span>
+                            <span class="mx-badge-status">{{ merma.edo_merma_nombre }}</span>
+                        </div>
+                        <div class="mx-text-muted small mb-2">{{ merma.fecha }}</div>
+                        <div class="mb-1">
+                            <strong>{{ merma.cantidad|floatformat:0 }} {{ merma.unidad }}s</strong>
+                            de {{ merma.componente_nombre }}
+                        </div>
+                        <div class="small mb-1">
+                            Línea: {{ merma.linea_produccion_nombre }} · Estación: {{ merma.estacion_trabajo_nombre }}
+                        </div>
+                        <div class="small mb-3">
+                            Tipo: {{ merma.tipo_merma_nombre }} · Causa: {{ merma.causa_raiz_nombre }}
+                        </div>
+                        <a href="{% url 'mermas:detail_mermas' merma.folio %}" class="btn btn-secondary mt-auto align-self-start">
+                            Ver Detalles
+                        </a>
+                    </div>
+                </div>
+                {% empty %}
+                <div class="col-12 text-center mx-text-muted py-4">No hay mermas registradas.</div>
+                {% endfor %}
+            </div>
+        </div>
+
+    </div>
 
     <!-- Footer -->
     <div class="d-flex justify-content-center">

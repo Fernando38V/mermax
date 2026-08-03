@@ -78,16 +78,24 @@
             {% endif %}
 
         </nav>
+        
     </aside>
+
+    <div class="mx-sidebar-overlay" id="sidebarOverlay"></div>
 
     <!-- Contenido principal -->
     <div class="mx-content-wrapper flex-grow-1">
 
         <!-- TOPBAR -->
         <header class="mx-topbar d-flex justify-content-between align-items-center">
-            <div>
-                <h1 class="h4 mb-0">{% block page_title %}{% endblock page_title %}</h1>
-                <p class="mx-text-muted mb-0 small">{% block page_subtitle %}{% endblock page_subtitle %}</p>
+            <div class="d-flex align-items-center gap-2">
+                <button class="mx-sidebar-toggle" id="sidebarToggle">
+                    <span class="material-symbols-outlined">menu</span>
+                </button>
+                <div>
+                    <h1 class="h4 mb-0">{% block page_title %}{% endblock page_title %}</h1>
+                    <p class="mx-text-muted mb-0 small">{% block page_subtitle %}{% endblock page_subtitle %}</p>
+                </div>
             </div>
             <div class="d-flex align-items-center gap-3">
                 <span class="material-symbols-outlined">notifications</span>

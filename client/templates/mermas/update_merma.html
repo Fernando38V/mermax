@@ -7,37 +7,38 @@
 
 {% block app_content %}
 
+<!-- btn para regresar -->
+<div class="mb-4">
+    <a href="{% url 'mermas:detail_mermas' pk=merma.folio %}" class="btn btn-secondary">
+        <span class="material-symbols-outlined">arrow_back</span>
+        Regresar
+    </a>
+</div>
+
+<!-- Formulario -->
 <div class="container-fluid">
-
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <a href="{% url 'mermas:detail_mermas' pk=merma.folio %}" class="btn btn-secondary d-inline-flex align-items-center gap-1">
-            <span class="material-symbols-outlined">arrow_back</span>
-            Regresar
-        </a>
-    </div>
-
     <form method="post">
         {% csrf_token %}
 
         <div class="card mb-4">
             <div class="card-header">
-                <strong>Datos del Registro</strong>
+                <strong>Datos del registro</strong>
             </div>
             <div class="card-body">
-                <div class="row g-4">
-                    <div class="col-md-3">
+                <div class="row g-3">
+                    <div class="col-md-4">
                         <div class="text-muted small">Folio</div>
                         <div class="fw-semibold">{{ merma.folio }}</div>
                     </div>
-                    <div class="col-md-3">
+                    <div class="col-md-4">
                         <div class="text-muted small">Estado</div>
                         <div class="fw-semibold">{{ merma.edo_merma_nombre }}</div>
                     </div>
-                    <div class="col-md-3">
+                    <div class="col-md-4">
                         <div class="text-muted small">Línea</div>
                         <div class="fw-semibold">{{ merma.linea_produccion_nombre }}</div>
                     </div>
-                    <div class="col-md-3">
+                    <div class="col-md-4">
                         <div class="text-muted small">Componente</div>
                         <div class="fw-semibold">{{ merma.componente_nombre }}</div>
                     </div>
@@ -47,22 +48,35 @@
 
         <div class="card mb-4">
             <div class="card-header">
-                <strong>Campos editables</strong>
+                <strong>Cantidad</strong>
             </div>
             <div class="card-body">
-                <div class="row g-4">
-
+                <div class="row g-3">
                     <div class="col-md-4">
-                        <label class="form-label">Cantidad</label>
-                        <input type="number" step="1" name="cantidad" class="form-control {% if errores.cantidad %}is-invalid{% endif %}" value="{{ merma.cantidad|floatformat:0 }}">
+                        <label class="form-label" for="cantidad">Cantidad</label>
+                        <div class="input-group">
+                            <input type="number" step="1" min="1" name="cantidad" id="cantidad"
+                                   class="form-control {% if errores.cantidad %}is-invalid{% endif %}"
+                                   value="{{ merma.cantidad|floatformat:0 }}">
+                            <span class="input-group-text">Piezas</span>
+                        </div>
                         {% if errores.cantidad %}
                             <div class="invalid-feedback">{{ errores.cantidad.0 }}</div>
                         {% endif %}
                     </div>
+                </div>
+            </div>
+        </div>
 
+        <div class="card mb-4">
+            <div class="card-header">
+                <strong>Clasificación</strong>
+            </div>
+            <div class="card-body">
+                <div class="row g-3">
                     <div class="col-md-4">
-                        <label class="form-label">Tipo de merma</label>
-                        <select name="tipo_merma" class="form-select {% if errores.tipo_merma %}is-invalid{% endif %}">
+                        <label class="form-label" for="tipo_merma">Tipo de merma</label>
+                        <select name="tipo_merma" id="tipo_merma" class="form-select {% if errores.tipo_merma %}is-invalid{% endif %}">
                             {% for tipo in tipo_merma %}
                                 <option value="{{ tipo.codigo }}" {% if tipo.codigo == merma.tipo_merma %}selected{% endif %}>
                                     {{ tipo.nombre }}
@@ -75,8 +89,8 @@
                     </div>
 
                     <div class="col-md-4">
-                        <label class="form-label">Causa raíz</label>
-                        <select name="causa_raiz" class="form-select {% if errores.causa_raiz %}is-invalid{% endif %}">
+                        <label class="form-label" for="causa_raiz">Causa raíz</label>
+                        <select name="causa_raiz" id="causa_raiz" class="form-select {% if errores.causa_raiz %}is-invalid{% endif %}">
                             {% for causa in causa_raiz %}
                                 <option value="{{ causa.codigo }}" {% if causa.codigo == merma.causa_raiz %}selected{% endif %}>
                                     {{ causa.nombre }}
@@ -87,7 +101,6 @@
                             <div class="invalid-feedback">{{ errores.causa_raiz.0 }}</div>
                         {% endif %}
                     </div>
-
                 </div>
 
                 {% if errores.non_field_errors %}
@@ -98,9 +111,14 @@
             </div>
         </div>
 
-        <button type="submit" class="btn btn-primary mx-btn-primary">Guardar cambios</button>
+        <div class="d-flex justify-content-end gap-2">
+            <a href="{% url 'mermas:detail_mermas' pk=merma.folio %}" class="btn btn-secondary">Cancelar</a>
+            <button type="submit" class="mx-btn-primary">
+                <span class="material-symbols-outlined">save</span>
+                Guardar cambios
+            </button>
+        </div>
     </form>
-
 </div>
 
 {% endblock app_content %}

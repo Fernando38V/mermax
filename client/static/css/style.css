@@ -189,6 +189,7 @@ body {
   background-color: var(--mx-bg-app);
   border-right: 1px solid var(--mx-border);
   width: 240px;
+  height: 100%;
   min-height: 100vh;
   padding: 1.25rem 0.85rem;
   position: fixed;
@@ -288,4 +289,86 @@ body {
 
 .mx-modal-card-light .mx-text-muted {
   color: #6b7280 !important;
+}
+
+
+/* =========================================================
+   boton hamburguesa
+   ========================================================= */
+.mx-sidebar-toggle {
+  display: none;
+  background: none;
+  border: none;
+  color: var(--mx-text-dark);
+  font-size: 1.5rem;
+  cursor: pointer;
+}
+
+@media (max-width: 992px) {
+.mx-sidebar {
+  transform: translateX(-100%);
+  transition: transform 0.25s ease;
+  z-index: 1040;
+}
+
+.mx-sidebar.mx-sidebar-open {
+  transform: translateX(0);
+}
+
+.mx-content-wrapper {
+  margin-left: 0;
+}
+
+.mx-sidebar-toggle {
+  display: inline-flex;
+}
+
+.mx-sidebar-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(11, 18, 32, 0.5);
+    z-index: 1030;
+}
+
+.mx-sidebar-overlay.mx-sidebar-open {
+    display: block;
+}
+
+}
+
+@media (max-width: 576px) {
+  .mx-topbar .fw-semibold,
+  .mx-topbar small {
+    display: none;
+  }
+}
+
+/* =========================================================
+   Toggle de vista tabla / tarjetas en listados
+   ========================================================= */
+
+.mx-list-container[data-view="table"] .mx-list-cards { display: none; }
+.mx-list-container[data-view="table"] .mx-list-table { display: block; }
+.mx-list-container[data-view="cards"] .mx-list-table { display: none; }
+.mx-list-container[data-view="cards"] .mx-list-cards { display: block; }
+
+.mx-view-toggle .btn.active {
+  background-color: var(--mx-accent);
+  color: #fff;
+  border-color: var(--mx-accent);
+}
+
+.mx-list-card {
+  background-color: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: var(--mx-radius);
+  padding: 1rem;
+}
+
+/* En móvil, siempre tarjetas, sin importar la preferencia guardada */
+@media (max-width: 768px) {
+  .mx-list-container .mx-list-table { display: none !important; }
+  .mx-list-container .mx-list-cards { display: block !important; }
+  .mx-view-toggle { display: none; }
 }
