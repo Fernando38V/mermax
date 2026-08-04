@@ -7,58 +7,76 @@
 
 <div class="row g-0 mx-login-wrapper">
 
-  <!-- columna izqueida -->
-   <div class="col-12 col-lg-6 mx-login-image"
+  <!-- Columna izquierda: imagen -->
+  <div class="col-12 col-lg-6 mx-login-image"
       style="background-image: url('{% static 'img/login.png' %}')">
-   </div>
 
-   <!-- Coluamna derecha -->
-   <div class="col-12 col-lg-6 mx-login-panel">
+    <div class="mx-login-brand">
+      <span class="material-symbols-outlined">precision_manufacturing</span>
+      <div class="mx-login-brand-text">
+        MERMAX
+        <small>Sistema Web</small>
+      </div>
+    </div>
 
-      <div class="mx-login-card">
-         <h2 class="mx-login-title">Iniciar sesión</h2>
+    <div class="mx-login-overlay-text">
+      <h3>Ensamble de Televisores</h3>
+      <p>Gestión inteligente de mermas y trazabilidad</p>
+      <div class="mx-login-accent-bar"></div>
+    </div>
 
-        {% if messages %}
-            {% for message in messages %}
-            <div class="alert alert-{{ message.tags }}">{{ message }}</div>
-            {% endfor %}
-        {% endif %}
+  </div>
 
-         {% if form.non_field_errors %}
-         
-          <div class="alert alert-danger" role="alert">
-              {{ form.non_field_errors }}
+  <!-- Columna derecha: formulario -->
+  <div class="col-12 col-lg-6 mx-login-panel">
+
+    <div class="mx-login-card">
+      <h2 class="mx-login-title">Iniciar sesión</h2>
+
+      {% if messages %}
+        {% for message in messages %}
+        <div class="alert alert-{{ message.tags }}">{{ message }}</div>
+        {% endfor %}
+      {% endif %}
+
+      {% if form.non_field_errors %}
+      <div class="alert alert-danger" role="alert">
+          {{ form.non_field_errors }}
+      </div>
+      {% endif %}
+
+      <form method="POST" action="{% url 'usuarios:login' %}">
+        {% csrf_token %}
+
+        <div class="mb-3">
+          <label for="id_username">Username o correo</label>
+          <div class="mx-input-group">
+            <span class="material-symbols-outlined mx-input-icon">person</span>
+            <input type="text" name="username" id="id_username" class="mx-input" placeholder="ingresar nombre de usuario o correo" autocomplete="username" required autofocus>
           </div>
-         {% endif %}
+        </div>
 
-         <form method="POST" action="{% url 'usuarios:login' %}">
-            {% csrf_token %}
+        <div class="mb-4">
+          <label for="id_password">Contraseña</label>
+          <div class="mx-input-group">
+            <span class="material-symbols-outlined mx-input-icon">lock</span>
+            <input type="password" name="password" id="id_password" class="mx-input" placeholder="ingresar contraseña" autocomplete="current-password" required>
 
-            <div class="mb-3">
-               <label for="username">Username o correo</label>
-               <div class="mx-input-group">
-                  <span class="material-symbols-outlined mx-input-icon">person</span>
-                  <input type="text" name="username" id="id_username" class="mx-input" placeholder="ingresar nombre de usuario o correo" autocomplete="username" required autofocus>
-               </div>
-            </div>
-
-            <div class="mb-4">
-              <label for="password">Contraseña</label>
-              <div class="mx-input-group">
-                <span class="material-symbols-outlined mx-input-icon">lock</span> 
-                <input type="password" name="password" id="id_password" class="mx-input" placeholder="ingresar contraseña" autocomplete="current-password" required>
-              
-                <button type="button" class="mx-input-toggle" id="mxTogglePassword" aria-label="Mostrar contraseña">
-                  <span class="material-symbols-outlined" id="mxToggleIcon">visibility</span>
-                </button>
-              </div>
-            </div>
-            
-            <button type="submit" class="mx-btn-primary w-100">
-              Acceder
-              <span class="material-symbols-outlined">login</span>
+            <button type="button" class="mx-input-toggle" id="mxTogglePassword" aria-label="Mostrar contraseña">
+              <span class="material-symbols-outlined d-flex align-items-center" id="mxToggleIcon">visibility</span>
             </button>
-   </div>
+          </div>
+        </div>
+
+        <button type="submit" class="mx-btn-primary w-100">
+          Acceder
+          <span class="material-symbols-outlined">login</span>
+        </button>
+      </form>
+    </div>
+
+  </div>
+
 </div>
 
 {% endblock content %}
@@ -68,14 +86,13 @@
 <script>
   const mxToggleBtn = document.getElementById('mxTogglePassword');
   const mxPasswordInput = document.getElementById('id_password');
-  const mxToggleIcon = document.getElementById('mxToggleIcon')
+  const mxToggleIcon = document.getElementById('mxToggleIcon');
 
   mxToggleBtn.addEventListener('click', () => {
     const isPassword = mxPasswordInput.type === 'password';
     mxPasswordInput.type = isPassword ? 'text' : 'password';
-    mxToggleIcon.textContent = isPassword ? 'visibility' : 'visibility_off';
-});
-    
+    mxToggleIcon.textContent = isPassword ? 'visibility_off' : 'visibility';
+  });
 </script>
 
 {% endblock extra_js %}
