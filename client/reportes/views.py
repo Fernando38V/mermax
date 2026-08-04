@@ -1,8 +1,10 @@
 import requests
+from django.conf import settings  
 from django.views import generic
 from django.shortcuts import render, redirect
 from django.contrib import messages
 from usuarios.wrappers import ApiError, api_post, api_get
+from django.http import HttpResponse
 
 def dashboard_kpis(request):
     """
@@ -172,3 +174,88 @@ def configurar_umbrales_view(request):
         'umbrales': umbrales if isinstance(umbrales, list) else [],
         'lineas': lineas if isinstance(lineas, list) else [],
     })
+    
+def reporte_mermas(request):
+    """
+    RF-14: Vista para la consulta detallada de reportes de mermas/scrap.
+    Obtiene los catálogos y los datos filtrados consumiendo la API de reportes.
+    """
+    token = request.session.get('api_token')
+    
+    # Capturar filtros GET de la URL
+    desde = request.GET.get('desde', '')
+    hasta = request.GET.get('hasta', '')
+    linea = request.GET.get('linea', '')
+    turno = request.GET.get('turno', '')
+
+    # Construir query string para la API
+    params = []
+    if desde: params.append(f"desde={desde}")
+    if hasta: params.append(f"hasta={hasta}")
+    if linea: params.append(f"linea={linea}")
+    if turno: params.append(f"turno={turno}")
+
+    endpoint = '/reportes/mermas/'
+    if params:
+        endpoint += '?' + '&'.join(params)
+
+    # 1. Obtenemos datos del reporte
+    try:
+        respuesta = api_get(endpoint, token=token)
+        reporte_data = respuesta if isinstance(respuesta, dict) else {'resultados': [], 'totales': {}}
+    except Exception:
+        reporte_data = {'resultados': [], 'totales': {'eventos': 0, 'piezas': 0, 'costo': 0}}
+        messages.error(request, "Error de comunicación con la API de reportes.")
+
+    # 2. Obtenemos catálogo de líneas para el select del filtro
+    try:
+        lineas = api_get('/catalogos/lineas/', token=token)
+        lineas_list = lineas if isinstance(lineas, list) else []
+    except Exception:
+        lineas_list = []
+
+    return render(request, 'reportes/reporte_mermas.html', {
+        'reporte_data': reporte_data,
+        'lineas': lineas_list,
+        'desde_actual': desde,
+        'hasta_actual': hasta,
+        'linea_actual': linea,
+        'turno_actual': turno,
+    })
+
+
+def exportar_reporte_pdf(request):
+    """
+    RF-14: Proxy para descargar el PDF consumiendo la API backend.
+    """
+    token = request.session.get('api_token')
+    query_string = request.META.get('QUERY_STRING', '')
+    
+    BASE_API_URL = getattr(settings, 'API_BASE_URL', 'http://127.0.0.1:8000/api')
+    
+    api_backend_url = f"{BASE_API_URL.rstrip('/')}/reportes/mermas/pdf/"
+    if query_string:
+        api_backend_url += f"?{query_string}"
+
+    headers = {}
+    if token:
+        headers['Authorization'] = f"Token {token}"
+
+    try:
+        response = requests.get(api_backend_url, headers=headers, stream=True)
+        
+        if response.status_code == 401 and token:
+            headers['Authorization'] = f"Bearer {token}"
+            response = requests.get(api_backend_url, headers=headers, stream=True)
+
+        if response.status_code == 200:
+            http_response = HttpResponse(response.content, content_type='application/pdf')
+            http_response['Content-Disposition'] = 'attachment; filename="Reporte_Scrap_Mermax.pdf"'
+            return http_response
+        else:
+            messages.error(request, f"Error del backend ({response.status_code}) al generar el PDF.")
+            return redirect('reportes:reporte-mermas')
+
+    except Exception as e:
+        messages.error(request, f"Error de conexión al generar PDF: {e}")
+        return redirect('reportes:reporte-mermas')

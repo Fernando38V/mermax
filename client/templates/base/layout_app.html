@@ -69,6 +69,12 @@
             </a>
             {% endif %}
 
+            {% if usuario.rol == 'CALID' %}
+            <a href="{% url 'reportes:reporte-mermas' %}" class="mx-sidebar-link {% block nav_reportes %}{% endblock nav_reportes %}">
+                <span class="material-symbols-outlined">summarize</span> Reportes
+            </a>
+            {% endif %}
+
             {% if usuario.rol == 'ADMIN' %}
             <a href="{% url 'administrador:bitacora' %}" class="mx-sidebar-link {% block nav_bitacora %}{% endblock nav_bitacora %}">
                 <span class="material-symbols-outlined">description</span> Bitácora
