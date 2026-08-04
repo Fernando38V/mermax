@@ -1,6 +1,6 @@
 {% extends "base/layout_app.html" %}
 
-{% block nav_almacen %}active{% endblock nav_almacen %}
+{% block nav_discrepancias %}active{% endblock nav_discrepancias %}
 
 {% block page_title %}Almacén{% endblock page_title %}
 {% block page_subtitle %}Discrepancias abiertas{% endblock page_subtitle %}
@@ -15,7 +15,7 @@
 
 <div class="mb-4 d-flex justify-content-end gap-2">
     {% if filtros_activos %}
-        <a href="{% url 'recepciones:discrepancias' %}" class="btn btn-secondary">
+        <a href="{% url 'recepciones:discrepancias' %}" class="btn btn-secondary d-inline-flex align-items-center gap-1">
             <span class="material-symbols-outlined">clear</span>
             Limpiar filtros
         </a>
@@ -38,7 +38,7 @@
             <input type="date" class="form-control" name="fecha" value="{{ filtros.fecha|default:'' }}">
         </div>
         <div class="col-auto d-flex align-items-end">
-            <button type="submit" class="btn btn-secondary">
+            <button type="submit" class="btn btn-secondary d-inline-flex align-items-center gap-1">
                 <span class="material-symbols-outlined">filter_alt</span>
                 Filtrar
             </button>
