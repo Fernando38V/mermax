@@ -1,7 +1,7 @@
 from django.shortcuts import render, get_object_or_404
 
 # Create your views here.
-
+from auditoria.services import AuditoriaSqlMixin
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import generics, status
@@ -64,7 +64,7 @@ class ListRegistroMermaAPIView(generics.ListAPIView):
             
         return queryset.order_by('-fecha', '-folio')
         
-class CreateRegistroMermaAPIView(generics.CreateAPIView):
+class CreateRegistroMermaAPIView(AuditoriaSqlMixin, generics.CreateAPIView):
     permission_classes = [LecturaTodosEscrituraSupervisor]
     queryset = models.RegistroMerma.objects.all()
     serializer_class = serializers.CreateRegistroMermaSerializer
@@ -81,7 +81,7 @@ class DetailRegistroMermaAPIView(generics.RetrieveAPIView):
     serializer_class = serializers.DetailRegistroMermaSerializer
 
 
-class UpdateRegistroMermaAPIView(generics.UpdateAPIView):
+class UpdateRegistroMermaAPIView(AuditoriaSqlMixin, generics.UpdateAPIView):
     permission_classes = [LecturaTodosEscrituraSupervisor]
     queryset = models.RegistroMerma.objects.all()
     serializer_class = serializers.UpdateRegistroMermaSerializer
@@ -167,7 +167,7 @@ class ListDiscrepanciaAPIView(generics.ListAPIView):
         return queryset
 
 
-class DiscrepanciaCreateAPIView(generics.CreateAPIView):
+class DiscrepanciaCreateAPIView(AuditoriaSqlMixin, generics.CreateAPIView):
     permission_classes = [EsAlmacenista]
     queryset = models.Discrepancia.objects.all()
     serializer_class = serializers.DiscrepanciaSerializer
@@ -176,7 +176,7 @@ class DiscrepanciaCreateAPIView(generics.CreateAPIView):
         serializer.save(usuario_reporte=self.request.user)
 
 
-class ResolverDiscrepanciaAPIView(APIView):
+class ResolverDiscrepanciaAPIView(AuditoriaSqlMixin, APIView):
     permission_classes = [EsAlmacenista]
 
     def post(self, request, folio):
@@ -227,7 +227,7 @@ class ResolverDiscrepanciaAPIView(APIView):
         )
 
 
-class ConfirmarRecepcionAPIView(APIView):
+class ConfirmarRecepcionAPIView(AuditoriaSqlMixin, APIView):
     permission_classes = [EsAlmacenista]
 
     def post(self, request, folio):

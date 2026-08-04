@@ -22,6 +22,7 @@ la propia base (los triggers y las restricciones), no en esta bitácora.
 import json
 
 from django.forms.models import model_to_dict
+from django.db import connection
 
 from .models import BitacoraAuditoria
 
@@ -106,3 +107,27 @@ class BitacoraMixin:
         registrar(self.request.user, self._modulo(), 'DELETE',
                   anterior=instantanea, nuevo=instance,
                   motivo='Baja del registro')
+
+
+class AuditoriaSqlMixin:
+    """
+    Setea la variable de sesión MySQL @usuario_actual al inicio de cada
+    request, para que los triggers de bitácora (REGISTRO_MERMA, DISCREPANCIA,
+    SOLICITUD_INSPECCION, REGISTRO_DISPOSICION, USUARIO, EMPLEADO) sepan
+    quién hace la operación, sin que cada vista tenga que acordarse de
+    hacerlo a mano.
+
+    Es el equivalente de BitacoraMixin pero para el OTRO conjunto de tablas:
+    las que audita MySQL vía trigger (Axel), no las que audita este archivo
+    vía perform_create/perform_update (Fernando). No se pisan entre sí.
+
+    Se resetea a NULL en cada request (incluso si no hay usuario autenticado)
+    para no arrastrar el valor de una conexión reciclada del request anterior
+    -- el propio comentario de Axel en el .sql advierte justo este riesgo.
+    """
+    def initial(self, request, *args, **kwargs):
+        super().initial(request, *args, **kwargs)  # aquí ya se resolvió request.user
+        usuario = getattr(request, 'user', None)
+        num = getattr(usuario, 'num', None)
+        with connection.cursor() as cursor:
+            cursor.execute("SET @usuario_actual = %s", [num])

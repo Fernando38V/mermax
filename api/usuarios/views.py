@@ -6,6 +6,7 @@ from rest_framework import permissions, status
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework import generics
+from auditoria.services import AuditoriaSqlMixin
 
 from .models import Token
 from usuarios import serializers, models
@@ -57,7 +58,7 @@ class ListUsuarioAPIView(APIView):
         data = serializers.ListUsuarioSerializer(queryset, many=True).data
         return Response(data)
 
-class CreateUsuarioAPIView(generics.CreateAPIView):
+class CreateUsuarioAPIView(AuditoriaSqlMixin, generics.CreateAPIView):
     permission_classes = [EsAdministrador]
     queryset = models.Usuario.objects.all()
     serializer_class = serializers.CreateUsuarioSerializer
@@ -67,7 +68,7 @@ class DetailUsuarioAPIView(generics.RetrieveAPIView):
     queryset = models.Usuario.objects.all()
     serializer_class = serializers.DetailUsuarioSerializer
 
-class UpdateUsuarioAPIView(generics.UpdateAPIView):
+class UpdateUsuarioAPIView(AuditoriaSqlMixin, generics.UpdateAPIView):
     permission_classes = [EsAdministrador]
     queryset = models.Usuario.objects.all()
     serializer_class = serializers.UpdateUsuarioSerializer
@@ -84,7 +85,7 @@ class ListEmpleadoAPIView(APIView):
         data = serializers.ListEmpleadoSerializer(queryset, many=True).data
         return Response(data)
 
-class CreateEmpleadoAPIView(generics.CreateAPIView):
+class CreateEmpleadoAPIView(AuditoriaSqlMixin, generics.CreateAPIView):
     permission_classes = [EsAdministrador]
     queryset = models.Empleado.objects.all()
     serializer_class = serializers.CreateEmpleadoSerializer
@@ -94,7 +95,7 @@ class DetailEmpleadoAPIView(generics.RetrieveAPIView):
     queryset = models.Empleado.objects.all()
     serializer_class = serializers.DetailEmpleadoSerializer
 
-class UpdateEmpleadoAPIView(generics.UpdateAPIView):
+class UpdateEmpleadoAPIView(AuditoriaSqlMixin, generics.UpdateAPIView):
     permission_classes = [EsAdministrador]
     queryset = models.Empleado.objects.all()
     serializer_class = serializers.UpdateEmpleadoSerializer

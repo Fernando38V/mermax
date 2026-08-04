@@ -7,6 +7,7 @@ from rest_framework import status
 from django.db.models import Q
 from django.db import transaction
 from datetime import date, datetime
+from auditoria.services import AuditoriaSqlMixin
 
 from usuarios.permissions import EsCalidad, LecturaTodosEscrituraCalidad, EsAlmacenista
 
@@ -37,7 +38,7 @@ class ListSolicitudInspeccionAPIView(generics.ListAPIView):
 
         return queryset
 
-class IniciarInspeccionAPIView(APIView):
+class IniciarInspeccionAPIView(AuditoriaSqlMixin, APIView):
     permission_classes = [EsCalidad]
 
     def post(self, request, codigo_solicitud):
@@ -174,7 +175,7 @@ def _siguiente_folio(modelo, prefijo, campo='folio'):
     return f'{patron}{ultimo + 1:03d}'
 
 
-class DictaminarInspeccionAPIView(APIView):
+class DictaminarInspeccionAPIView(AuditoriaSqlMixin, APIView):
     """
     POST /api/inspecciones/dictaminar/<codigo_solicitud>/
 
@@ -310,7 +311,7 @@ class ListRegistroDisposicionAPIView(generics.ListAPIView):
         return qs
 
 
-class EjecutarDisposicionAPIView(APIView):
+class EjecutarDisposicionAPIView(AuditoriaSqlMixin, APIView):
     """
     POST /api/inspecciones/disposicion/ejecutar/<folio>/
 
