@@ -1,0 +1,168 @@
+{% comment %}
+  Este partial es un resumen condensado. El detalle completo de KPIs
+  (impacto económico, semáforo por línea, causas raíz) ya vive en
+  reportes:dashboard_kpis (dashboard_kpis.html), así que aquí solo
+  mostramos lo operativo del día a día del Ingeniero de Calidad.
+
+  Requiere en el context de la vista:
+
+  dash = {
+      "resumen": {
+          "inspecciones_pendientes": int,
+          "alertas_activas": int,
+          "dictaminadas_hoy": int,
+          "tasa_aprobacion": float,   # porcentaje 0-100
+      },
+      "inspecciones_por_estado": [
+          {"estado": "Pendiente", "cantidad": 4},
+          {"estado": "Aprobada", "cantidad": 10},
+          {"estado": "Rechazada", "cantidad": 2},
+      ],
+      "alertas_por_linea": [
+          {"linea_nombre": "Línea 1", "cantidad": 2}, ...
+      ],
+  }
+{% endcomment %}
+
+<!-- TARJETAS RESUMEN -->
+<div class="row g-3 mb-4">
+    <div class="col-12 col-sm-6 col-xl-3">
+        <div class="card border-0 shadow-sm border-start border-warning border-4 h-100">
+            <div class="card-body">
+                <span class="text-muted fw-bold text-uppercase small">Inspecciones Pendientes</span>
+                <h3 class="text-warning fw-bold my-2">{{ dash.resumen.inspecciones_pendientes }}</h3>
+                <p class="text-muted small mb-0">Por dictaminar</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-12 col-sm-6 col-xl-3">
+        <div class="card border-0 shadow-sm border-start border-danger border-4 h-100">
+            <div class="card-body">
+                <span class="text-muted fw-bold text-uppercase small">Alertas Activas</span>
+                <h3 class="text-danger fw-bold my-2">{{ dash.resumen.alertas_activas }}</h3>
+                <p class="text-muted small mb-0">Umbral superado</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-12 col-sm-6 col-xl-3">
+        <div class="card border-0 shadow-sm border-start border-success border-4 h-100">
+            <div class="card-body">
+                <span class="text-muted fw-bold text-uppercase small">Dictaminadas Hoy</span>
+                <h3 class="text-success fw-bold my-2">{{ dash.resumen.dictaminadas_hoy }}</h3>
+                <p class="text-muted small mb-0">Aprobadas + rechazadas</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-12 col-sm-6 col-xl-3">
+        <div class="card border-0 shadow-sm border-start border-info border-4 h-100">
+            <div class="card-body">
+                <span class="text-muted fw-bold text-uppercase small">Tasa de Aprobación</span>
+                <h3 class="text-info fw-bold my-2">{{ dash.resumen.tasa_aprobacion|floatformat:1 }}%</h3>
+                <p class="text-muted small mb-0">Últimos 30 días</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ACCESOS RÁPIDOS -->
+<div class="card border-0 shadow-sm mb-4">
+    <div class="card-body">
+        <h6 class="fw-bold mb-3">Accesos rápidos</h6>
+        <div class="d-flex flex-wrap gap-2">
+            <a href="{% url 'inspecciones:alertas' %}" class="btn btn-primary d-flex align-items-center gap-2">
+                <span class="material-symbols-outlined fs-6">content_paste_search</span> Inspecciones
+            </a>
+            <a href="{% url 'reportes:alertas_umbral' %}" class="btn btn-outline-secondary d-flex align-items-center gap-2">
+                <span class="material-symbols-outlined fs-6">warning</span> Alertas
+            </a>
+            <a href="{% url 'reportes:dashboard_kpis' %}" class="btn btn-outline-secondary d-flex align-items-center gap-2">
+                <span class="material-symbols-outlined fs-6">analytics</span> Ver KPIs completos de Scrap
+            </a>
+        </div>
+    </div>
+</div>
+
+<!-- GRÁFICOS -->
+<div class="row g-4">
+    <div class="col-12 col-lg-5">
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-header bg-white py-3 d-inline-flex align-items-center gap-1">
+                <span class="material-symbols-outlined fs-6">search</span>
+                <h6 class="fw-bold mb-0">Inspecciones por Estado</h6>
+            </div>
+            <div class="card-body">
+                <div style="height: 280px; position: relative;">
+                    <canvas id="chartInspeccionesCalidad"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-12 col-lg-7">
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-header bg-white py-3 d-inline-flex align-items-center gap-1">
+                <span class="material-symbols-outlined fs-6">warning</span>
+                <h6 class="fw-bold mb-0">Alertas Activas por Línea</h6>
+            </div>
+            <div class="card-body">
+                <div style="height: 280px; position: relative;">
+                    <canvas id="chartAlertasCalidad"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{{ dash|json_script:"dash-calidad-payload" }}
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const raw = document.getElementById('dash-calidad-payload');
+    if (!raw) return;
+    const data = JSON.parse(raw.textContent);
+    const inspecciones = data.inspecciones_por_estado || [];
+    const alertas = data.alertas_por_linea || [];
+
+    const ctxInspecciones = document.getElementById('chartInspeccionesCalidad');
+    if (ctxInspecciones && inspecciones.length > 0) {
+        new Chart(ctxInspecciones, {
+            type: 'doughnut',
+            data: {
+                labels: inspecciones.map(i => i.estado),
+                datasets: [{
+                    data: inspecciones.map(i => i.cantidad),
+                    backgroundColor: ['#ffc107', '#198754', '#dc3545', '#6c757d']
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: { legend: { position: 'bottom' } }
+            }
+        });
+    }
+
+    const ctxAlertas = document.getElementById('chartAlertasCalidad');
+    if (ctxAlertas && alertas.length > 0) {
+        new Chart(ctxAlertas, {
+            type: 'bar',
+            data: {
+                labels: alertas.map(a => a.linea_nombre),
+                datasets: [{
+                    label: 'Alertas',
+                    data: alertas.map(a => a.cantidad),
+                    backgroundColor: '#dc3545',
+                    borderRadius: 4
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } }
+            }
+        });
+    }
+});
+</script>

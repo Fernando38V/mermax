@@ -1,0 +1,38 @@
+{% comment %}
+  Requiere en el context de la vista:
+
+  dash = {
+      "resumen": {
+          "usuarios_activos": int,
+          "catalogos_configurados": int,
+          "eventos_bitacora_hoy": int,
+          "alertas_criticas": int,   # semáforo rojo en cualquier línea (agregado global)
+      },
+      "bitacora_por_dia": [
+          {"fecha": "2026-07-29", "eventos": 14}, ...  # últimos 7 días
+      ],
+      "usuarios_por_rol": [
+          {"rol_nombre": "Supervisor de Línea", "cantidad": 5},
+          {"rol_nombre": "Almacenista", "cantidad": 3}, ...
+      ],
+  }
+{% endcomment %}
+
+
+<!-- ACCESOS RÁPIDOS -->
+<div class="card border-0 shadow-sm mb-4">
+    <div class="card-body">
+        <h6 class="fw-bold mb-3">Accesos rápidos</h6>
+        <div class="d-flex flex-wrap gap-2">
+            <a href="{% url 'administrador:bitacora' %}" class="btn btn-primary d-flex align-items-center gap-2">
+                <span class="material-symbols-outlined fs-6">description</span> Bitácora
+            </a>
+            <a href="{% url 'trazabilidad:consulta' %}" class="btn btn-outline-secondary d-flex align-items-center gap-2">
+                <span class="material-symbols-outlined fs-6">account_tree</span> Trazabilidad
+            </a>
+            <a href="{% url 'administrador:usuarios_list' %}" class="btn btn-outline-secondary d-flex align-items-center gap-2">
+                <span class="material-symbols-outlined fs-6">group</span> Usuarios
+            </a>
+        </div>
+    </div>
+</div>

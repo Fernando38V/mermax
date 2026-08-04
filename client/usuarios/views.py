@@ -5,9 +5,8 @@ from django.shortcuts import render
 from django.contrib import messages
 from django.shortcuts import redirect, render
 
-from .wrappers import ApiError, api_post
+from .wrappers import ApiError, api_post, api_get
 from .decorators import login_required_api
-
 
 def login_view(request):
     if request.session.get('api_token'):
@@ -45,12 +44,37 @@ def logout_view(request):
     request.session.flush()
     return redirect('usuarios:login')
 
-
+# Un endpoint de agregación por app, cada uno debe regresar ya el JSON
+# con la forma exacta que espera el partial correspondiente (ver
+# dashboard_partials/README_integracion.md). Así esta vista no tiene
+# que transformar nada, solo pasar el dict de largo.
+_DASHBOARD_ENDPOINT_POR_ROL = {
+    'SUPER': '/mermas/dashboard/',
+    'ALMAC': '/recepciones/dashboard/',
+    'CALID': '/inspecciones/dashboard/',
+    'ADMIN': '/administrador/dashboard/',
+}
+ 
+ 
 @login_required_api
 def dashboard_view(request):
-    print("Dashboard:", request.session.get("api_token"))
-    """Vista de ejemplo para comprobar que la sesión quedó activa."""
+    usuario = request.session.get('usuario')
+    token = request.session.get('api_token')
+ 
+    dash = {}
+    endpoint = _DASHBOARD_ENDPOINT_POR_ROL.get(usuario.get('rol'))
+ 
+    if endpoint:
+        try:
+            dash = api_get(endpoint, token=token)
+        except ApiError:
+            # No tronamos el dashboard si el agregado falla o el
+            # endpoint todavía no existe en el backend; los partials
+            # ya están protegidos para renderizar vacío con dash={}.
+            messages.warning(request, 'No se pudieron cargar los indicadores del panel.')
+ 
     return render(request, 'dashboard/dashboard.html', {
-        'usuario': request.session.get('usuario'),
+        'usuario': usuario,
+        'dash': dash,
     })
-    
+ 

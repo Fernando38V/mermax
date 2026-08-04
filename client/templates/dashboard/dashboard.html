@@ -1,4 +1,5 @@
 {% extends 'base/layout_app.html' %}
+{% load static %}
 
 {% block title %}Dashboard - Mermax{% endblock title %}
 
@@ -8,11 +9,21 @@
 {% block page_subtitle %}Panel de {{ usuario.rol_nombre }}{% endblock page_subtitle %}
 
 {% block app_content %}
-<div class="row g-3 mb-4">
-  <div class="col-6 col-lg-3">
-    <h3>Bienvenido, {{ usuario.nombre_completo }}</h3>
-    <p class="text-muted mb-4">Rol: {{ usuario.rol_nombre }}</p>
-    <a href="{% url 'usuarios:logout' %}" class="btn btn-outline-secondary">Cerrar sesión</a>
-  </div>
+<div class="mb-4">
+    <h3 class="mb-1">Bienvenido, {{ usuario.nombre_completo }}</h3>
+    <p class="text-muted mb-0">Rol: {{ usuario.rol_nombre }}</p>
 </div>
+
+{% if usuario.rol == 'SUPER' %}
+    {% include 'dashboard/dashboard_partials/_supervisor.html' %}
+{% elif usuario.rol == 'ALMAC' %}
+    {% include 'dashboard/dashboard_partials/_almacen.html' %}
+{% elif usuario.rol == 'CALID' %}
+    {% include 'dashboard/dashboard_partials/_calidad.html' %}
+{% elif usuario.rol == 'ADMIN' %}
+    {% include 'dashboard/dashboard_partials/_admin.html' %}
+{% endif %}
+
+<!-- Chart.js una sola vez para toda la página, los partials solo inicializan sus canvas -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 {% endblock %}
