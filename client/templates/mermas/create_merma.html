@@ -16,7 +16,7 @@
 </div>
 <!-- Formulario -->
 <div class="container-fluid">
-    <form method="post">
+    <form method="post" id="formMerma">
 
         {% csrf_token %}
         <div class="card mb-4">
@@ -183,7 +183,7 @@
 
         <div class="d-flex justify-content-end gap-2">
             <a href="{% url 'mermas:list_mermas' %}" class="btn btn-secondary">Cancelar</a>
-            <button type="submit" class="mx-btn-primary">
+            <button type="submit" class="mx-btn-primary" id="btnRegistrar">
                 <span class="material-symbols-outlined">add</span>
                 Registrar Merma
             </button>
@@ -352,6 +352,16 @@
         if (selectComponente.value) {
             cargarLotes(selectComponente.value, loteInicial);
         }
+    });
+
+    document.getElementById('formMerma').addEventListener('submit', function () {
+        const boton = document.getElementById('btnRegistrar');
+
+        boton.disabled = true;
+        boton.innerHTML = `
+            <span class="spinner-border spinner-border-sm me-2"></span>
+            Registrando...
+        `;
     });
 </script>
 {% endblock extra_js %}

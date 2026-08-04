@@ -3,6 +3,7 @@ from django.shortcuts import render, redirect
 from django.utils import timezone
 from django.utils.decorators import method_decorator
 from django.views import generic
+from django.contrib import messages
 from usuarios.decorators import login_required_api
 from usuarios.wrappers import ApiError, api_get, api_post, api_patch
 
@@ -122,9 +123,18 @@ class CreateMermas(generic.View):
         try:
             respuesta = api_post(self.url_base, payload, token=token)
             
+            messages.success(request, 'La merma se registró correctamente.')
+            
             return redirect('mermas:list_mermas')
             
         except ApiError as e:
+            
+            if not getattr(e, "data", None):
+                messages.error(
+                    request,
+                    "Ocurrió un error inesperado. Inténtalo nuevamente."
+                )   
+            
             self.context = {
                 'lineas': self._catalogo('/catalogos/lineas/', token),
                 'tipos_merma': self._catalogo('/catalogos/tipos-merma/', token),
@@ -265,9 +275,16 @@ class UpdateMermas(generic.View):
         }
         try:
             api_patch(f'/mermas/registro/update/{pk}/', payload, token=token)
+            
+            messages.success(request, 'Registro actualizado correctamente.')
+            
             return redirect('mermas:detail_mermas', pk=pk)
 
         except ApiError as e:
+            
+            if not getattr(e, "data", None):
+                messages.error(request, "Ocurrio un error inesperado. Intente nuevamente.")
+            
             try:
                 merma = api_get(f'/mermas/registro/detail/{pk}/', token=token)
             except ApiError:
