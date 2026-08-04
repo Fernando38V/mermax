@@ -123,21 +123,42 @@
                 </div>
             </div>
             <div class="d-flex align-items-center gap-3">
-                <span class="material-symbols-outlined">notifications</span>
+                <span class="material-symbols-outlined text-muted" style="cursor: pointer;">notifications</span>
                 <div class="d-flex align-items-center gap-2">
-                    <div class="rounded-circle bg-primary text-white d-flex align-items-center justify-content-center" style="width: 36px; height: 36px; font-size: 1.2rem;">
-                        {{ usuario.nombre_completo|slice:":1" }}
-                    </div>
 
-                    <div>
-                        <div class="fw-semibold">
-                        {{ usuario.nombre_completo }}
-                        </div>
-                        <small class="mx-text-muted">
-                        {{ usuario.rol_nombre }}
-                        </small>
-                    </div>
+                    <div class="dropdown">
+                        <a href="#" class="d-flex align-items-center gap-2 text-decoration-none text-reset dropdown-toggle" id="userDropdown" data-bs-toggle="dropdown" aria-expanded="false" style="cursor: pointer;">
+                        
+                            <div class="rounded-circle bg-primary text-white d-flex align-items-center justify-content-center" style="width: 36px; height: 36px; font-size: 1.2rem;">
+                                {{ usuario.nombre_completo|slice:":1" }}
+                            </div>
+                        
+                            <div class="text-start">
+                                <div class="fw-semibold lh-sm">
+                                {{ usuario.nombre_completo }}
+                                </div>
+                                <small class="mx-text-muted d-block">
+                                {{ usuario.rol_nombre }}
+                                </small>
+                            </div>
+                        </a>
 
+                        <ul class="dropdown-menu dropdown-menu-end shadow-sm border-0 mt-2" aria-labelledby="userDropdown">
+                            <li>
+                                <a href="#" class="dropdown-item d-flex align-items-center gap-2 py-2">
+                                    <span class="material-symbols-outlined fs-5">person</span>
+                                    Perfil
+                                </a>
+                            </li>
+                            <li><hr class="dropdown-divider my-1"></li>
+                            <li>
+                                <a class="dropdown-item d-flex align-items-center gap-2 py-2 text-danger" href="{% url 'usuarios:logout' %}">
+                                    <span class="material-symbols-outlined fs-5">logout</span>
+                                    <span>Cerrar sesión</span>
+                                </a>
+                            </li>
+                        </ul>
+                    </div>
                 </div>
             </div>
 
