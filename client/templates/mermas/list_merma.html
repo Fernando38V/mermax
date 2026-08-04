@@ -16,10 +16,10 @@
         {% endif %}
 
         <div class="mx-view-toggle btn-group" role="group" aria-label="Cambiar vista" data-list-target="mermas">
-            <button type="button" class="btn btn-secondary" data-view-btn="table">
+            <button type="button" class="btn btn-secondary d-inline-flex align-items-center" data-view-btn="table">
                 <span class="material-symbols-outlined">table_rows</span>
             </button>
-            <button type="button" class="btn btn-secondary" data-view-btn="cards">
+            <button type="button" class="btn btn-secondary d-inline-flex align-items-center" data-view-btn="cards">
                 <span class="material-symbols-outlined">grid_view</span>
             </button>
         </div>
@@ -158,7 +158,7 @@
                         </div>
                         <div class="mx-text-muted small mb-2">{{ merma.fecha }}</div>
                         <div class="mb-1">
-                            <strong>{{ merma.cantidad|floatformat:0 }} {{ merma.unidad }}s</strong>
+                            <strong>{{ merma.cantidad|floatformat:0 }} {{ merma.unidad }}{{ merma.cantidad|pluralize }}</strong>
                             de {{ merma.componente_nombre }}
                         </div>
                         <div class="small mb-1">

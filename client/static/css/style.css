@@ -372,3 +372,86 @@ body {
   .mx-list-container .mx-list-cards { display: block !important; }
   .mx-view-toggle { display: none; }
 }
+
+/* =========================================================
+   Login: contenido sobre la imagen (marca + texto de cierre)
+   ========================================================= */
+
+.mx-login-image {
+  display: none; /* oculta en móvil/tablet: solo se muestra el form */
+}
+
+@media (min-width: 992px) {
+  .mx-login-image {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    padding: 2rem 2.5rem;
+  }
+}
+
+.mx-login-brand {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  color: var(--mx-text-light);
+}
+
+.mx-login-brand .material-symbols-outlined {
+  font-size: 1.35rem;
+  background-color: var(--mx-accent);
+  padding: 0.5rem;
+  border-radius: 0.5rem;
+  line-height: 1;
+}
+
+.mx-login-brand-text {
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  line-height: 1.15;
+}
+
+.mx-login-brand-text small {
+  display: block;
+  font-weight: 400;
+  font-size: 0.7rem;
+  color: var(--mx-text-muted);
+  letter-spacing: 0.02em;
+}
+
+.mx-login-overlay-text {
+  position: relative;
+  z-index: 1;
+  color: var(--mx-text-light);
+  max-width: 420px;
+}
+
+.mx-login-overlay-text h3 {
+  font-weight: 700;
+  margin-bottom: 0.35rem;
+}
+
+.mx-login-overlay-text p {
+  color: var(--mx-text-muted);
+  margin-bottom: 0.85rem;
+}
+
+.mx-login-accent-bar {
+  width: 60px;
+  height: 3px;
+  background-color: var(--mx-accent);
+  border-radius: 2px;
+}
+
+/* =========================================================
+   Borde/tarjeta del panel de login
+   ========================================================= */
+
+.mx-login-card {
+  background-color: var(--mx-bg-card);
+  border: 1px solid var(--mx-border);
+  border-radius: var(--mx-radius);
+  box-shadow: var(--mx-shadow-card);
+}
