@@ -372,3 +372,31 @@ body {
   .mx-list-container .mx-list-cards { display: block !important; }
   .mx-view-toggle { display: none; }
 }
+
+/* Botones de acción con mínimo táctil 44x44 (RNF-13) */
+.mx-btn-touch {
+  min-height: 44px;
+  min-width: 44px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.mx-sidebar-section {
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  color: var(--mx-text-muted);
+  text-transform: uppercase;
+  padding: 0.9rem 0.75rem 0.35rem;
+}
+
+/* Botones de la vista de tabla, cuando se ve en rango de tablet
+   (RNF-13: mínimo táctil 44x44, incluso si el usuario no hizo
+   toggle a tarjetas) */
+@media (min-width: 769px) and (max-width: 991px) {
+  .mx-list-table .btn {
+    min-height: 44px;
+    min-width: 44px;
+  }
+}

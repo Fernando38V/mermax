@@ -39,6 +39,11 @@
             <a href="{% url 'mermas:list_mermas' %}" class="mx-sidebar-link {% block nav_merma %}{% endblock nav_merma %}">
                 <span class="material-symbols-outlined">inventory_2</span> Merma
             </a>
+
+            <a href="{% url 'administrador:catalogo_list' slug='estaciones' %}"
+            class="mx-sidebar-link {% if request.resolver_match.kwargs.slug == 'estaciones' %}active{% endif %}">
+                <span class="material-symbols-outlined">precision_manufacturing</span> Estaciones de Trabajo
+            </a>
             {% endif %}
 
             {% if usuario.rol == 'ALMAC' %}
@@ -76,16 +81,62 @@
             {% endif %}
 
             {% if usuario.rol == 'ADMIN' %}
-            <a href="{% url 'administrador:bitacora' %}" class="mx-sidebar-link {% block nav_bitacora %}{% endblock nav_bitacora %}">
-                <span class="material-symbols-outlined">description</span> Bitácora
+            <div class="mx-sidebar-section">Producción</div>
+
+            <a href="{% url 'administrador:catalogo_list' slug='lineas' %}"
+            class="mx-sidebar-link {% if request.resolver_match.kwargs.slug == 'lineas' %}active{% endif %}">
+                <span class="material-symbols-outlined">factory</span> Líneas de Producción
             </a>
 
-            <a href="{% url 'administrador:catalogos_indice' %}" class="mx-sidebar-link {% block nav_catalogos %}{% endblock nav_catalogos %}">
-                <span class="material-symbols-outlined">view_list</span> Catalogos
+            <a href="{% url 'administrador:catalogo_list' slug='estaciones' %}"
+            class="mx-sidebar-link {% if request.resolver_match.kwargs.slug == 'estaciones' %}active{% endif %}">
+                <span class="material-symbols-outlined">precision_manufacturing</span> Estaciones de Trabajo
+            </a>
+
+            <div class="mx-sidebar-section">Catálogos</div>
+
+            <a href="{% url 'administrador:catalogo_list' slug='componentes' %}"
+            class="mx-sidebar-link {% if request.resolver_match.kwargs.slug == 'componentes' %}active{% endif %}">
+                <span class="material-symbols-outlined">memory</span> Componentes
+            </a>
+
+            <a href="{% url 'administrador:catalogo_list' slug='proveedores' %}"
+            class="mx-sidebar-link {% if request.resolver_match.kwargs.slug == 'proveedores' %}active{% endif %}">
+                <span class="material-symbols-outlined">local_shipping</span> Proveedores
+            </a>
+
+            <a href="{% url 'administrador:catalogo_list' slug='causas-raiz' %}"
+            class="mx-sidebar-link {% if request.resolver_match.kwargs.slug == 'causas-raiz' %}active{% endif %}">
+                <span class="material-symbols-outlined">troubleshoot</span> Causas Raíz
+            </a>
+
+            <a href="{% url 'administrador:catalogo_list' slug='tipos-merma' %}"
+            class="mx-sidebar-link {% if request.resolver_match.kwargs.slug == 'tipos-merma' %}active{% endif %}">
+                <span class="material-symbols-outlined">category</span> Tipos de Merma
+            </a>
+
+            <a href="{% url 'administrador:catalogo_list' slug='empresas-recicladoras' %}"
+            class="mx-sidebar-link {% if request.resolver_match.kwargs.slug == 'empresas-recicladoras' %}active{% endif %}">
+                <span class="material-symbols-outlined">recycling</span> Empresas Recicladoras
+            </a>
+
+            <a href="{% url 'administrador:catalogo_list' slug='metodos-destruccion' %}"
+            class="mx-sidebar-link {% if request.resolver_match.kwargs.slug == 'metodos-destruccion' %}active{% endif %}">
+                <span class="material-symbols-outlined">delete_forever</span> Métodos de Destrucción
+            </a>
+
+            <div class="mx-sidebar-section">Administración</div>
+
+            <a href="{% url 'administrador:empleados_list' %}" class="mx-sidebar-link {% block nav_empleados %}{% endblock nav_empleados %}">
+                <span class="material-symbols-outlined">badge</span> Empleados
             </a>
 
             <a href="{% url 'administrador:usuarios_list' %}" class="mx-sidebar-link {% block nav_usuarios %}{% endblock nav_usuarios %}">
-                <span class="material-symbols-outlined">group</span> Usuarios
+                <span class="material-symbols-outlined">group</span> Usuarios y Roles
+            </a>
+
+            <a href="{% url 'administrador:bitacora' %}" class="mx-sidebar-link {% block nav_bitacora %}{% endblock nav_bitacora %}">
+                <span class="material-symbols-outlined">description</span> Bitácora
             </a>
             {% endif %}
 

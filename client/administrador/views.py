@@ -1,3 +1,5 @@
+import token
+
 from django.shortcuts import render, redirect
 from django.contrib import messages
 from django.utils.decorators import method_decorator
@@ -26,9 +28,10 @@ CATALOGOS = {
         'campos': [
             {'name': 'nombre', 'label': 'Nombre', 'type': 'text', 'required': True},
             {'name': 'descripcion', 'label': 'Descripción', 'type': 'text'},
-            {'name': 'numero_linea', 'label': 'Número de línea', 'type': 'number', 'required': True},
-            {'name': 'area', 'label': 'Área', 'type': 'select', 'endpoint': '/catalogos/lookup/areas/',
-             'value_key': 'codigo', 'label_key': 'nombre', 'required': True},
+            {'name': 'numero_linea', 'label': 'Número de línea', 'type': 'number', 'required': True,
+            'solo_creacion': True, 'auto': True},
+            {'name': 'area', 'label': 'Área', 'type': 'text', 'required': True,
+            'solo_creacion': True, 'auto': True},
             {'name': 'estado_linea', 'label': 'Estado', 'type': 'select', 'endpoint': '/catalogos/lookup/estados-linea/',
              'value_key': 'codigo', 'label_key': 'nombre', 'required': True},
         ],
@@ -77,7 +80,9 @@ CATALOGOS = {
         'campos': [
             {'name': 'codigo', 'label': 'Código', 'type': 'text', 'required': True, 'solo_creacion': True, 'auto': True},
             {'name': 'nombre', 'label': 'Nombre', 'type': 'text', 'required': True},
-            {'name': 'etapa', 'label': 'Etapa', 'type': 'text'},
+            {'name': 'etapa', 'label': 'Etapa', 'type': 'select',
+            'value_key': 'nombre', 'label_key': 'nombre',
+            'opciones_fijas': ['Preparación', 'Integración', 'Pruebas', 'Empaque']},
             {'name': 'linea_produccion', 'label': 'Línea de producción', 'type': 'select', 'endpoint': '/catalogos/lineas/',
              'value_key': 'num', 'label_key': 'nombre', 'required': True},
         ],
@@ -166,6 +171,12 @@ def _traducir_errores(errores):
 @method_decorator(login_required_api, name='dispatch')
 class IndiceCatalogos(generic.View):
     def get(self, request):
+        usuario = request.session.get('usuario') or {}
+        rol = usuario.get('rol')
+
+        if rol != 'ADMIN':
+            return redirect('administrador:catalogo_list', slug='estaciones')
+
         return render(request, 'administrador/catalogos_indice.html', {'catalogos': CATALOGOS})
 
 
@@ -175,6 +186,13 @@ class ListCatalogo(generic.View):
 
     def get(self, request, slug):
         token = request.session.get('api_token')
+        usuario = request.session.get('usuario') or {}
+        rol = usuario.get('rol')
+
+        if rol != 'ADMIN' and slug != 'estaciones':
+            messages.error(request, 'No tienes acceso a ese catálogo.')
+            return redirect('administrador:catalogo_list', slug='estaciones')
+
         config = CATALOGOS[slug]
 
         params = {}
@@ -184,6 +202,19 @@ class ListCatalogo(generic.View):
         activo = request.GET.get('activo')
         if activo:
             params['activo'] = activo
+
+        # RF-29: filtro por línea, solo aplica al catálogo de estaciones
+        linea_filtro = ''
+        lineas_filtro = []
+        if slug == 'estaciones':
+            linea_filtro = request.GET.get('linea', '').strip()
+            if linea_filtro:
+                params['linea'] = linea_filtro
+            try:
+                lineas_resp = api_get('/catalogos/lineas/', token=token)
+                lineas_filtro = lineas_resp.get('results', []) if isinstance(lineas_resp, dict) else lineas_resp
+            except ApiError:
+                lineas_filtro = []
 
         try:
             respuesta = api_get(config['endpoint'], token=token, params=params)
@@ -208,6 +239,8 @@ class ListCatalogo(generic.View):
             'registros': registros,
             'busqueda': busqueda,
             'activo_filtro': activo,
+            'linea_filtro': linea_filtro,
+            'lineas_filtro': lineas_filtro,
         })
 
 
@@ -226,12 +259,20 @@ class FormCatalogo(generic.View):
             except ApiError:
                 messages.error(request, 'No se encontró el registro.')
                 return redirect('administrador:catalogo_list', slug=slug)
+            if slug == 'lineas' and 'area_nombre' in valores:
+                valores['area'] = valores['area_nombre']
         elif config.get('auto_codigo_prefijo'):
             valores = {'codigo': self._siguiente_codigo(config, token)}
+        elif slug == 'lineas':
+            valores = {
+                'numero_linea': self._siguiente_numero_linea(config, token),
+                'area': self._area_produccion_nombre(token),
+            }
 
         return render(request, self.template_name, self._contexto(config, slug, pk, valores, {}, token))
 
     def _siguiente_codigo(self, config, token):
+        
         prefijo = config['auto_codigo_prefijo']
         padding = config.get('auto_codigo_padding', 2)
         try:
@@ -248,6 +289,18 @@ class FormCatalogo(generic.View):
                 if sufijo.isdigit():
                     ultimo = max(ultimo, int(sufijo))
         return f"{prefijo}-{ultimo + 1:0{padding}d}"
+
+    def _siguiente_numero_linea(self, config, token):
+        """RF-15: número de línea secuencial de 10 en 10 (10, 20, 30...)."""
+        try:
+            registros = api_get(config['endpoint'], token=token)
+            lista = registros.get('results', []) if isinstance(registros, dict) else registros
+        except ApiError:
+            lista = []
+
+        numeros = [r.get('numero_linea', 0) for r in lista if r.get('numero_linea') is not None]
+        ultimo = max(numeros) if numeros else 0
+        return ultimo + 10
 
     def post(self, request, slug, pk=None):
         token = request.session.get('api_token')
@@ -266,6 +319,9 @@ class FormCatalogo(generic.View):
         if not pk and config.get('auto_codigo_prefijo'):
             payload['codigo'] = request.POST.get('codigo', '').strip()
 
+        if slug == 'lineas' and not pk:
+            payload['area'] = self._area_produccion(token)
+
         try:
             if pk:
                 api_patch(f"{config['endpoint']}{pk}/", payload, token=token)
@@ -279,16 +335,43 @@ class FormCatalogo(generic.View):
             errores = _traducir_errores(errores)
             return render(request, self.template_name, self._contexto(config, slug, pk, request.POST, errores, token))
 
+    def _area_produccion(self, token):
+        """RF-15: las líneas de producción siempre pertenecen al área Producción."""
+        try:
+            areas = api_get('/catalogos/lookup/areas/', token=token)
+            lista = areas.get('results', []) if isinstance(areas, dict) else areas
+        except ApiError:
+            lista = []
+        for a in lista:
+            if a.get('nombre', '').strip().lower() == 'producción':
+                return a.get('codigo')
+        return None
+
+    def _area_produccion_nombre(self, token):
+        """Igual que _area_produccion, pero devuelve el nombre legible para mostrar en el formulario."""
+        try:
+            areas = api_get('/catalogos/lookup/areas/', token=token)
+            lista = areas.get('results', []) if isinstance(areas, dict) else areas
+        except ApiError:
+            lista = []
+        for a in lista:
+            if a.get('nombre', '').strip().lower() == 'producción':
+                return a.get('nombre')
+        return 'Producción'
+
     def _contexto(self, config, slug, pk, valores, errores, token):
         campos_render = []
         for campo in config['campos']:
             campo_ctx = dict(campo)
             if campo['type'] == 'select':
-                try:
-                    opciones = api_get(campo['endpoint'], token=token)
-                    campo_ctx['opciones'] = opciones.get('results', []) if isinstance(opciones, dict) else opciones
-                except ApiError:
-                    campo_ctx['opciones'] = []
+                if campo.get('opciones_fijas'):
+                    campo_ctx['opciones'] = [{'nombre': o} for o in campo['opciones_fijas']]
+                else:
+                    try:
+                        opciones = api_get(campo['endpoint'], token=token)
+                        campo_ctx['opciones'] = opciones.get('results', []) if isinstance(opciones, dict) else opciones
+                    except ApiError:
+                        campo_ctx['opciones'] = []
             campos_render.append(campo_ctx)
 
         return {
