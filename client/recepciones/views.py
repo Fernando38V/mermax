@@ -75,15 +75,19 @@ class BandejaRecepcion(generic.View):
 class ConfirmarRecepcion(generic.View):
     template_name = 'recepciones/confirmar.html'
 
+    def _obtener_detalle(self, folio, token):
+        try:
+            return api_get(f'/mermas/registro/detail/{folio}/', token=token)
+        except ApiError:
+            return {}    
+    
     def get(self, request, folio):
         token = request.session.get('api_token')
-        try:
-            detalle = api_get(f'/mermas/registro/detail/{folio}/', token=token)
-        except ApiError:
-            detalle = {}
+        detalle = self._obtener_detalle(folio, token)
 
         return render(request, self.template_name, {
             'folio': folio,
+            'merma': detalle,
             'cantidad_reportada': detalle.get('cantidad'),
             'valores': {},
             'errores': {},
@@ -103,6 +107,7 @@ class ConfirmarRecepcion(generic.View):
             messages.error(request, 'Cantidad inválida.')
             return render(request, self.template_name, {
                 'folio': folio,
+                'merma': self._obtener_detalle(folio, token),
                 'cantidad_reportada': cantidad_reportada_raw,
                 'valores': request.POST,
                 'errores': {},
@@ -121,6 +126,7 @@ class ConfirmarRecepcion(generic.View):
                 errores = e.detail if isinstance(e.detail, dict) else {'error': [str(e.detail)]}
                 return render(request, self.template_name, {
                     'folio': folio,
+                    'merma': self._obtener_detalle(folio, token),
                     'cantidad_reportada': cantidad_reportada_raw,
                     'valores': request.POST,
                     'errores': errores,
@@ -129,6 +135,7 @@ class ConfirmarRecepcion(generic.View):
         if not motivo_reporte:
             return render(request, self.template_name, {
                 'folio': folio,
+                'merma': self._obtener_detalle(folio, token),
                 'cantidad_reportada': cantidad_reportada_raw,
                 'valores': request.POST,
                 'errores': {},
@@ -152,6 +159,7 @@ class ConfirmarRecepcion(generic.View):
             errores = e.detail if isinstance(e.detail, dict) else {'error': [str(e.detail)]}
             return render(request, self.template_name, {
                 'folio': folio,
+                'merma': self._obtener_detalle(folio, token),
                 'cantidad_reportada': cantidad_reportada_raw,
                 'valores': request.POST,
                 'errores': errores,

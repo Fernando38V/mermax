@@ -1,0 +1,125 @@
+{% extends "base/layout_app.html" %}
+{% load static %}
+
+{% block nav_reportes %}active{% endblock nav_reportes %}
+{% block page_title %}Reportes de Mermas y Scrap{% endblock page_title %}
+{% block page_subtitle %}Consulta de historial y exportación a PDF (RF-14){% endblock page_subtitle %}
+
+{% block app_content %}
+<div class="container-fluid p-0">
+
+    <!-- 1. Barra de Filtros -->
+    <div class="card mb-4 border-0 shadow-sm">
+        <div class="card-body">
+            <form method="GET" action="{% url 'reportes:reporte-mermas' %}" class="row g-3 align-items-end">
+                <div class="col-md-2">
+                    <label class="form-label fw-semibold">Desde</label>
+                    <input type="date" name="desde" value="{{ desde_actual }}" class="form-control">
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label fw-semibold">Hasta</label>
+                    <input type="date" name="hasta" value="{{ hasta_actual }}" class="form-control">
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label fw-semibold">Línea de Producción</label>
+                    <select name="linea" class="form-select">
+                        <option value="">-- Todas las líneas --</option>
+                        {% for l in lineas %}
+                            <option value="{{ l.num }}" {% if linea_actual == l.num|stringformat:"s" %}selected{% endif %}>
+                                {{ l.nombre }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label fw-semibold">Turno</label>
+                    <select name="turno" class="form-select">
+                        <option value="">-- Todos --</option>
+                        <option value="MAT" {% if turno_actual == 'MAT' %}selected{% endif %}>Matutino</option>
+                        <option value="NOC" {% if turno_actual == 'NOC' %}selected{% endif %}>Nocturno</option>
+                    </select>
+                </div>
+                <div class="col-md-3 d-flex gap-2">
+                    <button type="submit" class="btn btn-primary flex-grow-1">
+                        <span class="material-symbols-outlined align-middle fs-5">search</span> Consultar
+                    </button>
+                    <a href="{% url 'reportes:exportar-pdf' %}?desde={{ desde_actual }}&hasta={{ hasta_actual }}&linea={{ linea_actual }}&turno={{ turno_actual }}" 
+                       target="_blank" 
+                       class="btn btn-outline-danger">
+                        <span class="material-symbols-outlined align-middle fs-5">picture_as_pdf</span> PDF
+                    </a>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- 2. Tarjetas de Resumen -->
+    <div class="row g-3 mb-4">
+        <div class="col-md-4">
+            <div class="card border-0 shadow-sm p-3">
+                <small class="text-muted fw-bold">IMPACTO ECONÓMICO</small>
+                <h3 class="text-danger fw-bold my-1">${{ reporte_data.totales.costo|default:"0.00" }} USD</h3>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card border-0 shadow-sm p-3">
+                <small class="text-muted fw-bold">PIEZAS MERMADAS</small>
+                <h3 class="text-primary fw-bold my-1">{{ reporte_data.totales.piezas|default:"0" }}</h3>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card border-0 shadow-sm p-3">
+                <small class="text-muted fw-bold">EVENTOS REGISTRADOS</small>
+                <h3 class="text-dark fw-bold my-1">{{ reporte_data.totales.eventos|default:"0" }}</h3>
+            </div>
+        </div>
+    </div>
+
+    <!-- 3. Tabla de Resultados -->
+    <div class="card border-0 shadow-sm">
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Folio</th>
+                            <th>Fecha</th>
+                            <th>Línea</th>
+                            <th>Estación</th>
+                            <th>Turno</th>
+                            <th>Componente</th>
+                            <th class="text-end">Cant.</th>
+                            <th class="text-end">Costo Total</th>
+                            <th>Causa Raíz</th>
+                            <th>Estado</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for item in reporte_data.resultados %}
+                        <tr>
+                            <td><span class="fw-bold">{{ item.folio }}</span></td>
+                            <td>{{ item.fecha }}</td>
+                            <td>{{ item.linea }}</td>
+                            <td>{{ item.estacion }}</td>
+                            <td>{{ item.turno|default:"-" }}</td>
+                            <td>{{ item.componente }}</td>
+                            <td class="text-end">{{ item.cantidad }}</td>
+                            <td class="text-end">${{ item.costo_total }}</td>
+                            <td>{{ item.causa_raiz|default:"-" }}</td>
+                            <td><span class="badge bg-secondary">{{ item.estado }}</span></td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="10" class="text-center py-4 text-muted">
+                                No se encontraron registros de mermas para los filtros seleccionados.
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+</div>
+{% endblock app_content %}

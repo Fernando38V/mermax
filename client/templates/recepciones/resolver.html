@@ -1,6 +1,6 @@
 {% extends "base/layout_app.html" %}
 
-{% block nav_almacen %}active{% endblock nav_almacen %}
+{% block nav_discrepancias %}active{% endblock nav_discrepancias %}
 
 {% block page_title %}Almacén{% endblock page_title %}
 {% block page_subtitle %}Resolver discrepancia — {{ folio }}{% endblock page_subtitle %}
@@ -39,7 +39,7 @@
             </div>
             <div class="mt-4 d-flex gap-2">
                 <button type="button" class="btn mx-btn-primary" id="btn-abrir-confirmacion">Confirmar resolución</button>
-                <a href="{% url 'recepciones:discrepancias' %}" class="btn btn-secondary">Cancelar</a>
+                <a href="{% url 'recepciones:discrepancias' %}" class="btn btn-secondary d-inline-flex align-items-center">Cancelar</a>
             </div>
         </form>
     </div>
