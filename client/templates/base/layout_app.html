@@ -56,7 +56,13 @@
             <a href="{% url 'trazabilidad:consulta' %}" class="mx-sidebar-link {% block nav_trazabilidad %}{% endblock nav_trazabilidad %}">
                 <span class="material-symbols-outlined">account_tree</span> Trazabilidad
             </a>
-
+            <!--
+            {% if usuario.rol == 'SUPER' %}
+            <a href="#" class="mx-sidebar-link {% block nav_mislineas %}{% endblock nav_mislineas %}">
+                <span class="material-symbols-outlined">manufacturing</span> Mis líneas
+            </a>
+            {% endif %}
+            -->
             {% if usuario.rol == 'CALID' %}
             <a href="{% url 'reportes:dashboard_kpis' %}" class="mx-sidebar-link {% block nav_kpis %}{% endblock nav_kpis %}">
                 <span class="material-symbols-outlined">analytics</span> KPIs Scrap
@@ -90,7 +96,12 @@
             {% endif %}
 
         </nav>
-        
+
+        <!-- Sidebar footer -->
+         <div class="mx-sidebar-footer">
+            Sistema de control de mermas <br>
+            Versión 1.0 
+         </div>
     </aside>
 
     <div class="mx-sidebar-overlay" id="sidebarOverlay"></div>
