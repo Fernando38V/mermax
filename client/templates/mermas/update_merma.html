@@ -17,7 +17,7 @@
 
 <!-- Formulario -->
 <div class="container-fluid">
-    <form method="post">
+    <form method="post" id="formEditarMerma">
         {% csrf_token %}
 
         <div class="card mb-4">
@@ -113,7 +113,7 @@
 
         <div class="d-flex justify-content-end gap-2">
             <a href="{% url 'mermas:detail_mermas' pk=merma.folio %}" class="btn btn-secondary">Cancelar</a>
-            <button type="submit" class="mx-btn-primary">
+            <button type="submit" class="mx-btn-primary" id="btnGuardar" disabled>
                 <span class="material-symbols-outlined">save</span>
                 Guardar cambios
             </button>
@@ -122,3 +122,59 @@
 </div>
 
 {% endblock app_content %}
+
+{% block extra_js %}
+
+<script>
+document.addEventListener("DOMContentLoaded", () => {
+
+    const form = document.getElementById("formEditarMerma");
+    const btnGuardar = document.getElementById("btnGuardar");
+
+    // Campos que sí pueden modificarse
+    const campos = [
+        document.getElementById("cantidad"),
+        document.getElementById("tipo_merma"),
+        document.getElementById("causa_raiz")
+    ];
+
+    // Guardar los valores originales
+    const valoresOriginales = {};
+
+    campos.forEach(campo => {
+        valoresOriginales[campo.id] = campo.value;
+    });
+
+    function hayCambios() {
+        return campos.some(campo => campo.value !== valoresOriginales[campo.id]);
+    }
+
+    function actualizarBoton() {
+        btnGuardar.disabled = !hayCambios();
+    }
+
+    // Detectar cambios
+    campos.forEach(campo => {
+        campo.addEventListener("input", actualizarBoton);
+        campo.addEventListener("change", actualizarBoton);
+    });
+
+    // Evitar doble envío
+    form.addEventListener("submit", function () {
+
+        if (!hayCambios()) {
+            event.preventDefault();
+            return;
+        }
+
+        btnGuardar.disabled = true;
+        btnGuardar.innerHTML = `
+            <span class="spinner-border spinner-border-sm me-2"></span>
+            Guardando...
+        `;
+    });
+
+});
+</script>
+
+{% endblock extra_js %}
