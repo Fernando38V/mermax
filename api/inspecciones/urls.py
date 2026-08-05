@@ -31,4 +31,7 @@ urlpatterns = [
     path('desecho/create/', views.CreateDesechoAPIView.as_view(), name='create_desecho'),
     path('desecho/detail/<str:pk>/', views.DetailDesechoAPIView.as_view(), name='detail_desecho'),
     path('desecho/update/<str:pk>/', views.UpdateDesechoAPIView.as_view(), name='update_desecho'),
+    
+    #url de dashboard
+    path('dashboard/', views.dashboard_calidad, name='dashboard_calidad'),
 ]

@@ -18,5 +18,7 @@ urlpatterns = [
     path('empleado/create/', views.CreateEmpleadoAPIView.as_view(), name='create_empleado'),
     path('empleado/detail/<int:pk>/', views.DetailEmpleadoAPIView.as_view(), name='detail_empleado'),
     path('empleado/update/<int:pk>/', views.UpdateEmpleadoAPIView.as_view(), name='update_empleado'),
+    
+    path("dashboard/", views.dashboard_admin, name="dashboard_admin"),
 ]
 

@@ -35,7 +35,7 @@
             </div>
         </div>
     </div>
-
+ 
     <div class="col-12 col-sm-6 col-xl-3">
         <div class="card border-0 shadow-sm border-start border-danger border-4 h-100">
             <div class="card-body">
@@ -45,23 +45,23 @@
             </div>
         </div>
     </div>
-
+ 
     <div class="col-12 col-sm-6 col-xl-3">
         <div class="card border-0 shadow-sm border-start border-success border-4 h-100">
             <div class="card-body">
-                <span class="text-muted fw-bold text-uppercase small">Dictaminadas Hoy</span>
-                <h3 class="text-success fw-bold my-2">{{ dash.resumen.dictaminadas_hoy }}</h3>
-                <p class="text-muted small mb-0">Aprobadas + rechazadas</p>
+                <span class="text-muted fw-bold text-uppercase small">Atendidas Hoy</span>
+                <h3 class="text-success fw-bold my-2">{{ dash.resumen.atendidas_hoy }}</h3>
+                <p class="text-muted small mb-0">Solicitudes de inspección</p>
             </div>
         </div>
     </div>
-
+ 
     <div class="col-12 col-sm-6 col-xl-3">
         <div class="card border-0 shadow-sm border-start border-info border-4 h-100">
             <div class="card-body">
-                <span class="text-muted fw-bold text-uppercase small">Tasa de Aprobación</span>
-                <h3 class="text-info fw-bold my-2">{{ dash.resumen.tasa_aprobacion|floatformat:1 }}%</h3>
-                <p class="text-muted small mb-0">Últimos 30 días</p>
+                <span class="text-muted fw-bold text-uppercase small">% Devuelto a Proveedor</span>
+                <h3 class="text-info fw-bold my-2">{{ dash.resumen.pct_devolucion|floatformat:1 }}%</h3>
+                <p class="text-muted small mb-0">Disposiciones del mes</p>
             </div>
         </div>
     </div>
@@ -72,13 +72,13 @@
     <div class="card-body">
         <h6 class="fw-bold mb-3">Accesos rápidos</h6>
         <div class="d-flex flex-wrap gap-2">
-            <a href="{% url 'inspecciones:alertas' %}" class="btn btn-primary d-flex align-items-center gap-2">
+            <a href="{% url 'inspecciones:alertas' %}" class="mx-btn-primary">
                 <span class="material-symbols-outlined fs-6">content_paste_search</span> Inspecciones
             </a>
-            <a href="{% url 'reportes:alertas_umbral' %}" class="btn btn-outline-secondary d-flex align-items-center gap-2">
+            <a href="{% url 'reportes:alertas_umbral' %}" class="btn btn-secondary d-flex align-items-center gap-2">
                 <span class="material-symbols-outlined fs-6">warning</span> Alertas
             </a>
-            <a href="{% url 'reportes:dashboard_kpis' %}" class="btn btn-outline-secondary d-flex align-items-center gap-2">
+            <a href="{% url 'reportes:dashboard_kpis' %}" class="btn btn-secondary d-flex align-items-center gap-2">
                 <span class="material-symbols-outlined fs-6">analytics</span> Ver KPIs completos de Scrap
             </a>
         </div>
@@ -124,7 +124,7 @@ document.addEventListener('DOMContentLoaded', function () {
     const data = JSON.parse(raw.textContent);
     const inspecciones = data.inspecciones_por_estado || [];
     const alertas = data.alertas_por_linea || [];
-
+ 
     const ctxInspecciones = document.getElementById('chartInspeccionesCalidad');
     if (ctxInspecciones && inspecciones.length > 0) {
         new Chart(ctxInspecciones, {
@@ -143,7 +143,7 @@ document.addEventListener('DOMContentLoaded', function () {
             }
         });
     }
-
+ 
     const ctxAlertas = document.getElementById('chartAlertasCalidad');
     if (ctxAlertas && alertas.length > 0) {
         new Chart(ctxAlertas, {

@@ -4,9 +4,9 @@
   dash = {
       "resumen": {
           "usuarios_activos": int,
-          "catalogos_configurados": int,
+          "catalogos_activos": int,   # suma de ítems activos en catálogos con bandera 'activo'
           "eventos_bitacora_hoy": int,
-          "alertas_criticas": int,   # semáforo rojo en cualquier línea (agregado global)
+          "alertas_criticas": int,   # líneas distintas con alerta ACTIVA
       },
       "bitacora_por_dia": [
           {"fecha": "2026-07-29", "eventos": 14}, ...  # últimos 7 días
@@ -18,21 +18,147 @@
   }
 {% endcomment %}
 
+<!-- TARJETAS RESUMEN -->
+<div class="row g-3 mb-4">
+    <div class="col-12 col-sm-6 col-xl-3">
+        <div class="card border-0 shadow-sm border-start border-primary border-4 h-100">
+            <div class="card-body">
+                <span class="text-muted fw-bold text-uppercase small">Usuarios Activos</span>
+                <h3 class="text-primary fw-bold my-2">{{ dash.resumen.usuarios_activos }}</h3>
+                <p class="text-muted small mb-0">En el sistema</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-12 col-sm-6 col-xl-3">
+        <div class="card border-0 shadow-sm border-start border-info border-4 h-100">
+            <div class="card-body">
+                <span class="text-muted fw-bold text-uppercase small">Ítems Activos en Catálogos</span>
+                <h3 class="text-info fw-bold my-2">{{ dash.resumen.catalogos_activos }}</h3>
+                <p class="text-muted small mb-0">Tipos, causas, componentes, etc.</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-12 col-sm-6 col-xl-3">
+        <div class="card border-0 shadow-sm border-start border-secondary border-4 h-100">
+            <div class="card-body">
+                <span class="text-muted fw-bold text-uppercase small">Eventos Bitácora Hoy</span>
+                <h3 class="text-secondary fw-bold my-2">{{ dash.resumen.eventos_bitacora_hoy }}</h3>
+                <p class="text-muted small mb-0">Trazabilidad de acciones</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-12 col-sm-6 col-xl-3">
+        <div class="card border-0 shadow-sm border-start border-danger border-4 h-100">
+            <div class="card-body">
+                <span class="text-muted fw-bold text-uppercase small">Alertas Críticas</span>
+                <h3 class="text-danger fw-bold my-2">{{ dash.resumen.alertas_criticas }}</h3>
+                <p class="text-muted small mb-0">Líneas en semáforo rojo</p>
+            </div>
+        </div>
+    </div>
+</div>
 
 <!-- ACCESOS RÁPIDOS -->
 <div class="card border-0 shadow-sm mb-4">
     <div class="card-body">
         <h6 class="fw-bold mb-3">Accesos rápidos</h6>
         <div class="d-flex flex-wrap gap-2">
-            <a href="{% url 'administrador:bitacora' %}" class="btn btn-primary d-flex align-items-center gap-2">
+            <a href="{% url 'administrador:bitacora' %}" class="mx-btn-primary d-flex align-items-center gap-2">
                 <span class="material-symbols-outlined fs-6">description</span> Bitácora
             </a>
-            <a href="{% url 'trazabilidad:consulta' %}" class="btn btn-outline-secondary d-flex align-items-center gap-2">
-                <span class="material-symbols-outlined fs-6">account_tree</span> Trazabilidad
+            <a href="{% url 'administrador:catalogos_indice' %}" class="btn btn-secondary d-flex align-items-center gap-2">
+                <span class="material-symbols-outlined fs-6">view_list</span> Catálogos
             </a>
-            <a href="{% url 'administrador:usuarios_list' %}" class="btn btn-outline-secondary d-flex align-items-center gap-2">
+            <a href="{% url 'administrador:usuarios_list' %}" class="btn btn-secondary d-flex align-items-center gap-2">
                 <span class="material-symbols-outlined fs-6">group</span> Usuarios
             </a>
         </div>
     </div>
 </div>
+
+<!-- GRÁFICOS -->
+<div class="row g-4">
+    <div class="col-12 col-lg-7">
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-header bg-white py-3 d-inline-flex align-items-center gap-1">
+                <span class="material-symbols-outlined">description</span>
+                <h6 class="fw-bold mb-0">Actividad en Bitácora (últimos 7 días)</h6>
+            </div>
+            <div class="card-body">
+                <div style="height: 280px; position: relative;">
+                    <canvas id="chartBitacoraAdmin"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-12 col-lg-5">
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-header bg-white py-3 d-inline-flex align-items-center gap-1">
+                <span class="material-symbols-outlined">group</span>
+                <h6 class="fw-bold mb-0">Usuarios por Rol</h6>
+            </div>
+            <div class="card-body">
+                <div style="height: 280px; position: relative;">
+                    <canvas id="chartUsuariosAdmin"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{{ dash|json_script:"dash-admin-payload" }}
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const raw = document.getElementById('dash-admin-payload');
+    if (!raw) return;
+    const data = JSON.parse(raw.textContent);
+    const bitacora = data.bitacora_por_dia || [];
+    const usuarios = data.usuarios_por_rol || [];
+
+    const ctxBitacora = document.getElementById('chartBitacoraAdmin');
+    if (ctxBitacora && bitacora.length > 0) {
+        new Chart(ctxBitacora, {
+            type: 'line',
+            data: {
+                labels: bitacora.map(b => b.fecha),
+                datasets: [{
+                    label: 'Eventos',
+                    data: bitacora.map(b => b.eventos),
+                    borderColor: '#0d6efd',
+                    backgroundColor: 'rgba(13,110,253,0.1)',
+                    tension: 0.3,
+                    fill: true
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: { y: { beginAtZero: true } }
+            }
+        });
+    }
+
+    const ctxUsuarios = document.getElementById('chartUsuariosAdmin');
+    if (ctxUsuarios && usuarios.length > 0) {
+        new Chart(ctxUsuarios, {
+            type: 'doughnut',
+            data: {
+                labels: usuarios.map(u => u.rol_nombre),
+                datasets: [{
+                    data: usuarios.map(u => u.cantidad),
+                    backgroundColor: ['#0d6efd', '#20c997', '#ffc107', '#6c757d']
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: { legend: { position: 'bottom' } }
+            }
+        });
+    }
+});
+</script>

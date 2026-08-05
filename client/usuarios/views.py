@@ -49,10 +49,10 @@ def logout_view(request):
 # dashboard_partials/README_integracion.md). Así esta vista no tiene
 # que transformar nada, solo pasar el dict de largo.
 _DASHBOARD_ENDPOINT_POR_ROL = {
-    'SUPER': '/mermas/dashboard/',
-    'ALMAC': '/recepciones/dashboard/',
+    'SUPER': '/mermas/dashboard-supervisor/',
+    'ALMAC': '/mermas/dashboard-almacen/',
     'CALID': '/inspecciones/dashboard/',
-    'ADMIN': '/administrador/dashboard/',
+    'ADMIN': '/usuarios/dashboard/',
 }
  
  

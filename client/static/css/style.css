@@ -110,6 +110,7 @@ body {
    ========================================================= */
 
 .mx-btn-primary {
+  text-decoration: none;
   background-color: var(--mx-accent);
   color: #ffffff;
   border: none;
@@ -189,12 +190,18 @@ body {
   background-color: var(--mx-bg-app);
   border-right: 1px solid var(--mx-border);
   width: 240px;
-  height: 100%;
-  min-height: 100vh;
-  padding: 1.25rem 0.85rem;
+  height: 100vh;
+  padding: 1.25rem 0.85rem 0;
   position: fixed;
   top: 0;
   left: 0;
+  overflow: hidden;
+}
+
+.mx-sidebar nav {
+  overflow-y: auto;
+  min-height: 0;
+  padding-bottom: 0.5rem;
 }
 
 .mx-sidebar-brand {
@@ -229,12 +236,11 @@ body {
 }
 
 .mx-sidebar-footer {
-  position: absolute;
-  bottom: 1rem;
-  left: 0.85rem;
-  right: 0.85rem;
+  position: static;
   color: var(--mx-text-muted);
   font-size: 0.75rem;
+  padding: 0.75rem 0 1rem;
+  flex-shrink: 0;
 }
 
 .mx-content-wrapper {
