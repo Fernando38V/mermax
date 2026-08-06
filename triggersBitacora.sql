@@ -67,7 +67,7 @@ BEGIN
     VALUES (
         v_usuario,
         'REGISTRO_MERMA',
-        'INSERT',
+        'CREATE',
         NULL,
         JSON_OBJECT(
             'folio', NEW.folio,
@@ -146,7 +146,7 @@ BEGIN
     VALUES (
         v_usuario,
         'DISCREPANCIA',
-        'INSERT',
+        'CREATE',
         NULL,
         JSON_OBJECT(
             'folio', NEW.folio,
@@ -224,7 +224,7 @@ BEGIN
     VALUES (
         v_usuario,
         'SOLICITUD_INSPECCION',
-        'INSERT',
+        'CREATE',
         NULL,
         JSON_OBJECT(
             'codigo', NEW.codigo,
@@ -297,7 +297,7 @@ BEGIN
     VALUES (
         v_usuario,
         'REGISTRO_DISPOSICION',
-        'INSERT',
+        'CREATE',
         NULL,
         JSON_OBJECT(
             'folio', NEW.folio,
@@ -377,7 +377,7 @@ BEGIN
     VALUES (
         @usuario_actual,
         'USUARIO',
-        'INSERT',
+        'CREATE',
         NULL,
         JSON_OBJECT(
             'num', NEW.num,
@@ -455,7 +455,7 @@ BEGIN
     VALUES (
         v_usuario,
         'EMPLEADO',
-        'INSERT',
+        'CREATE',
         NULL,
         JSON_OBJECT(
             'numero', NEW.numero,

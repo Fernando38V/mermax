@@ -71,6 +71,48 @@ def _parse_json(valor):
     return datos if isinstance(datos, dict) else None
 
 
+ETIQUETAS_CAMPOS = {
+    'num': 'ID', 'folio': 'Folio', 'codigo': 'Código',
+    'nombre': 'Nombre', 'descripcion': 'Descripción',
+    'costo': 'Costo', 'costo_total': 'Costo total', 'tipo': 'Tipo',
+    'activo': 'Activo', 'correo': 'Correo', 'telefono': 'Teléfono',
+    'direccion_calle': 'Calle', 'direccion_numero': 'Número exterior',
+    'direccion_colonia': 'Colonia', 'rfc': 'RFC',
+    'numero_linea': 'Número de línea', 'area': 'Área',
+    'estado_linea': 'Estado de la línea', 'etapa': 'Etapa',
+    'linea_produccion': 'Línea de producción', 'cantidad': 'Cantidad',
+    'fecha': 'Fecha', 'unidad': 'Unidad',
+    'edo_flujo_merma': 'Estado de la merma', 'usuario': 'Usuario',
+    'lote_material': 'Lote', 'componente': 'Componente',
+    'tipo_merma': 'Tipo de merma', 'causa_raiz': 'Causa raíz',
+    'estacion_trabajo': 'Estación de trabajo', 'orden_produccion': 'Orden de producción',
+    'fecha_reporte': 'Fecha de reporte', 'cantidad_reportada': 'Cantidad reportada',
+    'cantidad_recibida': 'Cantidad recibida', 'diferencia': 'Diferencia',
+    'motivo_reporte': 'Motivo del reporte', 'usuario_reporte': 'Reportado por',
+    'registro_merma': 'Merma relacionada', 'edo_discrepancia': 'Estado de la discrepancia',
+    'fecha_resolucion': 'Fecha de resolución', 'motivo_resolucion': 'Motivo de resolución',
+    'usuario_resolucion': 'Resuelto por', 'fecha_generacion': 'Fecha de generación',
+    'hora_generacion': 'Hora de generación', 'fecha_atencion': 'Fecha de atención',
+    'hora_atencion': 'Hora de atención', 'edo_solicitud': 'Estado de la solicitud',
+    'usuario_atencion': 'Atendido por', 'fecha_determinacion': 'Fecha de dictamen',
+    'fecha_ejecucion': 'Fecha de ejecución', 'cantidad_ejecutada': 'Cantidad ejecutada',
+    'observaciones': 'Observaciones', 'sale_almacen': 'Sale de almacén',
+    'llega_almacen': 'Llega a almacén', 'disposicion_final': 'Disposición final',
+    'estado_disposicion': 'Estado de la disposición', 'username': 'Usuario (login)',
+    'empleado': 'Empleado', 'rol': 'Rol', 'numero': 'Número de empleado',
+    'emNombre': 'Nombre', 'emPrimerApell': 'Primer apellido',
+    'emSegundoApell': 'Segundo apellido', 'fecha_nacimiento': 'Fecha de nacimiento',
+    'fecha_ingreso': 'Fecha de ingreso', 'turno': 'Turno',
+    'password_modificada': 'Contraseña modificada',
+}
+
+
+def _etiqueta(campo):
+    if campo in ETIQUETAS_CAMPOS:
+        return ETIQUETAS_CAMPOS[campo]
+    return campo.replace('_', ' ').replace('em', '', 1).capitalize()
+
+
 @register.filter
 def diferencias_json(valor_anterior, valor_nuevo):
     """
@@ -94,13 +136,13 @@ def diferencias_json(valor_anterior, valor_nuevo):
 
     if anterior is None:
         return mark_safe('<br>'.join(
-            f'<strong>{escape(k)}:</strong> {escape(str(v))}' for k, v in nuevo.items()
+            f'<strong>{_etiqueta(k)}:</strong> {escape(str(v))}' for k, v in nuevo.items()
         ))
 
     id_campo = next((c for c in IDENTIFICADORES if c in nuevo), None)
     lineas = []
     if id_campo:
-        lineas.append(f'<strong>{escape(id_campo)}:</strong> {escape(str(nuevo[id_campo]))}')
+        lineas.append(f'<strong>{_etiqueta(id_campo)}:</strong> {escape(str(nuevo[id_campo]))}')
 
     cambios = []
     for campo, valor in nuevo.items():
@@ -108,7 +150,7 @@ def diferencias_json(valor_anterior, valor_nuevo):
             continue
         if str(anterior.get(campo)) != str(valor):
             cambios.append(
-                f'<strong>{escape(campo)}:</strong> '
+                f'<strong>{_etiqueta(campo)}:</strong> '
                 f'<del class="mx-text-muted">{escape(str(anterior.get(campo)))}</del> &rarr; '
                 f'<b>{escape(str(valor))}</b>'
             )
