@@ -7,20 +7,32 @@
 
 {% block app_content %}
 
-{% if messages %}
-    {% for message in messages %}
-    <div class="alert alert-{{ message.tags }}">{{ message }}</div>
-    {% endfor %}
-{% endif %}
-
 <div class="mb-4 d-flex justify-content-end gap-2">
     {% if filtros_activos %}
-        <a href="{% url 'recepciones:disposiciones' %}" class="btn btn-secondary">
+        <a href="{% url 'recepciones:disposiciones' %}" class="btn btn-secondary d-inline-flex align-items-center gap-1">
             <span class="material-symbols-outlined">clear</span>
             Limpiar filtros
         </a>
     {% endif %}
+
+    <div class="mx-view-toggle btn-group" role="group" aria-label="Cambiar vista" data-list-target="disposiciones">
+        <button type="button" class="btn btn-secondary d-inline-flex align-items-center" data-view-btn="table">
+            <span class="material-symbols-outlined">table_rows</span>
+        </button>
+        <button type="button" class="btn btn-secondary d-inline-flex align-items-center" data-view-btn="cards">
+            <span class="material-symbols-outlined">grid_view</span>
+        </button>
+    </div>
 </div>
+
+{% if messages %}
+    {% for message in messages %}
+    <div class="alert alert-{{ message.tags }} alert-dismissible fade show d-flex align-items-center gap-2">
+        {{ message }}
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+    {% endfor %}
+{% endif %}
 
 <form method="get">
     <div class="row g-3 mb-4">
@@ -34,7 +46,7 @@
             </select>
         </div>
         <div class="col-auto d-flex align-items-end">
-            <button type="submit" class="btn btn-secondary">
+            <button type="submit" class="btn btn-secondary d-inline-flex align-items-center gap-1">
                 <span class="material-symbols-outlined">filter_alt</span>
                 Filtrar
             </button>
@@ -42,39 +54,77 @@
     </div>
 </form>
 
-<table class="table">
-    <thead>
-        <tr>
-            <th>Folio</th>
-            <th>Merma</th>
-            <th>Dictamen</th>
-            <th>Fecha determinación</th>
-            <th>Emitió</th>
-            <th>Acciones</th>
-        </tr>
-    </thead>
-    <tbody>
-        {% for disp in disposiciones %}
-        <tr>
-            <td>{{ disp.folio }}</td>
-            <td>{{ disp.registro_merma }}</td>
-            <td>{{ disp.dictamen_nombre }}</td>
-            <td>{{ disp.fecha_determinacion }}</td>
-            <td>{{ disp.emitido_por }}</td>
-            <td>
-                <button type="button" class="btn mx-btn-primary btn-sm btn-abrir-ejecutar"
-                        data-folio="{{ disp.folio }}">
-                    Ejecutar
-                </button>
-            </td>
-        </tr>
-        {% empty %}
-        <tr>
-            <td colspan="6" class="text-center mx-text-muted py-4">No hay disposiciones pendientes de ejecutar.</td>
-        </tr>
-        {% endfor %}
-    </tbody>
-</table>
+<div class="mx-list-container" data-view="table" data-list-id="disposiciones">
+
+    <div class="mx-list-table table-responsive">
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Folio</th>
+                    <th>Merma</th>
+                    <th>Dictamen</th>
+                    <th>Fecha determinación</th>
+                    <th>Emitió</th>
+                    <th>Acciones</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for disp in disposiciones %}
+                <tr>
+                    <td>{{ disp.folio }}</td>
+                    <td>{{ disp.registro_merma }}</td>
+                    <td>{{ disp.dictamen_nombre }}</td>
+                    <td>{{ disp.fecha_determinacion }}</td>
+                    <td>{{ disp.emitido_por }}</td>
+                    <td>
+                        <button type="button" class="btn mx-btn-primary btn-sm btn-abrir-ejecutar"
+                                data-folio="{{ disp.folio }}">
+                            Ejecutar
+                        </button>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="6" class="text-center mx-text-muted py-4">No hay disposiciones pendientes de ejecutar.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <div class="mx-list-cards">
+        <div class="row g-3">
+            {% for disp in disposiciones %}
+            <div class="col-12 col-md-6 col-lg-4">
+                <div class="mx-list-card h-100 d-flex flex-column">
+                    <div class="d-flex justify-content-between align-items-start mb-2">
+                        <span class="fw-semibold">{{ disp.folio }}</span>
+                    </div>
+
+                    <div class="mx-text-muted small mb-2">{{ disp.registro_merma }}</div>
+
+                    <div class="mb-1">
+                        <strong>Dictamen:</strong> {{ disp.dictamen_nombre }} · <strong>Emitió:</strong> {{ disp.emitido_por|title }}   
+                    </div>
+
+                    <div class="mb-1">
+                        <strong>fecha determinación:</strong> {{ disp.fecha_determinacion }}    
+                    </div>
+
+
+                    <div class="mt-auto">
+                        <button type="button" class="btn mx-btn-primary btn-sm btn-abrir-ejecutar mt-3"
+                                data-folio="{{ disp.folio }}">
+                            Ejecutar
+                        </button>
+                    </div>
+
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</div>
 
 <div id="modal-confirmar-ejecucion" class="mx-modal-overlay">
     <div class="mx-modal-card-light">

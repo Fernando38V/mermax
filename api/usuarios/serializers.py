@@ -71,6 +71,8 @@ class UsuarioPerfilSerializer(serializers.ModelSerializer):
 # ======================================================
 
 class ListUsuarioSerializer(serializers.ModelSerializer):
+    rol_nombre = serializers.CharField(source='rol.nombre', read_only=True)
+    
     class Meta:
         model = Usuario
         fields = [
@@ -79,6 +81,7 @@ class ListUsuarioSerializer(serializers.ModelSerializer):
             "correo",
             "empleado",
             "rol",
+            "rol_nombre",
             "activo",
         ]
 
@@ -157,13 +160,15 @@ CAMPOS_EMPLEADO = [
     "fecha_nacimiento",
     "fecha_ingreso", 
     "area", 
+    "area_nombre",
     "turno", 
     "activo",
 ]
 
 class ListEmpleadoSerializer(serializers.ModelSerializer):
     edad = serializers.IntegerField(read_only=True)   # viene de la propiedad del modelo
-
+    area_nombre = serializers.CharField(source='area.nombre', read_only=True)
+    
     class Meta:
         model = Empleado
         fields = ["numero", "edad"] + CAMPOS_EMPLEADO
