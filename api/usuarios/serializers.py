@@ -160,7 +160,6 @@ CAMPOS_EMPLEADO = [
     "fecha_nacimiento",
     "fecha_ingreso", 
     "area", 
-    "area_nombre",
     "turno", 
     "activo",
 ]
@@ -171,7 +170,7 @@ class ListEmpleadoSerializer(serializers.ModelSerializer):
     
     class Meta:
         model = Empleado
-        fields = ["numero", "edad"] + CAMPOS_EMPLEADO
+        fields = ["numero", "edad", "area_nombre"] + CAMPOS_EMPLEADO
 
 class CreateEmpleadoSerializer(serializers.ModelSerializer):
     class Meta:
