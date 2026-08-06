@@ -1,0 +1,166 @@
+{% comment %}
+  Requiere en el context de la vista:
+
+  dash = {
+      "resumen": {
+          "mermas_hoy": int,
+          "mermas_semana": int,
+          "piezas_semana": float,
+          "estacion_top": "Nombre estación" | None,
+      },
+      "tendencia_semana": [
+          {"fecha": "2026-07-29", "piezas": 12.5}, ...  # últimos 7 días
+      ],
+      "por_estacion": [
+          {"estacion_nombre": "EST-01", "piezas": 34.0}, ...  # top estaciones por piezas mermadas
+      ],
+  }
+{% endcomment %}
+
+<!-- TARJETAS RESUMEN -->
+<div class="row g-3 mb-4">
+    <div class="col-12 col-sm-6 col-xl-3">
+        <div class="card border-0 shadow-sm border-start border-danger border-4 h-100">
+            <div class="card-body">
+                <span class="text-muted fw-bold text-uppercase small">Mermas Hoy</span>
+                <h3 class="text-danger fw-bold my-2">{{ dash.resumen.mermas_hoy }}</h3>
+                <p class="text-muted small mb-0">Registros del día</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-12 col-sm-6 col-xl-3">
+        <div class="card border-0 shadow-sm border-start border-primary border-4 h-100">
+            <div class="card-body">
+                <span class="text-muted fw-bold text-uppercase small">Mermas Semana</span>
+                <h3 class="text-primary fw-bold my-2">{{ dash.resumen.mermas_semana }}</h3>
+                <p class="text-muted small mb-0">Últimos 7 días</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-12 col-sm-6 col-xl-3">
+        <div class="card border-0 shadow-sm border-start border-info border-4 h-100">
+            <div class="card-body">
+                <span class="text-muted fw-bold text-uppercase small">Piezas Mermadas</span>
+                <h3 class="text-info fw-bold my-2">{{ dash.resumen.piezas_semana|floatformat:1 }}</h3>
+                <p class="text-muted small mb-0">Acumulado semana</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-12 col-sm-6 col-xl-3">
+        <div class="card border-0 shadow-sm border-start border-warning border-4 h-100">
+            <div class="card-body">
+                <span class="text-muted fw-bold text-uppercase small">Estación Crítica</span>
+                <h3 class="text-warning fw-bold my-2">{{ dash.resumen.estacion_top|default:"—" }}</h3>
+                <p class="text-muted small mb-0">Mayor volumen de merma</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ACCESOS RÁPIDOS -->
+<div class="card border-0 shadow-sm mb-4">
+    <div class="card-body">
+        <h6 class="fw-bold mb-3">Accesos rápidos</h6>
+        <div class="d-flex flex-wrap gap-2">
+            <a href="{% url 'mermas:create_mermas' %}" class="mx-btn-primary d-flex align-items-center gap-2">
+                <span class="material-symbols-outlined fs-6">add_circle</span> Registrar Merma
+            </a>
+            <a href="{% url 'mermas:list_mermas' %}" class="btn btn-secondary d-flex align-items-center gap-2">
+                <span class="material-symbols-outlined fs-6">inventory_2</span> Ver Mermas
+            </a>
+            <a href="{% url 'trazabilidad:consulta' %}" class="btn btn-secondary d-flex align-items-center gap-2">
+                <span class="material-symbols-outlined fs-6">account_tree</span> Trazabilidad
+            </a>
+        </div>
+    </div>
+</div>
+
+<!-- GRÁFICOS -->
+<div class="row g-4">
+    <div class="col-12 col-lg-7">
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-header bg-white py-3 d-inline-flex align-items-center gap-1">
+                <span class="material-symbols-outlined fs-6">trending_up</span>
+                <h6 class="fw-bold mb-0">Tendencia de Merma (últimos 7 días)</h6>
+            </div>
+            <div class="card-body">
+                <div style="height: 280px; position: relative;">
+                    <canvas id="chartTendenciaSupervisor"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-12 col-lg-5">
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-header bg-white py-3 d-inline-flex align-items-center gap-1">
+                <span class="material-symbols-outlined fs-6">factory</span>
+                <h6 class="fw-bold mb-0">Piezas por Estación</h6>
+            </div>
+            <div class="card-body">
+                <div style="height: 280px; position: relative;">
+                    <canvas id="chartEstacionesSupervisor"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{{ dash|json_script:"dash-supervisor-payload" }}
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const raw = document.getElementById('dash-supervisor-payload');
+    if (!raw) return;
+    const data = JSON.parse(raw.textContent);
+    const tendencia = data.tendencia_semana || [];
+    const estaciones = data.por_estacion || [];
+
+    const ctxTendencia = document.getElementById('chartTendenciaSupervisor');
+    if (ctxTendencia && tendencia.length > 0) {
+        new Chart(ctxTendencia, {
+            type: 'line',
+            data: {
+                labels: tendencia.map(d => d.fecha),
+                datasets: [{
+                    label: 'Piezas mermadas',
+                    data: tendencia.map(d => d.piezas),
+                    borderColor: '#dc3545',
+                    backgroundColor: 'rgba(220,53,69,0.1)',
+                    tension: 0.3,
+                    fill: true
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: { y: { beginAtZero: true } }
+            }
+        });
+    }
+
+    const ctxEstaciones = document.getElementById('chartEstacionesSupervisor');
+    if (ctxEstaciones && estaciones.length > 0) {
+        new Chart(ctxEstaciones, {
+            type: 'bar',
+            data: {
+                labels: estaciones.map(e => e.estacion_nombre),
+                datasets: [{
+                    label: 'Piezas',
+                    data: estaciones.map(e => e.piezas),
+                    backgroundColor: '#0d6efd',
+                    borderRadius: 4
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                indexAxis: 'y',
+                scales: { x: { beginAtZero: true } }
+            }
+        });
+    }
+});
+</script>

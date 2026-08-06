@@ -1,0 +1,166 @@
+{% comment %}
+  Requiere en el context de la vista:
+
+  dash = {
+      "resumen": {
+          "lotes_disponibles": int,
+          "discrepancias_abiertas": int,
+          "disposiciones_mes": int,
+          "lotes_hoy": int,
+      },
+      "disposiciones_por_tipo": [
+          {"tipo": "Devolución", "cantidad": 5},
+          {"tipo": "Reciclaje", "cantidad": 8},
+          {"tipo": "Desecho", "cantidad": 2},
+      ],
+      "discrepancias_por_linea": [
+          {"linea_nombre": "Línea 1", "cantidad": 3}, ...
+      ],
+  }
+{% endcomment %}
+
+<!-- TARJETAS RESUMEN -->
+<div class="row g-3 mb-4">
+    <div class="col-12 col-sm-6 col-xl-3">
+        <div class="card border-0 shadow-sm border-start border-primary border-4 h-100">
+            <div class="card-body">
+                <span class="text-muted fw-bold text-uppercase small">Lotes Disponibles</span>
+                <h3 class="text-primary fw-bold my-2">{{ dash.resumen.lotes_disponibles }}</h3>
+                <p class="text-muted small mb-0">Stock utilizable ahora</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-12 col-sm-6 col-xl-3">
+        <div class="card border-0 shadow-sm border-start border-danger border-4 h-100">
+            <div class="card-body">
+                <span class="text-muted fw-bold text-uppercase small">Discrepancias Abiertas</span>
+                <h3 class="text-danger fw-bold my-2">{{ dash.resumen.discrepancias_abiertas }}</h3>
+                <p class="text-muted small mb-0">Sin resolver</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-12 col-sm-6 col-xl-3">
+        <div class="card border-0 shadow-sm border-start border-info border-4 h-100">
+            <div class="card-body">
+                <span class="text-muted fw-bold text-uppercase small">Disposiciones del Mes</span>
+                <h3 class="text-info fw-bold my-2">{{ dash.resumen.disposiciones_mes }}</h3>
+                <p class="text-muted small mb-0">Devolución / reciclaje / desecho</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-12 col-sm-6 col-xl-3">
+        <div class="card border-0 shadow-sm border-start border-success border-4 h-100">
+            <div class="card-body">
+                <span class="text-muted fw-bold text-uppercase small">Lotes Recibidos Hoy</span>
+                <h3 class="text-success fw-bold my-2">{{ dash.resumen.lotes_hoy }}</h3>
+                <p class="text-muted small mb-0">Recepciones del día</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ACCESOS RÁPIDOS -->
+<div class="card border-0 shadow-sm mb-4">
+    <div class="card-body">
+        <h6 class="fw-bold mb-3">Accesos rápidos</h6>
+        <div class="d-flex flex-wrap gap-2">
+            <a href="{% url 'recepciones:bandeja' %}" class="mx-btn-primary d-flex align-items-center gap-2">
+                <span class="material-symbols-outlined fs-6">warehouse</span> Almacen
+            </a>
+            <a href="{% url 'recepciones:discrepancias' %}" class="btn btn-secondary d-flex align-items-center gap-2">
+                <span class="material-symbols-outlined fs-6">report</span> Discrepancias
+            </a>
+            <a href="{% url 'recepciones:disposiciones' %}" class="btn btn-secondary d-flex align-items-center gap-2">
+                <span class="material-symbols-outlined fs-6">local_shipping</span> Disposiciones
+            </a>
+            <a href="{% url 'recepciones:historial' %}" class="btn btn-secondary d-flex align-items-center gap-2">
+                <span class="material-symbols-outlined fs-6">history</span> Historial
+            </a>
+        </div>
+    </div>
+</div>
+
+<!-- GRÁFICOS -->
+<div class="row g-4">
+    <div class="col-12 col-lg-5">
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-header bg-white py-3 d-inline-flex align-items-center gap-1">
+                <span class="material-symbols-outlined">box</span>
+                <h6 class="fw-bold mb-0">Disposiciones por Tipo</h6>
+            </div>
+            <div class="card-body">
+                <div style="height: 280px; position: relative;">
+                    <canvas id="chartDisposicionesAlmacen"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-12 col-lg-7">
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-header bg-white py-3 d-inline-flex align-items-center gap-1">
+                <span class="material-symbols-outlined">warning</span>
+                <h6 class="fw-bold mb-0">Discrepancias por Línea</h6>
+            </div>
+            <div class="card-body">
+                <div style="height: 280px; position: relative;">
+                    <canvas id="chartDiscrepanciasAlmacen"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{{ dash|json_script:"dash-almacen-payload" }}
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const raw = document.getElementById('dash-almacen-payload');
+    if (!raw) return;
+    const data = JSON.parse(raw.textContent);
+    const disposiciones = data.disposiciones_por_tipo || [];
+    const discrepancias = data.discrepancias_por_linea || [];
+
+    const ctxDisposiciones = document.getElementById('chartDisposicionesAlmacen');
+    if (ctxDisposiciones && disposiciones.length > 0) {
+        new Chart(ctxDisposiciones, {
+            type: 'doughnut',
+            data: {
+                labels: disposiciones.map(d => d.tipo),
+                datasets: [{
+                    data: disposiciones.map(d => d.cantidad),
+                    backgroundColor: ['#0d6efd', '#20c997', '#dc3545']
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: { legend: { position: 'bottom' } }
+            }
+        });
+    }
+
+    const ctxDiscrepancias = document.getElementById('chartDiscrepanciasAlmacen');
+    if (ctxDiscrepancias && discrepancias.length > 0) {
+        new Chart(ctxDiscrepancias, {
+            type: 'bar',
+            data: {
+                labels: discrepancias.map(d => d.linea_nombre),
+                datasets: [{
+                    label: 'Discrepancias',
+                    data: discrepancias.map(d => d.cantidad),
+                    backgroundColor: '#ffc107',
+                    borderRadius: 4
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } }
+            }
+        });
+    }
+});
+</script>

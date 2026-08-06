@@ -1,13 +1,18 @@
 from django.shortcuts import render, get_object_or_404
 from rest_framework.views import APIView
 from rest_framework.response import Response
+from rest_framework.decorators import api_view, permission_classes
+from rest_framework.permissions import IsAuthenticated
 from rest_framework import generics
 from inspecciones import serializers, models
 from rest_framework import status
-from django.db.models import Q
+from django.db.models import Q, Count
 from django.db import transaction
 from datetime import date, datetime
 from auditoria.services import AuditoriaSqlMixin
+
+from .models import SolicitudInspeccion, RegistroDisposicion
+from reportes.models import AlertaGenerada
 
 from usuarios.permissions import EsCalidad, LecturaTodosEscrituraCalidad, EsAlmacenista
 
@@ -341,3 +346,71 @@ class EjecutarDisposicionAPIView(AuditoriaSqlMixin, APIView):
             },
             status=status.HTTP_200_OK
         )
+
+# ======================================================
+# Dashboard de calidad
+# ======================================================
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def dashboard_calidad(request):
+    hoy = date.today()
+    inicio_mes = hoy.replace(day=1)
+ 
+    # ---- Resumen ----
+    inspecciones_pendientes = SolicitudInspeccion.objects.filter(
+        edo_solicitud_id='PENDIENTE'
+    ).count()
+ 
+    atendidas_hoy = SolicitudInspeccion.objects.filter(
+        fecha_atencion=hoy
+    ).count()
+ 
+    alertas_activas = AlertaGenerada.objects.filter(
+        estado_alerta_id='ACTIVA'
+    ).count()
+ 
+    disposiciones_mes = RegistroDisposicion.objects.filter(
+        fecha_determinacion__gte=inicio_mes
+    )
+    total_disposiciones = disposiciones_mes.count()
+    devoluciones = disposiciones_mes.filter(
+        disposiciondevolucion__isnull=False
+    ).count()
+    pct_devolucion = round((devoluciones / total_disposiciones) * 100, 1) if total_disposiciones else 0
+ 
+    # ---- Inspecciones por estado (para la dona) ----
+    inspecciones_por_estado_qs = (
+        SolicitudInspeccion.objects
+        .values('edo_solicitud__nombre')
+        .annotate(cantidad=Count('codigo'))
+        .order_by('edo_solicitud__nombre')
+    )
+    inspecciones_por_estado = [
+        {'estado': item['edo_solicitud__nombre'], 'cantidad': item['cantidad']}
+        for item in inspecciones_por_estado_qs
+    ]
+ 
+    # ---- Alertas activas por línea (para la barra) ----
+    alertas_por_linea_qs = (
+        AlertaGenerada.objects
+        .filter(estado_alerta_id='ACTIVA')
+        .values('umbral_alerta__linea_produccion__nombre')
+        .annotate(cantidad=Count('num'))
+        .order_by('-cantidad')
+    )
+    alertas_por_linea = [
+        {'linea_nombre': item['umbral_alerta__linea_produccion__nombre'], 'cantidad': item['cantidad']}
+        for item in alertas_por_linea_qs
+    ]
+ 
+    return Response({
+        'resumen': {
+            'inspecciones_pendientes': inspecciones_pendientes,
+            'alertas_activas': alertas_activas,
+            'atendidas_hoy': atendidas_hoy,
+            'pct_devolucion': pct_devolucion,
+        },
+        'inspecciones_por_estado': inspecciones_por_estado,
+        'alertas_por_linea': alertas_por_linea,
+    })

@@ -26,4 +26,7 @@ urlpatterns = [
     path("lotes-por-componente/", views.ListLotesPorComponenteAPIView.as_view(), name="lotes-por-componente"),
     path("ordenes-por-estacion/", views.ListOrdenesPorEstacionAPIView.as_view(), name="ordenes-por-estacion"),
 
+    #dashboard
+    path("dashboard-supervisor/", views.dashboard_supervisor, name="dashboard_supervisor"),
+    path("dashboard-almacen/", views.dashboard_almacen, name="dashboard_almacen"),
 ]   

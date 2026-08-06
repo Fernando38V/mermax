@@ -110,6 +110,7 @@ body {
    ========================================================= */
 
 .mx-btn-primary {
+  text-decoration: none;
   background-color: var(--mx-accent);
   color: #ffffff;
   border: none;

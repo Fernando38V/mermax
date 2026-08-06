@@ -15,17 +15,25 @@ from usuarios.wrappers import ApiError, api_get, api_post
 class AlertasInspeccion(generic.View):
     """Vista para listar las solicitudes de inspección con paginación y filtros."""
     template_name = 'inspecciones/alertas.html'
+    PAGE_SIZE = 10
+    VENTANA_PAGINAS = 2
 
     def get(self, request):
         token = request.session.get('api_token')
 
-        estado_filtro = request.GET.get('estado', 'TODAS').strip().upper()
+        estado_filtro = request.GET.get('estado', '').strip().upper()
         busqueda = request.GET.get('q', '').strip()
-        numero_pagina = request.GET.get('page', 1)
+
+        try:
+            pagina_actual = int(request.GET.get('page', 1))
+        except (TypeError, ValueError):
+            pagina_actual = 1
+        if pagina_actual < 1:
+            pagina_actual = 1
 
         endpoint = '/inspecciones/solicitudes/list/'
         params = []
-        
+
         if estado_filtro and estado_filtro != 'TODAS':
             params.append(f'estado={estado_filtro}')
         if busqueda:
@@ -46,21 +54,41 @@ class AlertasInspeccion(generic.View):
         else:
             solicitudes_list = []
 
-        paginator = Paginator(solicitudes_list, 10)
-        
+        paginator = Paginator(solicitudes_list, self.PAGE_SIZE)
+        total_paginas = paginator.num_pages
+
         try:
-            page_obj = paginator.page(numero_pagina)
-        except PageNotAnInteger:
+            page_obj = paginator.page(pagina_actual)
+        except (PageNotAnInteger, EmptyPage):
+            pagina_actual = 1
             page_obj = paginator.page(1)
-        except EmptyPage:
-            page_obj = paginator.page(paginator.num_pages)
+
+        rango_paginas = self._rango_paginas(page_obj.number, total_paginas)
+
+        # Querystring sin 'page', para conservar los filtros al cambiar de página
+        filtros_qs = request.GET.copy()
+        filtros_qs.pop('page', None)
+        querystring_filtros = filtros_qs.urlencode()
+
+        filtros_activos = bool(estado_filtro and estado_filtro != 'TODAS') or bool(busqueda)
 
         return render(request, self.template_name, {
-            'page_obj': page_obj,
             'solicitudes': page_obj.object_list,
-            'estado_actual': estado_filtro,
+            'pagina_actual': page_obj.number,
+            'total_paginas': total_paginas,
+            'rango_paginas': rango_paginas,
+            'querystring_filtros': querystring_filtros,
+            'estado_actual': estado_filtro or 'TODAS',
             'busqueda_actual': busqueda,
+            'filtros_activos': filtros_activos,
+            'total_solicitudes': paginator.count,
         })
+
+    def _rango_paginas(self, actual, total):
+        """Devuelve un rango de páginas centrado en la página actual."""
+        inicio = max(1, actual - self.VENTANA_PAGINAS)
+        fin = min(total, actual + self.VENTANA_PAGINAS)
+        return range(inicio, fin + 1)
 
 @method_decorator(login_required_api, name='dispatch')
 class IniciarInspeccion(generic.View):

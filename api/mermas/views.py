@@ -4,10 +4,15 @@ from django.shortcuts import render, get_object_or_404
 from auditoria.services import AuditoriaSqlMixin
 from rest_framework.views import APIView
 from rest_framework.response import Response
+from rest_framework.decorators import api_view, permission_classes
+from rest_framework.permissions import IsAuthenticated
 from rest_framework import generics, status
 from django.db import IntegrityError, DatabaseError, transaction
 from django.utils import timezone
 from rest_framework.pagination import PageNumberPagination
+from django.db.models import Sum
+from datetime import date, timedelta
+from .models import RegistroMerma
 
 from catalogos.models import EstacionTrabajo
 from catalogos.serializers import EstacionTrabajoSerializer
@@ -257,3 +262,141 @@ class ConfirmarRecepcionAPIView(AuditoriaSqlMixin, APIView):
             },
             status=status.HTTP_200_OK
         )
+        
+        
+"""
+Vista de agregación para el dashboard del rol SUPER.
+Se apoya en mermas.models.RegistroMerma.
+"""
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def dashboard_supervisor(request):
+    hoy = date.today()
+    hace_6_dias = hoy - timedelta(days=6)  # ventana de 7 días incluyendo hoy
+
+    mermas_hoy = RegistroMerma.objects.filter(fecha=hoy).count()
+
+    semana_qs = RegistroMerma.objects.filter(fecha__gte=hace_6_dias, fecha__lte=hoy)
+    mermas_semana = semana_qs.count()
+    piezas_semana = semana_qs.aggregate(total=Sum('cantidad'))['total'] or 0
+
+    # ---- Estación con más piezas mermadas en la semana ----
+    estacion_top_row = (
+        semana_qs.exclude(estacion_trabajo__isnull=True)
+        .values('estacion_trabajo__nombre')
+        .annotate(piezas=Sum('cantidad'))
+        .order_by('-piezas')
+        .first()
+    )
+    estacion_top = estacion_top_row['estacion_trabajo__nombre'] if estacion_top_row else None
+
+    # ---- Tendencia diaria (rellenando días sin registros con 0) ----
+    tendencia_qs = (
+        semana_qs.values('fecha')
+        .annotate(piezas=Sum('cantidad'))
+        .order_by('fecha')
+    )
+    piezas_por_fecha = {row['fecha']: float(row['piezas'] or 0) for row in tendencia_qs}
+    tendencia_semana = []
+    for i in range(7):
+        d = hace_6_dias + timedelta(days=i)
+        tendencia_semana.append({'fecha': d.isoformat(), 'piezas': piezas_por_fecha.get(d, 0)})
+
+    # ---- Top estaciones de la semana ----
+    por_estacion_qs = (
+        semana_qs.exclude(estacion_trabajo__isnull=True)
+        .values('estacion_trabajo__nombre')
+        .annotate(piezas=Sum('cantidad'))
+        .order_by('-piezas')[:6]
+    )
+    por_estacion = [
+        {'estacion_nombre': row['estacion_trabajo__nombre'], 'piezas': float(row['piezas'] or 0)}
+        for row in por_estacion_qs
+    ]
+
+    return Response({
+        'resumen': {
+            'mermas_hoy': mermas_hoy,
+            'mermas_semana': mermas_semana,
+            'piezas_semana': float(piezas_semana),
+            'estacion_top': estacion_top,
+        },
+        'tendencia_semana': tendencia_semana,
+        'por_estacion': por_estacion,
+    })
+    
+    """
+Vista de agregación para el dashboard del rol ALMAC.
+Se apoya en recepciones.models.LoteMaterial / Discrepancia y en
+inspecciones.models.RegistroDisposicion (+ subtipos Devolucion/Reciclaje/Desecho).
+"""
+from datetime import date
+
+from django.db.models import Count
+from rest_framework.decorators import api_view, permission_classes
+from rest_framework.permissions import IsAuthenticated
+from rest_framework.response import Response
+
+from recepciones.models import LoteMaterial, Discrepancia
+from inspecciones.models import RegistroDisposicion
+
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def dashboard_almacen(request):
+    hoy = date.today()
+    inicio_mes = hoy.replace(day=1)
+
+    # Lotes con stock disponible ahora mismo (no agotados, no vencidos).
+    lotes_disponibles = LoteMaterial.objects.filter(estado_lote_id='DISPONIBLE').count()
+
+    discrepancias_abiertas = Discrepancia.objects.filter(edo_discrepancia_id='ABIERTA').count()
+
+    lotes_hoy = LoteMaterial.objects.filter(fecha=hoy).count()
+
+    disposiciones_mes_qs = RegistroDisposicion.objects.filter(fecha_determinacion__gte=inicio_mes)
+    disposiciones_mes = disposiciones_mes_qs.count()
+
+    # ---- Disposiciones por tipo (join con los 3 subtipos vía OneToOne) ----
+    devoluciones = disposiciones_mes_qs.filter(disposiciondevolucion__isnull=False).count()
+    reciclaje = disposiciones_mes_qs.filter(disposicionreciclaje__isnull=False).count()
+    desecho = disposiciones_mes_qs.filter(disposiciondesecho__isnull=False).count()
+    disposiciones_por_tipo = [
+        {'tipo': 'Devolución', 'cantidad': devoluciones},
+        {'tipo': 'Reciclaje', 'cantidad': reciclaje},
+        {'tipo': 'Desecho', 'cantidad': desecho},
+    ]
+
+    # ---- Discrepancias abiertas por línea ----
+    # Discrepancia no tiene FK directa a línea; se llega vía
+    # registro_merma -> estacion_trabajo -> linea_produccion. Como
+    # registro_merma es nullable, las discrepancias sin merma asociada
+    # quedan fuera de esta gráfica (se cuentan igual en el resumen).
+    discrepancias_por_linea_qs = (
+        Discrepancia.objects
+        .filter(edo_discrepancia_id='ABIERTA')
+        .exclude(registro_merma__isnull=True)
+        .exclude(registro_merma__estacion_trabajo__isnull=True)
+        .values('registro_merma__estacion_trabajo__linea_produccion__nombre')
+        .annotate(cantidad=Count('folio'))
+        .order_by('-cantidad')
+    )
+    discrepancias_por_linea = [
+        {
+            'linea_nombre': row['registro_merma__estacion_trabajo__linea_produccion__nombre'],
+            'cantidad': row['cantidad'],
+        }
+        for row in discrepancias_por_linea_qs
+    ]
+
+    return Response({
+        'resumen': {
+            'lotes_disponibles': lotes_disponibles,
+            'discrepancias_abiertas': discrepancias_abiertas,
+            'disposiciones_mes': disposiciones_mes,
+            'lotes_hoy': lotes_hoy,
+        },
+        'disposiciones_por_tipo': disposiciones_por_tipo,
+        'discrepancias_por_linea': discrepancias_por_linea,
+    })

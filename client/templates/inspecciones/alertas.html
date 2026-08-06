@@ -1,5 +1,4 @@
 {% extends "base/layout_app.html" %}
-{% load static %}
 
 {% block nav_inspecciones %}active{% endblock nav_inspecciones %}
 
@@ -8,217 +7,132 @@
 
 {% block app_content %}
 
-<!-- Alertas / Feedback -->
-{% if messages %}
-    <div class="row mb-3">
-        <div class="col-12">
-            {% for message in messages %}
-                <div class="alert alert-{% if message.tags == 'error' %}danger{% else %}{{ message.tags }}{% endif %} alert-dismissible fade show d-flex align-items-center gap-2" role="alert">
-                    <span class="material-symbols-outlined">
-                        {% if message.tags == 'error' %}error{% else %}check_circle{% endif %}
-                    </span>
-                    <div>{{ message }}</div>
-                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-                </div>
-            {% endfor %}
-        </div>
-    </div>
-{% endif %}
-
-<!-- Tarjeta Principal -->
-<div class="card shadow-sm border-0">
-    
-    <div class="card-header bg-white py-3 border-bottom">
-        <div class="d-flex flex-column flex-lg-row align-items-lg-center justify-content-between gap-3">
-            
-            <div class="text-nowrap">
-                <h5 class="card-title mb-0 fw-bold d-flex align-items-center gap-2">
-                    <span class="material-symbols-outlined text-primary">fact_check</span>
-                    Solicitudes de Inspección
-                </h5>
-                <small class="text-muted">Total: {{ page_obj.paginator.count }} registro(s)</small>
-            </div>
-
-            <div class="btn-group btn-group-sm" role="group" aria-label="Filtro por estado">
-                <a href="?estado=TODAS{% if busqueda_actual %}&q={{ busqueda_actual }}{% endif %}" 
-                   class="btn btn-outline-primary {% if estado_actual == 'TODAS' or not estado_actual %}active{% endif %}">
-                    Todas
-                </a>
-                <a href="?estado=PENDIENTE{% if busqueda_actual %}&q={{ busqueda_actual }}{% endif %}" 
-                   class="btn btn-outline-warning text-dark {% if estado_actual == 'PENDIENTE' %}active{% endif %}">
-                    Pendientes
-                </a>
-                <a href="?estado=ATENDIDA{% if busqueda_actual %}&q={{ busqueda_actual }}{% endif %}" 
-                   class="btn btn-outline-success {% if estado_actual == 'ATENDIDA' %}active{% endif %}">
-                    Atendidas
-                </a>
-            </div>
-
-            <form method="GET" action="" style="max-width: 280px;" class="w-100">
-                <input type="hidden" name="estado" value="{{ estado_actual }}">
-                <div class="input-group input-group-sm">
-                    <span class="input-group-text bg-light border-end-0">
-                        <span class="material-symbols-outlined fs-6 text-muted">search</span>
-                    </span>
-                    <input type="text" 
-                           name="q" 
-                           value="{{ busqueda_actual }}" 
-                           class="form-control bg-light border-start-0" 
-                           placeholder="Buscar código o folio...">
-                    {% if busqueda_actual %}
-                        <a href="?estado={{ estado_actual }}" class="btn btn-outline-secondary d-flex align-items-center" title="Limpiar búsqueda">
-                            <span class="material-symbols-outlined fs-6">close</span>
-                        </a>
-                    {% endif %}
-                </div>
-            </form>
-
-        </div>
+    <div class="mb-4 d-flex justify-content-end align-items-center gap-2">
+        {% if filtros_activos %}
+            <a href="{% url 'inspecciones:alertas' %}" class="btn btn-secondary">
+                <span class="material-symbols-outlined">clear</span>
+                Limpiar filtros
+            </a>
+        {% endif %}
     </div>
 
-    <!-- Tabla -->
-    <div class="card-body p-0">
-        <div class="table-responsive">
-            <table class="table table-hover align-middle mb-0">
-                <thead class="table-light">
-                    <tr>
-                        <th scope="col" class="ps-3">Código Solicitud</th>
-                        <th scope="col">Folio Merma</th>
-                        <th scope="col">Fecha / Hora Solicitud</th>
-                        <th scope="col">Estado</th>
-                        <th scope="col" class="text-end pe-4">Acción</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for solicitud in solicitudes %}
-                        <tr>
-                            <td class="ps-3 fw-bold text-dark">
-                                {{ solicitud.codigo }}
-                            </td>
-                            <td>
-                                <span class="badge bg-light text-dark border">
-                                    {{ solicitud.registro_merma.folio|default:solicitud.registro_merma }}
-                                </span>
-                            </td>
-                            <td>
-                                <div class="small">
-                                    <div><span class="fw-semibold">{{ solicitud.fecha_generacion }}</span></div>
-                                    <div class="text-muted fs-7">{{ solicitud.hora_generacion|default:"" }}</div>
-                                </div>
-                            </td>
-                            <td>
-                                {% if solicitud.edo_solicitud == 'ATENDIDA' or solicitud.edo_solicitud_id == 'ATENDIDA' %}
-                                    <span class="badge bg-success text-white border border-success">ATENDIDA</span>
-                                {% else %}
-                                    <span class="badge bg-warning text-dark border border-warning">PENDIENTE</span>
-                                {% endif %}
-                            </td>
-                            <td class="text-end pe-4">
-                                {% if solicitud.edo_solicitud == 'ATENDIDA' or solicitud.edo_solicitud_id == 'ATENDIDA' %}
-                                    <span class="badge bg-light text-muted border px-3 py-2 fw-semibold d-inline-flex align-items-center gap-1">
-                                        <span class="material-symbols-outlined fs-6 text-success">check_circle</span>
-                                        Atendida
-                                    </span>
-
-                                {% elif solicitud.estado_merma == 'INSPECCIO' or solicitud.registro_merma.edo_flujo_merma_id == 'INSPECCIO' or solicitud.registro_merma.edo_flujo_merma == 'INSPECCIO' %}
-                                    <a href="{% url 'inspecciones:dictaminar_inspeccion_codigo' solicitud.codigo %}" 
-                                       class="btn btn-primary btn-sm d-inline-flex align-items-center gap-1 shadow-sm">
-                                        <span class="material-symbols-outlined fs-6">gavel</span>
-                                        <span>Dictaminar</span>
-                                    </a>
-
-                                {% else %}
-                                    <button type="button" 
-                                            class="btn btn-outline-secondary btn-sm d-inline-flex align-items-center gap-1 shadow-sm"
-                                            data-bs-toggle="modal" 
-                                            data-bs-target="#modalIniciar-{{ solicitud.codigo }}">
-                                        <span class="material-symbols-outlined fs-6">play_arrow</span>
-                                        <span>Iniciar</span>
-                                    </button>
-
-                                    <div class="modal fade text-start" id="modalIniciar-{{ solicitud.codigo }}" tabindex="-1" aria-hidden="true">
-                                        <div class="modal-dialog modal-dialog-centered">
-                                            <div class="modal-content border-0 shadow-lg" style="border-radius: 12px;">
-                                                <div class="modal-header border-0 pb-0">
-                                                    <h5 class="modal-title fw-bold">Confirmar Inicio</h5>
-                                                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                                                </div>
-                                                <div class="modal-body text-center py-4">
-                                                    <span class="material-symbols-outlined text-warning display-3 mb-2">info</span>
-                                                    <h6 class="fw-bold fs-5 text-dark">¿Deseas iniciar la inspección?</h6>
-                                                    <p class="text-muted mb-0">
-                                                        La solicitud <strong>{{ solicitud.codigo }}</strong> iniciará su proceso de atención.
-                                                    </p>
-                                                </div>
-                                                <div class="modal-footer border-0 pt-0 justify-content-center gap-2">
-                                                    <button type="button" class="btn btn-light rounded-pill px-4" data-bs-dismiss="modal">Cancelar</button>
-                                                    <form method="POST" action="{% url 'inspecciones:iniciar_inspeccion' solicitud.codigo %}">
-                                                        {% csrf_token %}
-                                                        <button type="submit" class="btn btn-warning text-dark fw-bold rounded-pill px-4 d-inline-flex align-items-center gap-1">
-                                                            <span class="material-symbols-outlined fs-6">play_arrow</span>
-                                                            <span>Iniciar</span>
-                                                        </button>
-                                                    </form>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                {% endif %}
-                            </td>
-                        </tr>
-                    {% empty %}
-                        <tr>
-                            <td colspan="5" class="text-center py-5">
-                                <div class="d-flex flex-column align-items-center text-muted">
-                                    <span class="material-symbols-outlined display-4 mb-2 text-secondary">verified</span>
-                                    <h6 class="fw-bold text-dark">Sin registros encontrados</h6>
-                                    <p class="mb-0 small">No hay solicitudes que coincidan con el filtro seleccionado.</p>
-                                </div>
-                            </td>
-                        </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-        </div>
-    </div>
-
-    <!-- Paginador Bootstrap -->
-    {% if page_obj.paginator.num_pages > 1 %}
-        <div class="card-footer bg-white py-3 border-top">
-            <div class="d-flex flex-column flex-md-row justify-content-between align-items-center gap-2">
-                <small class="text-muted">
-                    Página <strong>{{ page_obj.number }}</strong> de <strong>{{ page_obj.paginator.num_pages }}</strong>
-                </small>
-                
-                <nav aria-label="Navegación de solicitudes">
-                    <ul class="pagination pagination-sm mb-0">
-                        <li class="page-item {% if not page_obj.has_previous %}disabled{% endif %}">
-                            <a class="page-link" 
-                               href="?page={% if page_obj.has_previous %}{{ page_obj.previous_page_number }}{% else %}1{% endif %}&estado={{ estado_actual }}&q={{ busqueda_actual }}">
-                                Anterior
-                            </a>
-                        </li>
-
-                        {% for i in page_obj.paginator.page_range %}
-                            <li class="page-item {% if i == page_obj.number %}active{% endif %}">
-                                <a class="page-link" 
-                                   href="?page={{ i }}&estado={{ estado_actual }}&q={{ busqueda_actual }}">
-                                    {{ i }}
-                                </a>
-                            </li>
-                        {% endfor %}
-
-                        <li class="page-item {% if not page_obj.has_next %}disabled{% endif %}">
-                            <a class="page-link" 
-                               href="?page={% if page_obj.has_next %}{{ page_obj.next_page_number }}{% else %}{{ page_obj.paginator.num_pages }}{% endif %}&estado={{ estado_actual }}&q={{ busqueda_actual }}">
-                                Siguiente
-                            </a>
-                        </li>
-                    </ul>
-                </nav>
+    <!-- Mensajes -->
+    {% if messages %}
+        <div class="row mb-3">
+            <div class="col-12">
+                {% for message in messages %}
+                    <div class="alert alert-{% if message.tags == 'error' %}danger{% else %}{{ message.tags }}{% endif %} alert-dismissible fade show d-flex align-items-center gap-2" role="alert">
+                        <span class="material-symbols-outlined">
+                            {% if message.tags == 'error' %}error{% else %}check_circle{% endif %}
+                        </span>
+                        <div>{{ message }}</div>
+                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                    </div>
+                {% endfor %}
             </div>
         </div>
     {% endif %}
-</div>
+
+    <form method="get">
+        <div class="row g-3 mb-4">
+            <div class="col-12 col-md-4 col-lg-3">
+                <label class="form-label">Estado</label>
+                <select class="form-select" name="estado">
+                    <option value="TODAS" {% if estado_actual == 'TODAS' or not estado_actual %}selected{% endif %}>Todas</option>
+                    <option value="PENDIENTE" {% if estado_actual == 'PENDIENTE' %}selected{% endif %}>Pendientes</option>
+                    <option value="ATENDIDA" {% if estado_actual == 'ATENDIDA' %}selected{% endif %}>Atendidas</option>
+                </select>
+            </div>
+            <div class="col-12 col-md-5 col-lg-4">
+                <label class="form-label">Buscar</label>
+                
+                <input type="text" name="q" value="{{ busqueda_actual }}" class="form-control" placeholder="Código o folio...">
+            </div>
+            <div class="col-12 col-md-3 col-lg-2 d-flex align-items-end">
+                <button type="submit" class="btn btn-secondary d-inline-flex align-items-center gap-1 w-100">
+                    <span class="material-symbols-outlined">filter_alt</span>
+                    Filtrar
+                </button>
+            </div>
+        </div>
+    </form>
+
+    <div class="mx-list-table table-responsive">
+        <table class="table">
+            <thead>
+                <th>Código Solicitud</th>
+                <th>Folio Merma</th>
+                <th>Fecha / Hora Solicitud</th>
+                <th>Estado</th>
+                <th>Acciones</th>
+            </thead>
+            <tbody>
+                {% for solicitud in solicitudes %}
+                <tr>
+                    <td>{{ solicitud.codigo }}</td>
+                    <td>{{ solicitud.registro_merma.folio|default:solicitud.registro_merma }}</td>
+                    <td>
+                        {{ solicitud.fecha_generacion }}
+                        {% if solicitud.hora_generacion %}
+                            <div class="small mx-text-muted">{{ solicitud.hora_generacion }}</div>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if solicitud.edo_solicitud == 'ATENDIDA' or solicitud.edo_solicitud_id == 'ATENDIDA' %}
+                            <span class="mx-badge-status">ATENDIDA</span>
+                        {% else %}
+                            <span class="mx-badge-status">PENDIENTE</span>
+                        {% endif %}
+                    </td>
+                    <td class="">
+                        {% if solicitud.edo_solicitud == 'ATENDIDA' or solicitud.edo_solicitud_id == 'ATENDIDA' %}
+                            <span class="badge bg-success">Atendida</span>
+
+                        {% elif solicitud.estado_merma == 'INSPECCIO' or solicitud.registro_merma.edo_flujo_merma_id == 'INSPECCIO' or solicitud.registro_merma.edo_flujo_merma == 'INSPECCIO' %}
+                            <a href="{% url 'inspecciones:dictaminar_inspeccion_codigo' solicitud.codigo %}" class="btn btn-secondary text-nowrap">
+                                <span>Dictaminar</span>
+                            </a>
+
+                        {% else %}
+                            <form method="POST" action="{% url 'inspecciones:iniciar_inspeccion' solicitud.codigo %}">
+                                {% csrf_token %}
+                                <button type="submit" class="btn mx-btn-primary text-nowrap">
+                                    <span>Iniciar</span>
+                                </button>
+                            </form>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="5" class="text-center mx-text-muted py-4">
+                        No hay solicitudes que coincidan con el filtro seleccionado.
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Footer -->
+    <div class="d-flex justify-content-center">
+        <nav aria-label="Paginación de solicitudes">
+            <ul class="pagination">
+                <li class="page-item {% if pagina_actual <= 1 %}disabled{% endif %}">
+                    <a class="page-link" href="?{{ querystring_filtros }}{% if querystring_filtros %}&{% endif %}page={{ pagina_actual|add:'-1' }}">Anterior</a>
+                </li>
+
+                {% for n in rango_paginas %}
+                <li class="page-item {% if n == pagina_actual %}active{% endif %}">
+                    <a class="page-link" href="?{{ querystring_filtros }}{% if querystring_filtros %}&{% endif %}page={{ n }}">{{ n }}</a>
+                </li>
+                {% endfor %}
+
+                <li class="page-item {% if pagina_actual >= total_paginas %}disabled{% endif %}">
+                    <a class="page-link" href="?{{ querystring_filtros }}{% if querystring_filtros %}&{% endif %}page={{ pagina_actual|add:"1" }}">Siguiente</a>
+                </li>
+            </ul>
+        </nav>
+    </div>
 
 {% endblock app_content %}
