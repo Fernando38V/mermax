@@ -9,48 +9,59 @@
 
 {% if messages %}
     {% for message in messages %}
-    <div class="alert alert-{{ message.tags }}">{{ message }}</div>
+    <div class="alert alert-{{ message.tags }} alert-dismissible fade show d-flex align-items-center gap-2">
+        {{ message }}
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
     {% endfor %}
 {% endif %}
 
 <div class="mb-4 d-flex justify-content-between">
-    <a href="{% url 'administrador:empleados_list' %}" class="btn btn-secondary">Ver empleados</a>
+    <a href="{% url 'administrador:empleados_list' %}" class="btn btn-secondary d-inline-flex align-items-center gap-2">
+        <span class="material-symbols-outlined">group</span>
+        Ver empleados
+    </a>
     <a href="{% url 'administrador:personal_create' %}" class="btn mx-btn-primary">
         <span class="material-symbols-outlined">add</span> Nuevo empleado + usuario
     </a>
 </div>
-
-<table class="table">
-    <thead>
-        <tr>
-            <th>Usuario</th>
-            <th>Correo</th>
-            <th>Rol</th>
-            <th>Estado</th>
-            <th>Acciones</th>
-        </tr>
-    </thead>
-    <tbody>
-        {% for u in usuarios %}
-        <tr>
-            <td>{{ u.username }}</td>
-            <td>{{ u.correo }}</td>
-            <td>{{ u.rol }}</td>
-            <td>
-                {% if u.activo %}
-                    <span class="badge bg-success">Activo</span>
-                {% else %}
-                    <span class="badge bg-secondary">Inactivo</span>
-                {% endif %}
-            </td>
-            <td>
-                <a href="{% url 'administrador:usuario_edit' pk=u.num %}" class="btn btn-secondary btn-sm">Editar</a>
-            </td>
-        </tr>
-        {% empty %}
-        <tr><td colspan="5" class="text-center mx-text-muted py-4">No hay usuarios.</td></tr>
-        {% endfor %}
-    </tbody>
-</table>
+<div class="mx-list-table table-responsive">
+    <table class="table">
+        <thead>
+            <tr>
+                <th></th>
+                <th> Número</th>
+                <th>Nombre de Usuario</th>
+                <th>Correo</th>
+                <th>Rol</th>
+                <th>Estado</th>
+                <th>Acciones</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for u in usuarios %}
+            <tr>
+                <td></td>
+                <td> {{ u.num|stringformat:"02d" }}</td>
+                <td>{{ u.username }}</td>
+                <td>{{ u.correo }}</td>
+                <td>{{ u.rol_nombre }}</td>
+                <td>
+                    {% if u.activo %}
+                        <span class="badge bg-success">Activo</span>
+                    {% else %}
+                        <span class="badge bg-secondary">Inactivo</span>
+                    {% endif %}
+                </td>
+                <td>
+                    <a href="{% url 'administrador:usuario_edit' pk=u.num %}" class="btn btn-secondary ">Editar</a>
+                </td>
+            </tr>
+            {% empty %}
+            <tr><td colspan="5" class="text-center mx-text-muted py-4">No hay usuarios.</td></tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
 
 {% endblock app_content %}

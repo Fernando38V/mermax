@@ -8,17 +8,26 @@
 
 {% if messages %}
     {% for message in messages %}
-    <div class="alert alert-{{ message.tags }}">{{ message }}</div>
+    <div class="alert alert-{{ message.tags }} alert-dismissible fade show d-flex align-items-center gap-2">
+        {{ message }}
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
     {% endfor %}
 {% endif %}
 
-<div class="mb-4">
-    <a href="{% url 'administrador:usuarios_list' %}" class="btn btn-secondary">← Ver usuarios</a>
+<div class="mb-4 d-flex justify-content-between">
+    <a href="{% url 'administrador:usuarios_list' %}" class="btn btn-secondary d-inline-flex align-items-center gap-2" style="padding: 0.75rem;">
+        <span class="material-symbols-outlined">badge</span>
+        Ver usuarios
+    </a>
+    
 </div>
 
 <table class="table">
     <thead>
         <tr>
+            <th></th>
+            <th>Número</th>
             <th>Nombre completo</th>
             <th>Área</th>
             <th>Turno</th>
@@ -29,9 +38,17 @@
     <tbody>
         {% for e in empleados %}
         <tr>
+            <td></td>
+            <td>{{ e.numero|stringformat:"02d" }}</td>
             <td>{{ e.nombre }} {{ e.primer_apellido }} {{ e.segundo_apellido|default:"" }}</td>
-            <td>{{ e.area }}</td>
-            <td>{{ e.turno }}</td>
+            <td>{{ e.area_nombre }}</td>
+            <td>
+                {% if e.turno == 'MAT' %}
+                    Matutino
+                {% elif e.turno == 'NOC' %}
+                    Vespertino
+                {% endif %}
+            </td>
             <td>
                 {% if e.activo %}<span class="badge bg-success">Activo</span>
                 {% else %}<span class="badge bg-secondary">Inactivo</span>{% endif %}
