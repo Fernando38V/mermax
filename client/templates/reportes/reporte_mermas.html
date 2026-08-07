@@ -1,5 +1,6 @@
 {% extends "base/layout_app.html" %}
 {% load static %}
+{% load reportes_extras %}
 
 {% block nav_reportes %}active{% endblock nav_reportes %}
 {% block page_title %}Reportes de Mermas y Scrap{% endblock page_title %}
@@ -56,21 +57,21 @@
     <!-- 2. Tarjetas de Resumen -->
     <div class="row g-3 mb-4">
         <div class="col-md-4">
-            <div class="card border-0 shadow-sm p-3">
+            <div class="card mx-kpi-card border-0 shadow-sm border-start border-danger border-4 p-3">
                 <small class="text-muted fw-bold">IMPACTO ECONÓMICO</small>
-                <h3 class="text-danger fw-bold my-1">${{ reporte_data.totales.costo|default:"0.00" }} MXN</h3>
+                <h3 class="text-danger fw-bold my-1">${{ reporte_data.totales.costo|default:0|moneda_mx }} MXN</h3>
             </div>
         </div>
         <div class="col-md-4">
-            <div class="card border-0 shadow-sm p-3">
+            <div class="card mx-kpi-card border-0 shadow-sm border-start border-primary border-4 p-3">
                 <small class="text-muted fw-bold">PIEZAS MERMADAS</small>
                 <h3 class="text-primary fw-bold my-1">{{ reporte_data.totales.piezas|default:"0" }}</h3>
             </div>
         </div>
         <div class="col-md-4">
-            <div class="card border-0 shadow-sm p-3">
+            <div class="card mx-kpi-card border-0 shadow-sm border-start border-info border-4 p-3">
                 <small class="text-muted fw-bold">EVENTOS REGISTRADOS</small>
-                <h3 class="text-dark fw-bold my-1">{{ reporte_data.totales.eventos|default:"0" }}</h3>
+                <h3 class="text-info fw-bold my-1">{{ reporte_data.totales.eventos|default:"0" }}</h3>
             </div>
         </div>
     </div>
@@ -104,7 +105,7 @@
                             <td>{{ item.turno|default:"-" }}</td>
                             <td>{{ item.componente }}</td>
                             <td class="text-end">{{ item.cantidad }}</td>
-                            <td class="text-end">${{ item.costo_total }}</td>
+                            <td class="text-end">${{ item.costo_total|moneda_mx }}</td>
                             <td>{{ item.causa_raiz|default:"-" }}</td>
                             <td><span class="badge bg-secondary">{{ item.estado }}</span></td>
                         </tr>

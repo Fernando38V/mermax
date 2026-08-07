@@ -1,5 +1,6 @@
 {% extends "base/layout_app.html" %}
 {% load static %}
+{% load reportes_extras %}
 
 {% block title %}KPIs Scrap - Mermax{% endblock title %}
 
@@ -34,27 +35,27 @@
     <!-- TARJETAS RESUMEN -->
     <div class="row g-3 mb-4">
         <div class="col-12 col-sm-6 col-xl-3">
-            <div class="card border-0 shadow-sm border-start border-danger border-4 h-100">
+            <div class="card mx-kpi-card border-0 shadow-sm border-start border-danger border-4 h-100">
                 <div class="card-body">
                     <span class="text-muted fw-bold text-uppercase small">Impacto Económico</span>
-                    <h3 class="text-danger fw-bold my-2">${{ kpi_data.resumen.impacto_economico|floatformat:2 }} MXN</h3>
+                    <h3 class="text-danger fw-bold my-2">${{ kpi_data.resumen.impacto_economico|moneda_mx }} MXN</h3>
                     <p class="text-muted small mb-0">Costo total por merma</p>
                 </div>
             </div>
         </div>
 
         <div class="col-12 col-sm-6 col-xl-3">
-            <div class="card border-0 shadow-sm border-start border-primary border-4 h-100">
+            <div class="card mx-kpi-card border-0 shadow-sm border-start border-primary border-4 h-100">
                 <div class="card-body">
                     <span class="text-muted fw-bold text-uppercase small">Piezas Mermadas</span>
-                    <h3 class="text-primary fw-bold my-2">{{ kpi_data.resumen.piezas_mermadas|floatformat:1 }}</h3>
+                    <h3 class="text-primary fw-bold my-2">{{ kpi_data.resumen.piezas_mermadas|moneda_mx }}</h3>
                     <p class="text-muted small mb-0">Unidades perdidas</p>
                 </div>
             </div>
         </div>
 
         <div class="col-12 col-sm-6 col-xl-3">
-            <div class="card border-0 shadow-sm border-start border-info border-4 h-100">
+            <div class="card mx-kpi-card border-0 shadow-sm border-start border-info border-4 h-100">
                 <div class="card-body">
                     <span class="text-muted fw-bold text-uppercase small">Eventos Registrados</span>
                     <h3 class="text-info fw-bold my-2">{{ kpi_data.resumen.eventos }}</h3>
@@ -64,7 +65,7 @@
         </div>
 
         <div class="col-12 col-sm-6 col-xl-3">
-            <div class="card border-0 shadow-sm border-start border-warning border-4 h-100">
+            <div class="card mx-kpi-card border-0 shadow-sm border-start border-warning border-4 h-100">
                 <div class="card-body">
                     <span class="text-muted fw-bold text-uppercase small">Líneas en Alerta</span>
                     <h3 class="text-warning fw-bold my-2">{{ kpi_data.resumen.lineas_en_alerta }}</h3>
@@ -83,7 +84,7 @@
             <div class="row g-3">
                 {% for item in kpi_data.por_linea %}
                 <div class="col-12 col-md-6 col-lg-4">
-                    <div class="p-3 border rounded-3 bg-light">
+                    <div class="p-3 border rounded-3 bg-light mx-linea-card">
                         <div class="d-flex justify-content-between align-items-center mb-2">
                             <h6 class="fw-bold mb-0">{{ item.linea_nombre }}</h6>
                             {% if item.semaforo == 'rojo' %}
