@@ -1,17 +1,19 @@
 {% extends 'base/layout_app.html' %}
+{% load reportes_extras %}
 
 {% block title %}Configuración de Umbrales - Mermax{% endblock title %}
 {% block nav_alertas %}active{% endblock nav_alertas %}
 
-{% block page_title %}Configuración de Umbrales de Scrap (RF-15){% endblock page_title %}
+{% block page_title %}Configuración de Umbrales de Scrap{% endblock page_title %}
 {% block page_subtitle %}Establece los límites tolerables de mermas por línea de producción{% endblock page_subtitle %}
 
 {% block app_content %}
 <div class="container-fluid p-0">
 
     <div class="mb-3">
-        <a href="{% url 'reportes:alertas_umbral' %}" class="btn btn-sm btn-link text-decoration-none p-0">
-            ← Volver al panel de Alertas
+        <a href="{% url 'reportes:alertas_umbral' %}" class="btn mx-btn-secondary btn-back d-inline-flex align-items-center gap-1">
+            <span class="material-symbols-outlined">arrow_back</span> 
+            <span class="btn-text">Volver al panel de Alertas</span>
         </a>
     </div>
 
@@ -19,8 +21,9 @@
         <!-- FORMULARIO DE EDICIÓN / CREACIÓN -->
         <div class="col-12 col-md-4">
             <div class="card border-0 shadow-sm">
-                <div class="card-header bg-white py-3">
-                    <h6 class="fw-bold mb-0">⚙️ Establecer Umbral</h6>
+                <div class="card-header bg-white py-3 d-inline-flex align-items-center gap-1">
+                    <span class="material-symbols-outlined text-muted">settings</span>
+                    <h6 class="fw-bold mb-0">Establecer Umbral</h6>
                 </div>
                 <div class="card-body">
                     <form method="POST">
@@ -39,7 +42,7 @@
                             <label class="form-label small fw-bold">Indicador KPI</label>
                             <select name="indicador_kpi" class="form-select" required>
                                 <option value="PCT_SCRAP">% Scrap Máximo Permitido</option>
-                                <option value="COSTO_MERMA">Costo Máximo en Merma (USD)</option>
+                                <option value="COSTO_MERMA">Costo Máximo en Merma (MXN)</option>
                             </select>
                         </div>
 
@@ -51,7 +54,7 @@
                             </div>
                         </div>
 
-                        <button type="submit" class="btn btn-primary w-100">Guardar Umbral</button>
+                        <button type="submit" class="mx-btn-primary w-100">Guardar Umbral</button>
                     </form>
                 </div>
             </div>
@@ -60,14 +63,15 @@
         <!-- TABLA DE UMBRALES CONFIGURADOS -->
         <div class="col-12 col-md-8">
             <div class="card border-0 shadow-sm">
-                <div class="card-header bg-white py-3">
-                    <h6 class="fw-bold mb-0">📋 Umbrales Vigentes</h6>
+                <div class="card-header bg-white py-3 d-inline-flex align-items-center gap-1">
+                    <h6 class="fw-bold mb-0">Umbrales Vigentes</h6>
                 </div>
                 <div class="card-body p-0">
                     <div class="table-responsive">
                         <table class="table table-hover align-middle mb-0">
                             <thead class="table-light">
                                 <tr>
+                                    <th></th>
                                     <th>Línea</th>
                                     <th>Indicador</th>
                                     <th>Valor Límite</th>
@@ -77,13 +81,14 @@
                             <tbody>
                                 {% for u in umbrales %}
                                 <tr>
+                                    <td></td>
                                     <td class="fw-bold">{{ u.linea_produccion_nombre|default:u.linea_produccion }}</td>
                                     <td><span class="badge bg-secondary">{{ u.indicador_kpi }}</span></td>
                                     <td class="fw-bold text-danger">
                                         {% if u.indicador_kpi == 'PCT_SCRAP' %}
                                             {{ u.valor }}%
                                         {% else %}
-                                            ${{ u.valor }} USD
+                                            ${{ u.valor|moneda_mx }} MXN
                                         {% endif %}
                                     </td>
                                     <td>

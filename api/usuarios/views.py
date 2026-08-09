@@ -189,3 +189,4 @@ def dashboard_admin(request):
         'bitacora_por_dia': bitacora_por_dia,
         'usuarios_por_rol': usuarios_por_rol,
     })
+    

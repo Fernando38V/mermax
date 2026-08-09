@@ -26,6 +26,11 @@
   --mx-accent-hover: #1c40b0;
   --mx-accent-soft: rgba(29, 78, 216, 0.15); /* fondo de badges tipo "En inspeccion" */
 
+  /* Acentos (boton secundario) */
+  --mx-accent-2: #1E293B;
+  --mx-accent-2-hover: #0f172a;
+  --mx-accent-2-soft: rgba(14, 165, 233, 0.15);
+
   /* Sombra y radios */
   --mx-radius: 0.65rem;
   --mx-shadow-card: 0 20px 45px rgba(0, 0, 0, 0.35);
@@ -47,6 +52,17 @@ body {
 .mx-bg-app   { background-color: var(--mx-bg-app); }
 .mx-bg-card  { background-color: var(--mx-bg-card); }
 .mx-text-muted { color: var(--mx-text-muted) !important; }
+
+/* =========================================================
+   Colores adicionales
+   ========================================================= */
+.text-orange {
+  color: #fd7e14;
+}
+
+.border-orange {
+  border: 2px solid #fd7e14;
+}
 
 /* =========================================================
    Inputs estilo mockup: fondo blanco, icono a la izquierda,
@@ -127,6 +143,24 @@ body {
 .mx-btn-primary:hover {
   background-color: var(--mx-accent-hover);
   color: #ffffff;
+}
+
+/* =========================================================
+   Boton secundario (gris, como "Cancelar" y otras acciones)
+   ========================================================= */
+.mx-btn-secondary {
+  text-decoration: none;
+  background-color: var(--mx-accent-2);
+  color: #ffffff;
+  border: none;
+  border-radius: 0.5rem;
+  padding: 0.75rem 1.5rem;
+  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  transition: background-color 0.15s ease;
 }
 
 /* =========================================================
@@ -504,4 +538,26 @@ body {
   transform: translateY(-2px);
   box-shadow: 0 6px 16px rgba(0, 0, 0, 0.10);
   border-color: var(--mx-accent) !important;
+}
+
+
+/* =========================================================
+   Ocultar botones de regresar
+   ========================================================= */
+
+.btn-back {
+  display: none;
+  align-items: center;
+  gap: .4rem;
+}
+
+@media (max-width: 576px) {
+  .btn-back .btn-text {
+    display: none;
+  }
+
+  .btn-back {
+    padding: .5rem;
+    gap: 0;
+  }
 }
