@@ -7,60 +7,151 @@
 {% block app_content %}
 
 {% if messages %}
-    {% for message in messages %}
-    <div class="alert alert-{{ message.tags }} alert-dismissible fade show d-flex align-items-center gap-2">
-        {{ message }}
-        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    <div class="row mb-3">
+        <div class="col-12">
+            {% for message in messages %}
+            <div class="alert alert-{% if message.tags == 'error' %}danger{% else %}{{ message.tags }}{% endif %} alert-dismissible fade show d-flex align-items-center gap-2" role="alert">
+                <span class="material-symbols-outlined fs-5">
+                    {% if message.tags == 'error' %}error{% else %}check_circle{% endif %}
+                </span>
+                <div>{{ message }}</div>
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+            {% endfor %}
+        </div>
     </div>
-    {% endfor %}
 {% endif %}
 
-<div class="mb-4 d-flex justify-content-between">
-    <a href="{% url 'administrador:usuarios_list' %}" class="btn btn-secondary d-inline-flex align-items-center gap-2" style="padding: 0.75rem;">
-        <span class="material-symbols-outlined">badge</span>
-        Ver usuarios
-    </a>
-    
+<div class="mb-4 d-flex justify-content-between align-items-center flex-wrap gap-3">
+    <div class="d-flex align-items-center gap-2">
+        <a href="{% url 'administrador:usuarios_list' %}" class="btn btn-secondary shadow-sm d-inline-flex align-items-center gap-2 px-3 py-2">
+            <span class="material-symbols-outlined fs-5">badge</span>
+            <span class="fw-medium">Ver usuarios</span>
+        </a>
+        <span class="badge bg-white text-secondary border shadow-sm px-3 py-2 rounded-3 d-none d-sm-inline-flex align-items-center gap-1">
+            <span class="material-symbols-outlined fs-6 text-primary">group</span>
+            <span>Total: <strong>{{ empleados|length }}</strong></span>
+        </span>
+    </div>
+
+    <div class="position-relative" style="min-width: 260px;">
+        <div class="input-group shadow-sm">
+            <span class="input-group-text bg-white border-end-0 text-secondary">
+                <span class="material-symbols-outlined fs-5">search</span>
+            </span>
+            <input type="text" id="search-empleados" class="form-control border-start-0 ps-0" placeholder="Buscar empleado, área...">
+        </div>
+    </div>
 </div>
 
-<table class="table">
-    <thead>
-        <tr>
-            <th></th>
-            <th>Número</th>
-            <th>Nombre completo</th>
-            <th>Área</th>
-            <th>Turno</th>
-            <th>Estado</th>
-            <th>Acciones</th>
-        </tr>
-    </thead>
-    <tbody>
-        {% for e in empleados %}
-        <tr>
-            <td></td>
-            <td>{{ e.numero|stringformat:"02d" }}</td>
-            <td>{{ e.nombre }} {{ e.primer_apellido }} {{ e.segundo_apellido|default:"" }}</td>
-            <td>{{ e.area_nombre }}</td>
-            <td>
-                {% if e.turno == 'MAT' %}
-                    Matutino
-                {% elif e.turno == 'NOC' %}
-                    Vespertino
-                {% endif %}
-            </td>
-            <td>
-                {% if e.activo %}<span class="badge bg-success">Activo</span>
-                {% else %}<span class="badge bg-secondary">Inactivo</span>{% endif %}
-            </td>
-            <td>
-                <a href="{% url 'administrador:empleado_edit' pk=e.numero %}" class="btn btn-secondary btn-sm">Editar</a>
-            </td>
-        </tr>
-        {% empty %}
-        <tr><td colspan="5" class="text-center mx-text-muted py-4">No hay empleados.</td></tr>
-        {% endfor %}
-    </tbody>
-</table>
+<div class="card border-0 shadow-sm rounded-3 overflow-hidden">
+    <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0" id="table-empleados">
+            <thead class="bg-light border-bottom">
+                <tr>
+                    <th class="ps-4 text-secondary text-uppercase fs-7 fw-bold py-3" style="width: 90px;">Número</th>
+                    <th class="text-secondary text-uppercase fs-7 fw-bold py-3">Nombre completo</th>
+                    <th class="text-secondary text-uppercase fs-7 fw-bold py-3">Área</th>
+                    <th class="text-secondary text-uppercase fs-7 fw-bold py-3">Turno</th>
+                    <th class="text-secondary text-uppercase fs-7 fw-bold py-3">Estado</th>
+                    <th class="text-end pe-4 text-secondary text-uppercase fs-7 fw-bold py-3">Acciones</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for e in empleados %}
+                <tr class="empleado-row">
+                    <td class="ps-4">
+                        <span class="badge bg-light text-dark border font-monospace fw-bold px-2.5 py-1.5 rounded-2 fs-7">
+                            #{{ e.numero|stringformat:"02d" }}
+                        </span>
+                    </td>
+
+                    <td>
+                        <div class="d-flex align-items-center gap-3 py-1">
+                            <div class="avatar-circle rounded-circle d-flex align-items-center justify-content-center fw-bold text-primary border border-primary-subtle shadow-sm" 
+                                 style="width: 40px; height: 40px; min-width: 40px; background-color: #e0f2fe; color: #0369a1; font-size: 0.875rem;">
+                                {{ e.nombre|slice:":1" }}{{ e.primer_apellido|slice:":1" }}
+                            </div>
+                            <div>
+                                <div class="fw-bold text-dark fs-6">
+                                    {{ e.nombre }} {{ e.primer_apellido }} {{ e.segundo_apellido|default:"" }}
+                                </div>
+                            </div>
+                        </div>
+                    </td>
+
+                    <td>
+                        <div class="d-inline-flex align-items-center gap-1.5 text-secondary fw-medium">
+                            <span class="material-symbols-outlined fs-6 text-muted">domain</span>
+                            <span>{{ e.area_nombre }}</span>
+                        </div>
+                    </td>
+
+                    <td>
+                        {% if e.turno == 'MAT' %}
+                            <span class="badge border px-2.5 py-1 rounded-pill fw-semibold d-inline-flex align-items-center gap-1" style="background-color: #fffbeeb0; color: #b45309; border-color: #fde68a !important;">
+                                <span class="material-symbols-outlined fs-6">light_mode</span> Matutino
+                            </span>
+                        {% elif e.turno == 'NOC' or e.turno == 'VES' %}
+                            <span class="badge border px-2.5 py-1 rounded-pill fw-semibold d-inline-flex align-items-center gap-1" style="background-color: #eef2ff; color: #4338ca; border-color: #c7d2fe !important;">
+                                <span class="material-symbols-outlined fs-6">bedtime</span> Vespertino
+                            </span>
+                        {% else %}
+                            <span class="badge bg-light text-secondary border px-2.5 py-1 rounded-pill fw-medium">
+                                {{ e.turno|default:"-" }}
+                            </span>
+                        {% endif %}
+                    </td>
+
+                    <td>
+                        {% if e.activo %}
+                            <span class="badge bg-success-subtle text-success border border-success-subtle px-2.5 py-1 rounded-pill fw-semibold d-inline-flex align-items-center gap-1">
+                                <span class="material-symbols-outlined fs-6">check_circle</span> Activo
+                            </span>
+                        {% else %}
+                            <span class="badge bg-secondary-subtle text-secondary border border-secondary-subtle px-2.5 py-1 rounded-pill fw-semibold d-inline-flex align-items-center gap-1">
+                                <span class="material-symbols-outlined fs-6">cancel</span> Inactivo
+                            </span>
+                        {% endif %}
+                    </td>
+
+                    <td class="text-end pe-4">
+                        <a href="{% url 'administrador:empleado_edit' pk=e.numero %}" class="btn btn-sm btn-outline-secondary d-inline-flex align-items-center gap-1 shadow-sm px-3">
+                            <span class="material-symbols-outlined fs-6">edit</span>
+                            <span>Editar</span>
+                        </a>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="7" class="text-center mx-text-muted py-5">
+                        <span class="material-symbols-outlined fs-1 text-secondary mb-2 d-block">group_off</span>
+                        No hay empleados registrados actualmente.
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
 
 {% endblock app_content %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const searchInput = document.getElementById('search-empleados');
+    if (searchInput) {
+        searchInput.addEventListener('keyup', function () {
+            const filter = this.value.toLowerCase().trim();
+            const rows = document.querySelectorAll('#table-empleados tbody tr.empleado-row');
+            
+            rows.forEach(row => {
+                const text = row.textContent.toLowerCase();
+                row.style.display = text.includes(filter) ? '' : 'none';
+            });
+        });
+    }
+});
+</script>
+{% endblock extra_js %}

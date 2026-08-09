@@ -7,16 +7,6 @@
 
 {% block app_content %}
 
-    <div class="mb-4 d-flex justify-content-end align-items-center gap-2">
-        {% if filtros_activos %}
-            <a href="{% url 'inspecciones:alertas' %}" class="btn btn-secondary">
-                <span class="material-symbols-outlined">clear</span>
-                Limpiar filtros
-            </a>
-        {% endif %}
-    </div>
-
-    <!-- Mensajes -->
     {% if messages %}
         <div class="row mb-3">
             <div class="col-12">
@@ -33,91 +23,241 @@
         </div>
     {% endif %}
 
-    <form method="get">
-        <div class="row g-3 mb-4">
-            <div class="col-12 col-md-4 col-lg-3">
-                <label class="form-label">Estado</label>
-                <select class="form-select" name="estado">
+    <form method="get" class="mb-4">
+        <div class="row g-2 align-items-end">
+            <div class="col-12 col-sm-6 col-md-3">
+                <label class="form-label mb-1 small fw-semibold text-secondary">Estado</label>
+                <select class="form-select shadow-sm" name="estado">
                     <option value="TODAS" {% if estado_actual == 'TODAS' or not estado_actual %}selected{% endif %}>Todas</option>
                     <option value="PENDIENTE" {% if estado_actual == 'PENDIENTE' %}selected{% endif %}>Pendientes</option>
                     <option value="ATENDIDA" {% if estado_actual == 'ATENDIDA' %}selected{% endif %}>Atendidas</option>
                 </select>
             </div>
-            <div class="col-12 col-md-5 col-lg-4">
-                <label class="form-label">Buscar</label>
-                
-                <input type="text" name="q" value="{{ busqueda_actual }}" class="form-control" placeholder="Código o folio...">
+            
+            <div class="col-12 col-sm-6 col-md-4">
+                <label class="form-label mb-1 small fw-semibold text-secondary">Buscar</label>
+                <div class="input-group shadow-sm">
+                    <span class="input-group-text bg-white border-end-0 text-secondary">
+                        <span class="material-symbols-outlined fs-5">search</span>
+                    </span>
+                    <input type="text" name="q" value="{{ busqueda_actual }}" class="form-control border-start-0 ps-0" placeholder="Código o folio...">
+                </div>
             </div>
-            <div class="col-12 col-md-3 col-lg-2 d-flex align-items-end">
-                <button type="submit" class="btn btn-secondary d-inline-flex align-items-center gap-1 w-100">
-                    <span class="material-symbols-outlined">filter_alt</span>
+
+            <div class="col-auto d-flex gap-2">
+                <button type="submit" class="btn btn-secondary d-inline-flex align-items-center gap-1 shadow-sm">
+                    <span class="material-symbols-outlined fs-5">filter_alt</span>
                     Filtrar
                 </button>
+
+                {% if filtros_activos %}
+                    <a href="{% url 'inspecciones:alertas' %}" class="btn btn-outline-secondary d-inline-flex align-items-center gap-1 shadow-sm">
+                        <span class="material-symbols-outlined fs-5">clear</span>
+                        Limpiar
+                    </a>
+                {% endif %}
+            </div>
+
+            <div class="col-auto ms-auto d-flex align-items-end">
+                <div class="mx-view-toggle btn-group shadow-sm" role="group" aria-label="Cambiar vista" data-list-target="inspecciones">
+                    <button type="button" class="btn btn-secondary d-inline-flex align-items-center" data-view-btn="table" title="Vista de Tabla">
+                        <span class="material-symbols-outlined">table_rows</span>
+                    </button>
+                    <button type="button" class="btn btn-secondary d-inline-flex align-items-center" data-view-btn="cards" title="Vista de Tarjetas">
+                        <span class="material-symbols-outlined">grid_view</span>
+                    </button>
+                </div>
             </div>
         </div>
     </form>
 
-    <div class="mx-list-table table-responsive">
-        <table class="table">
-            <thead>
-                <th>Código Solicitud</th>
-                <th>Folio Merma</th>
-                <th>Fecha / Hora Solicitud</th>
-                <th>Estado</th>
-                <th>Acciones</th>
-            </thead>
-            <tbody>
+    <div class="mx-list-container" data-view="table" data-list-id="inspecciones">
+
+        <div class="mx-list-table">
+            <div class="card border-0 shadow-sm rounded-3 overflow-hidden">
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0 mx-custom-table">
+                        <thead>
+                            <tr>
+                                <th class="ps-4">Código Solicitud</th>
+                                <th>Folio Merma</th>
+                                <th>Fecha / Hora Solicitud</th>
+                                <th>Estado</th>
+                                <th class="text-end pe-4">Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for solicitud in solicitudes %}
+                            <tr>
+                                <td class="ps-4 py-3">
+                                    <div class="d-flex align-items-center gap-2">
+                                        <div class="avatar-icon bg-primary-subtle text-primary rounded-2 p-2 d-inline-flex align-items-center justify-content-center">
+                                            <span class="material-symbols-outlined fs-5">assignment</span>
+                                        </div>
+                                        <span class="fw-bold text-dark fs-6">{{ solicitud.codigo }}</span>
+                                    </div>
+                                </td>
+
+                                <td>
+                                    <span class="badge bg-light text-dark border px-2 py-1 fs-6 fw-semibold d-inline-flex align-items-center gap-1">
+                                        <span class="material-symbols-outlined fs-6 text-secondary">fact_check</span>
+                                        {{ solicitud.registro_merma.folio|default:solicitud.registro_merma }}
+                                    </span>
+                                </td>
+
+                                <td>
+                                    <div class="d-flex flex-column gap-1">
+                                        <span class="d-inline-flex align-items-center gap-1 text-dark fw-medium fs-6">
+                                            <span class="material-symbols-outlined fs-6 text-secondary">calendar_today</span>
+                                            {{ solicitud.fecha_generacion }}
+                                        </span>
+                                        {% if solicitud.hora_generacion %}
+                                            <span class="d-inline-flex align-items-center gap-1 text-muted small">
+                                                <span class="material-symbols-outlined fs-6">schedule</span>
+                                                {{ solicitud.hora_generacion }}
+                                            </span>
+                                        {% endif %}
+                                    </div>
+                                </td>
+
+                                <td>
+                                    {% if solicitud.edo_solicitud == 'ATENDIDA' or solicitud.edo_solicitud_id == 'ATENDIDA' %}
+                                        <span class="badge bg-success-subtle text-success border border-success-subtle px-3 py-2 rounded-pill fw-semibold d-inline-flex align-items-center gap-1">
+                                            <span class="material-symbols-outlined fs-6">check_circle</span>
+                                            ATENDIDA
+                                        </span>
+                                    {% else %}
+                                        <span class="badge bg-warning-subtle text-warning-emphasis border border-warning-subtle px-3 py-2 rounded-pill fw-semibold d-inline-flex align-items-center gap-1">
+                                            <span class="material-symbols-outlined fs-6">schedule</span>
+                                            PENDIENTE
+                                        </span>
+                                    {% endif %}
+                                </td>
+
+                                <td class="text-end pe-4">
+                                    {% if solicitud.edo_solicitud == 'ATENDIDA' or solicitud.edo_solicitud_id == 'ATENDIDA' %}
+                                        <span class="btn btn-sm bg-success-subtle text-success border border-success-subtle disabled fw-semibold px-3 d-inline-flex align-items-center gap-1">
+                                            <span class="material-symbols-outlined fs-6">verified</span>
+                                            Atendida
+                                        </span>
+
+                                    {% elif solicitud.estado_merma == 'INSPECCIO' or solicitud.registro_merma.edo_flujo_merma_id == 'INSPECCIO' or solicitud.registro_merma.edo_flujo_merma == 'INSPECCIO' %}
+                                        <a href="{% url 'inspecciones:dictaminar_inspeccion_codigo' solicitud.codigo %}" class="btn btn-sm btn-secondary text-nowrap px-3 d-inline-flex align-items-center gap-1 shadow-sm">
+                                            <span class="material-symbols-outlined fs-6">gavel</span>
+                                            <span>Dictaminar</span>
+                                        </a>
+
+                                    {% else %}
+                                        <form method="POST" action="{% url 'inspecciones:iniciar_inspeccion' solicitud.codigo %}" class="d-inline">
+                                            {% csrf_token %}
+                                            <button type="submit" class="btn btn-sm mx-btn-primary text-nowrap px-3 d-inline-flex align-items-center gap-1 shadow-sm">
+                                                <span class="material-symbols-outlined fs-6">play_arrow</span>
+                                                <span>Iniciar</span>
+                                            </button>
+                                        </form>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="5" class="text-center mx-text-muted py-5">
+                                    <span class="material-symbols-outlined fs-1 text-secondary mb-2 d-block">search_off</span>
+                                    No hay solicitudes que coincidan con el filtro seleccionado.
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tarjetas -->
+        <div class="mx-list-cards">
+            <div class="row g-3">
                 {% for solicitud in solicitudes %}
-                <tr>
-                    <td>{{ solicitud.codigo }}</td>
-                    <td>{{ solicitud.registro_merma.folio|default:solicitud.registro_merma }}</td>
-                    <td>
-                        {{ solicitud.fecha_generacion }}
-                        {% if solicitud.hora_generacion %}
-                            <div class="small mx-text-muted">{{ solicitud.hora_generacion }}</div>
-                        {% endif %}
-                    </td>
-                    <td>
-                        {% if solicitud.edo_solicitud == 'ATENDIDA' or solicitud.edo_solicitud_id == 'ATENDIDA' %}
-                            <span class="mx-badge-status">ATENDIDA</span>
-                        {% else %}
-                            <span class="mx-badge-status">PENDIENTE</span>
-                        {% endif %}
-                    </td>
-                    <td class="">
-                        {% if solicitud.edo_solicitud == 'ATENDIDA' or solicitud.edo_solicitud_id == 'ATENDIDA' %}
-                            <span class="badge bg-success">Atendida</span>
+                <div class="col-12 col-sm-6 col-lg-4">
+                    <div class="mx-list-card h-100 d-flex flex-column p-3 rounded-3 border bg-white shadow-sm">
+                        
+                        <div class="d-flex justify-content-between align-items-center mb-2 pb-2 border-bottom">
+                            <div class="d-flex align-items-center gap-1 fw-bold text-dark fs-6">
+                                <span class="material-symbols-outlined text-primary fs-5">assignment</span>
+                                <span>{{ solicitud.codigo }}</span>
+                            </div>
+                            {% if solicitud.edo_solicitud == 'ATENDIDA' or solicitud.edo_solicitud_id == 'ATENDIDA' %}
+                                <span class="badge bg-success-subtle text-success border border-success-subtle px-2 py-1 rounded-pill fw-semibold small d-inline-flex align-items-center gap-1">
+                                    <span class="material-symbols-outlined fs-6">check_circle</span> ATENDIDA
+                                </span>
+                            {% else %}
+                                <span class="badge bg-warning-subtle text-warning-emphasis border border-warning-subtle px-2 py-1 rounded-pill fw-semibold small d-inline-flex align-items-center gap-1">
+                                    <span class="material-symbols-outlined fs-6">schedule</span> PENDIENTE
+                                </span>
+                            {% endif %}
+                        </div>
 
-                        {% elif solicitud.estado_merma == 'INSPECCIO' or solicitud.registro_merma.edo_flujo_merma_id == 'INSPECCIO' or solicitud.registro_merma.edo_flujo_merma == 'INSPECCIO' %}
-                            <a href="{% url 'inspecciones:dictaminar_inspeccion_codigo' solicitud.codigo %}" class="btn btn-secondary text-nowrap">
-                                <span>Dictaminar</span>
-                            </a>
+                        <div class="mx-text-muted small mb-3 d-flex align-items-center gap-2">
+                            <span class="d-inline-flex align-items-center gap-1">
+                                <span class="material-symbols-outlined fs-6">calendar_today</span>
+                                {{ solicitud.fecha_generacion }}
+                            </span>
+                            {% if solicitud.hora_generacion %}
+                                <span>•</span>
+                                <span class="d-inline-flex align-items-center gap-1">
+                                    <span class="material-symbols-outlined fs-6">schedule</span>
+                                    {{ solicitud.hora_generacion }}
+                                </span>
+                            {% endif %}
+                        </div>
 
-                        {% else %}
-                            <form method="POST" action="{% url 'inspecciones:iniciar_inspeccion' solicitud.codigo %}">
-                                {% csrf_token %}
-                                <button type="submit" class="btn mx-btn-primary text-nowrap">
-                                    <span>Iniciar</span>
-                                </button>
-                            </form>
-                        {% endif %}
-                    </td>
-                </tr>
+                        <div class="p-2 px-3 rounded-2 bg-light border mb-3">
+                            <div class="text-uppercase mx-text-muted fw-semibold" style="font-size: 0.725rem; letter-spacing: 0.5px;">Folio de Merma</div>
+                            <div class="d-flex align-items-center gap-2 text-dark fw-bold mt-1 fs-6">
+                                <span class="material-symbols-outlined text-secondary fs-5">fact_check</span>
+                                <span>{{ solicitud.registro_merma.folio|default:solicitud.registro_merma }}</span>
+                            </div>
+                        </div>
+
+                        <div class="mt-auto pt-2">
+                            {% if solicitud.edo_solicitud == 'ATENDIDA' or solicitud.edo_solicitud_id == 'ATENDIDA' %}
+                                <div class="w-100 py-2 px-3 rounded-2 bg-success-subtle text-success fw-semibold small d-flex align-items-center justify-content-center gap-1 border border-success-subtle">
+                                    <span class="material-symbols-outlined fs-5">verified</span>
+                                    <span>Inspección Atendida</span>
+                                </div>
+
+                            {% elif solicitud.estado_merma == 'INSPECCIO' or solicitud.registro_merma.edo_flujo_merma_id == 'INSPECCIO' or solicitud.registro_merma.edo_flujo_merma == 'INSPECCIO' %}
+                                <a href="{% url 'inspecciones:dictaminar_inspeccion_codigo' solicitud.codigo %}" class="btn btn-secondary w-100 d-flex align-items-center justify-content-center gap-1 shadow-sm">
+                                    <span class="material-symbols-outlined fs-5">gavel</span>
+                                    <span>Dictaminar Inspección</span>
+                                </a>
+
+                            {% else %}
+                                <form method="POST" action="{% url 'inspecciones:iniciar_inspeccion' solicitud.codigo %}" class="w-100">
+                                    {% csrf_token %}
+                                    <button type="submit" class="btn mx-btn-primary w-100 d-flex align-items-center justify-content-center gap-1 shadow-sm">
+                                        <span class="material-symbols-outlined fs-5">play_circle</span>
+                                        <span>Iniciar Inspección</span>
+                                    </button>
+                                </form>
+                            {% endif %}
+                        </div>
+
+                    </div>
+                </div>
                 {% empty %}
-                <tr>
-                    <td colspan="5" class="text-center mx-text-muted py-4">
-                        No hay solicitudes que coincidan con el filtro seleccionado.
-                    </td>
-                </tr>
+                <div class="col-12 text-center mx-text-muted py-5 bg-white rounded-3 border">
+                    <span class="material-symbols-outlined fs-1 text-secondary mb-2 d-block">search_off</span>
+                    No hay solicitudes que coincidan con el filtro seleccionado.
+                </div>
                 {% endfor %}
-            </tbody>
-        </table>
+            </div>
+        </div>
+
     </div>
 
-    <!-- Footer -->
-    <div class="d-flex justify-content-center">
+    <!-- Paginación -->
+    <div class="d-flex justify-content-center mt-4">
         <nav aria-label="Paginación de solicitudes">
-            <ul class="pagination">
+            <ul class="pagination shadow-sm">
                 <li class="page-item {% if pagina_actual <= 1 %}disabled{% endif %}">
                     <a class="page-link" href="?{{ querystring_filtros }}{% if querystring_filtros %}&{% endif %}page={{ pagina_actual|add:'-1' }}">Anterior</a>
                 </li>
@@ -129,7 +269,7 @@
                 {% endfor %}
 
                 <li class="page-item {% if pagina_actual >= total_paginas %}disabled{% endif %}">
-                    <a class="page-link" href="?{{ querystring_filtros }}{% if querystring_filtros %}&{% endif %}page={{ pagina_actual|add:"1" }}">Siguiente</a>
+                    <a class="page-link" href="?{{ querystring_filtros }}{% if querystring_filtros %}&{% endif %}page={{ n|default:pagina_actual|add:'1' }}">Siguiente</a>
                 </li>
             </ul>
         </nav>

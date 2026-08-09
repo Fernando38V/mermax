@@ -8,46 +8,89 @@
 {% block app_content %}
 
 {% if messages %}
-    {% for message in messages %}
-    <div class="alert alert-{{ message.tags }}">{{ message }}</div>
-    {% endfor %}
+    <div class="row mb-3">
+        <div class="col-12">
+            {% for message in messages %}
+            <div class="alert alert-{% if message.tags == 'error' %}danger{% else %}{{ message.tags }}{% endif %} alert-dismissible fade show d-flex align-items-center gap-2" role="alert">
+                <span class="material-symbols-outlined">
+                    {% if message.tags == 'error' %}error{% else %}check_circle{% endif %}
+                </span>
+                <div>{{ message }}</div>
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
 {% endif %}
 
-<div class="mb-4 d-flex justify-content-between align-items-center flex-wrap gap-2">
-    <form method="get" class="d-flex gap-2 flex-wrap">
-        <input type="text" name="q" class="form-control" placeholder="Buscar..." value="{{ busqueda }}">
+<!-- Barra Unificada de Filtros y Acciones -->
+<div class="mb-4 d-flex justify-content-between align-items-end flex-wrap gap-3">
+    <form method="get" class="d-flex align-items-end gap-2 flex-wrap">
+        <!-- Input de Búsqueda -->
+        <div style="min-width: 220px;">
+            <label class="form-label mb-1 small fw-semibold text-secondary">Búsqueda</label>
+            <div class="input-group shadow-sm">
+                <span class="input-group-text bg-white border-end-0 text-secondary">
+                    <span class="material-symbols-outlined fs-5">search</span>
+                </span>
+                <input type="text" name="q" class="form-control border-start-0 ps-0" placeholder="Buscar..." value="{{ busqueda }}">
+            </div>
+        </div>
+
+        <!-- Filtro Activo -->
         {% if config.usa_activo %}
-        <select name="activo" class="form-select">
-            <option value="">Todos</option>
-            <option value="true" {% if activo_filtro == 'true' %}selected{% endif %}>Activos</option>
-            <option value="false" {% if activo_filtro == 'false' %}selected{% endif %}>Inactivos</option>
-        </select>
+        <div style="min-width: 140px;">
+            <label class="form-label mb-1 small fw-semibold text-secondary">Estado</label>
+            <select name="activo" class="form-select shadow-sm">
+                <option value="">Todos</option>
+                <option value="true" {% if activo_filtro == 'true' %}selected{% endif %}>Activos</option>
+                <option value="false" {% if activo_filtro == 'false' %}selected{% endif %}>Inactivos</option>
+            </select>
+        </div>
         {% endif %}
+
         {% if slug == 'estaciones' %}
-        <select name="linea" class="form-select">
-            <option value="">Todas las líneas</option>
-            {% for l in lineas_filtro %}
-            <option value="{{ l.num }}" {% if linea_filtro == l.num|stringformat:"s" %}selected{% endif %}>{{ l.nombre }}</option>
-            {% endfor %}
-        </select>
+        <div style="min-width: 200px;">
+            <label class="form-label mb-1 small fw-semibold text-secondary">Línea</label>
+            <select name="linea" class="form-select shadow-sm">
+                <option value="">Todas las líneas</option>
+                {% for l in lineas_filtro %}
+                <option value="{{ l.num }}" {% if linea_filtro == l.num|stringformat:"s" %}selected{% endif %}>{{ l.nombre }}</option>
+                {% endfor %}
+            </select>
+        </div>
         {% endif %}
-        <button type="submit" class="btn btn-secondary">
-            <span class="material-symbols-outlined">search</span>
+
+        <!-- Botón Filtrar -->
+        <button type="submit" class="btn btn-secondary shadow-sm d-inline-flex align-items-center gap-1">
+            <span class="material-symbols-outlined fs-5">filter_alt</span>
+            <span>Filtrar</span>
         </button>
+
+        {% if busqueda or activo_filtro or linea_filtro %}
+        <a href="?" class="btn btn-outline-secondary shadow-sm d-inline-flex align-items-center gap-1" title="Limpiar filtros">
+            <span class="material-symbols-outlined fs-5">clear</span>
+            <span>Limpiar</span>
+        </a>
+        {% endif %}
     </form>
 
     <div class="d-flex align-items-center gap-2">
-        <div class="mx-view-toggle btn-group" role="group">
-            <button type="button" class="btn btn-outline-secondary btn-sm active" data-view="table">
-                <span class="material-symbols-outlined" style="font-size:1rem;">table_rows</span> Tabla
+        <div class="mx-view-toggle btn-group shadow-sm" role="group" aria-label="Cambiar vista">
+            <button type="button" class="btn btn-secondary btn-sm active d-inline-flex align-items-center gap-1" data-view="table" title="Vista de Tabla">
+                <span class="material-symbols-outlined fs-5">table_rows</span>
+                <span class="d-none d-sm-inline">Tabla</span>
             </button>
-            <button type="button" class="btn btn-outline-secondary btn-sm" data-view="cards">
-                <span class="material-symbols-outlined" style="font-size:1rem;">grid_view</span> Tarjetas
+            <button type="button" class="btn btn-secondary btn-sm d-inline-flex align-items-center gap-1" data-view="cards" title="Vista de Tarjetas">
+                <span class="material-symbols-outlined fs-5">grid_view</span>
+                <span class="d-none d-sm-inline">Tarjetas</span>
             </button>
         </div>
+
         {% if usuario.rol == 'ADMIN' %}
-        <a href="{% url 'administrador:catalogo_create' slug=slug %}" class="btn mx-btn-primary">
-            <span class="material-symbols-outlined">add</span> Nuevo
+        <a href="{% url 'administrador:catalogo_create' slug=slug %}" class="btn mx-btn-primary shadow-sm d-inline-flex align-items-center gap-1">
+            <span class="material-symbols-outlined fs-5">add</span>
+            <span>Nuevo</span>
         </a>
         {% endif %}
     </div>
@@ -55,95 +98,185 @@
 
 <div class="mx-list-container" data-view="table">
 
-    <!-- Vista de tabla: escritorio -->
     <div class="mx-list-table">
-        <table class="table">
-            <thead>
-                <tr>
-                    {% for campo, etiqueta in config.columnas %}
-                    <th>{{ etiqueta }}</th>
-                    {% endfor %}
-                    <th>Acciones</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for registro in registros %}
-                <tr>
-                    {% for campo, etiqueta in config.columnas %}
-                    <td>{{ registro|dictkey:campo }}</td>
-                    {% endfor %}
-                    <td class="d-flex gap-2">
-                        {% if usuario.rol == 'ADMIN' %}
-                        <a href="{% url 'administrador:catalogo_edit' slug=slug pk=registro|dictkey:config.pk_field %}" class="btn btn-secondary btn-sm">Editar</a>
-                        {% if registro.inactivo_calc %}
-                            <form method="post" action="{% url 'administrador:catalogo_reactivar' slug=slug pk=registro|dictkey:config.pk_field %}" class="d-inline">
-                                {% csrf_token %}
-                                <button type="submit" class="btn btn-outline-success btn-sm">Reactivar</button>
-                            </form>
-                        {% else %}
-                            <button type="button" class="btn btn-outline-danger btn-sm btn-abrir-baja"
-                                    data-pk="{{ registro|dictkey:config.pk_field }}">
-                                Baja
-                            </button>
-                        {% endif %}
-                        {% else %}
-                        <span class="mx-text-muted small">Solo lectura</span>
-                        {% endif %}
-                    </td>
-                </tr>
-                {% empty %}
-                <tr><td colspan="10" class="text-center mx-text-muted py-4">No hay registros.</td></tr>
-                {% endfor %}
-            </tbody>
-        </table>
+        <div class="card border-0 shadow-sm rounded-3 overflow-hidden">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0 mx-custom-table">
+                    <thead>
+                        <tr>
+                            {% for campo, etiqueta in config.columnas %}
+                            <th {% if forloop.first %}class="ps-4"{% endif %}>{{ etiqueta }}</th>
+                            {% endfor %}
+                            <th class="text-end pe-4">Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for registro in registros %}
+                        <tr>
+                            {% for campo, etiqueta in config.columnas %}
+                            <td {% if forloop.first %}class="ps-4 py-3"{% endif %}>
+                                {% with val=registro|dictkey:campo %}
+                                    {% if forloop.first %}
+                                        <div class="d-flex align-items-center gap-2">
+                                            <div class="avatar-icon bg-primary-subtle text-primary rounded-2 p-2 d-inline-flex align-items-center justify-content-center" style="width:32px; height:32px;">
+                                                <span class="material-symbols-outlined fs-5">folder</span>
+                                            </div>
+                                            <span class="fw-bold text-dark fs-6">{{ val }}</span>
+                                        </div>
+                                    {% elif val == True or val == 'True' or val == 'true' %}
+                                        <span class="badge bg-success-subtle text-success border border-success-subtle px-2 py-1 rounded-pill fw-semibold d-inline-flex align-items-center gap-1">
+                                            <span class="material-symbols-outlined fs-6">check_circle</span> Activo
+                                        </span>
+                                    {% elif val == False or val == 'False' or val == 'false' %}
+                                        <span class="badge bg-danger-subtle text-danger border border-danger-subtle px-2 py-1 rounded-pill fw-semibold d-inline-flex align-items-center gap-1">
+                                            <span class="material-symbols-outlined fs-6">cancel</span> Inactivo
+                                        </span>
+                                    {% else %}
+                                        <span class="text-dark fw-medium">{{ val }}</span>
+                                    {% endif %}
+                                {% endwith %}
+                            </td>
+                            {% endfor %}
+
+                            <td class="text-end pe-4">
+                                {% if usuario.rol == 'ADMIN' %}
+                                <div class="d-inline-flex gap-1 justify-content-end">
+                                    <a href="{% url 'administrador:catalogo_edit' slug=slug pk=registro|dictkey:config.pk_field %}" class="btn btn-sm btn-outline-secondary d-inline-flex align-items-center gap-1 shadow-sm">
+                                        <span class="material-symbols-outlined fs-6">edit</span>
+                                        <span>Editar</span>
+                                    </a>
+                                    {% if registro.inactivo_calc %}
+                                        <form method="post" action="{% url 'administrador:catalogo_reactivar' slug=slug pk=registro|dictkey:config.pk_field %}" class="d-inline">
+                                            {% csrf_token %}
+                                            <button type="submit" class="btn btn-sm btn-outline-success d-inline-flex align-items-center gap-1 shadow-sm">
+                                                <span class="material-symbols-outlined fs-6">autorenew</span>
+                                                <span>Reactivar</span>
+                                            </button>
+                                        </form>
+                                    {% else %}
+                                        <button type="button" class="btn btn-sm btn-outline-danger d-inline-flex align-items-center gap-1 shadow-sm btn-abrir-baja"
+                                                data-pk="{{ registro|dictkey:config.pk_field }}">
+                                            <span class="material-symbols-outlined fs-6">arrow_downward</span>
+                                            <span>Baja</span>
+                                        </button>
+                                    {% endif %}
+                                </div>
+                                {% else %}
+                                <span class="badge bg-light text-secondary border px-2 py-1 fw-medium d-inline-flex align-items-center gap-1">
+                                    <span class="material-symbols-outlined fs-6">visibility</span>
+                                    <span>Solo lectura</span>
+                                </span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="10" class="text-center mx-text-muted py-5">
+                                <span class="material-symbols-outlined fs-1 text-secondary mb-2 d-block">folder_off</span>
+                                No hay registros disponibles en este catálogo.
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
     </div>
 
-    <!-- Vista de tarjetas: tablet / piso de producción (RNF-13) -->
     <div class="mx-list-cards">
-        {% for registro in registros %}
-        <div class="mx-list-card mb-3">
-            {% for campo, etiqueta in config.columnas %}
-            <div class="d-flex justify-content-between py-1 border-bottom">
-                <span class="mx-text-muted small">{{ etiqueta }}</span>
-                <span class="fw-semibold">{{ registro|dictkey:campo }}</span>
+        <div class="row g-3">
+            {% for registro in registros %}
+            <div class="col-12 col-sm-6 col-lg-4">
+                <div class="mx-list-card h-100 d-flex flex-column p-3 rounded-3 border bg-white shadow-sm">
+                    
+                    {% for campo, etiqueta in config.columnas %}
+                        {% with val=registro|dictkey:campo %}
+                            {% if forloop.first %}
+                                <div class="d-flex justify-content-between align-items-center mb-3 pb-2 border-bottom">
+                                    <div class="d-flex align-items-center gap-2 fw-bold text-dark fs-6">
+                                        <span class="material-symbols-outlined text-primary fs-5">folder</span>
+                                        <span>{{ val }}</span>
+                                    </div>
+                                    <span class="badge bg-light text-secondary border small">{{ etiqueta }}</span>
+                                </div>
+                            {% else %}
+                                <div class="d-flex justify-content-between align-items-center py-1 border-bottom border-light">
+                                    <span class="mx-text-muted small fw-medium">{{ etiqueta }}:</span>
+                                    <span>
+                                        {% if val == True or val == 'True' or val == 'true' %}
+                                            <span class="badge bg-success-subtle text-success border border-success-subtle px-2 py-1 rounded-pill fw-semibold small">Activo</span>
+                                        {% elif val == False or val == 'False' or val == 'false' %}
+                                            <span class="badge bg-danger-subtle text-danger border border-danger-subtle px-2 py-1 rounded-pill fw-semibold small">Inactivo</span>
+                                        {% else %}
+                                            <span class="fw-semibold text-dark small">{{ val }}</span>
+                                        {% endif %}
+                                    </span>
+                                </div>
+                            {% endif %}
+                        {% endwith %}
+                    {% endfor %}
+
+                    <div class="mt-auto pt-3">
+                        {% if usuario.rol == 'ADMIN' %}
+                        <div class="d-flex gap-2">
+                            <a href="{% url 'administrador:catalogo_edit' slug=slug pk=registro|dictkey:config.pk_field %}" class="btn btn-sm btn-outline-secondary flex-fill d-inline-flex align-items-center justify-content-center gap-1 shadow-sm">
+                                <span class="material-symbols-outlined fs-6">edit</span>
+                                <span>Editar</span>
+                            </a>
+                            {% if registro.inactivo_calc %}
+                                <form method="post" action="{% url 'administrador:catalogo_reactivar' slug=slug pk=registro|dictkey:config.pk_field %}" class="flex-fill">
+                                    {% csrf_token %}
+                                    <button type="submit" class="btn btn-sm btn-outline-success w-100 d-inline-flex align-items-center justify-content-center gap-1 shadow-sm">
+                                        <span class="material-symbols-outlined fs-6">autorenew</span>
+                                        <span>Reactivar</span>
+                                    </button>
+                                </form>
+                            {% else %}
+                                <button type="button" class="btn btn-sm btn-outline-danger flex-fill d-inline-flex align-items-center justify-content-center gap-1 shadow-sm btn-abrir-baja"
+                                        data-pk="{{ registro|dictkey:config.pk_field }}">
+                                    <span class="material-symbols-outlined fs-6">arrow_downward</span>
+                                    <span>Baja</span>
+                                </button>
+                            {% endif %}
+                        </div>
+                        {% else %}
+                        <div class="w-100 py-2 px-3 rounded-2 bg-light text-secondary fw-medium small d-flex align-items-center justify-content-center gap-1 border text-center">
+                            <span class="material-symbols-outlined fs-6">visibility</span>
+                            <span>Consulta de solo lectura</span>
+                        </div>
+                        {% endif %}
+                    </div>
+
+                </div>
+            </div>
+            {% empty %}
+            <div class="col-12 text-center mx-text-muted py-5 bg-white rounded-3 border">
+                <span class="material-symbols-outlined fs-1 text-secondary mb-2 d-block">folder_off</span>
+                No hay registros disponibles en este catálogo.
             </div>
             {% endfor %}
-            {% if usuario.rol == 'ADMIN' %}
-            <div class="d-flex gap-2 mt-3">
-                <a href="{% url 'administrador:catalogo_edit' slug=slug pk=registro|dictkey:config.pk_field %}" class="btn btn-secondary mx-btn-touch flex-fill">Editar</a>
-                {% if registro.inactivo_calc %}
-                    <form method="post" action="{% url 'administrador:catalogo_reactivar' slug=slug pk=registro|dictkey:config.pk_field %}" class="flex-fill">
-                        {% csrf_token %}
-                        <button type="submit" class="btn btn-outline-success mx-btn-touch w-100">Reactivar</button>
-                    </form>
-                {% else %}
-                    <button type="button" class="btn btn-outline-danger mx-btn-touch flex-fill btn-abrir-baja"
-                            data-pk="{{ registro|dictkey:config.pk_field }}">
-                        Baja
-                    </button>
-                {% endif %}
-            </div>
-            {% endif %}
         </div>
-        {% empty %}
-        <p class="text-center mx-text-muted py-4">No hay registros.</p>
-        {% endfor %}
     </div>
 
 </div>
 
-
 <div id="modal-confirmar-baja" class="mx-modal-overlay">
-    <div class="mx-modal-card-light">
-        <h5 class="mb-3">Confirmar baja</h5>
+    <div class="mx-modal-card-light p-4 rounded-3 shadow-lg border">
+        <div class="d-flex align-items-center gap-2 mb-3 text-danger">
+            <span class="material-symbols-outlined fs-3">warning</span>
+            <h5 class="mb-0 fw-bold">Confirmar Baja</h5>
+        </div>
         <p class="mx-text-muted">
-            ¿Dar de baja este registro? Se conservará su historial y no podrá seleccionarse en nuevos registros.
+            ¿Está seguro de dar de baja este registro? Se conservará su historial en el sistema pero no podrá seleccionarse en nuevos registros.
         </p>
         <form method="post" id="form-baja">
             {% csrf_token %}
             <div class="d-flex justify-content-end gap-2 mt-4">
                 <button type="button" class="btn btn-secondary" id="btn-cancelar-baja">Cancelar</button>
-                <button type="submit" class="btn btn-outline-danger">Confirmar baja</button>
+                <button type="submit" class="btn btn-danger d-inline-flex align-items-center gap-1">
+                    <span class="material-symbols-outlined fs-6">delete</span>
+                    <span>Confirmar baja</span>
+                </button>
             </div>
         </form>
     </div>
@@ -168,7 +301,7 @@ document.addEventListener('DOMContentLoaded', function () {
         modal.classList.remove('mx-modal-open');
     });
 
-    // Toggle tabla / tarjetas (RNF-13)
+    // tarjetas (RNF-13)
     const contenedor = document.querySelector('.mx-list-container');
     document.querySelectorAll('.mx-view-toggle button').forEach(function (btn) {
         btn.addEventListener('click', function () {
@@ -180,4 +313,3 @@ document.addEventListener('DOMContentLoaded', function () {
 });
 </script>
 {% endblock extra_js %}
-
