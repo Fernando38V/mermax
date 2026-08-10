@@ -318,9 +318,7 @@ SELECT edo_flujo_merma FROM REGISTRO_MERMA WHERE folio = 'MRM-SEED-0004';
 */
 
 DROP PROCEDURE IF EXISTS sp_ejecutar_disposicion_final;
-
 DELIMITER $$
-
 CREATE PROCEDURE sp_ejecutar_disposicion_final(
     IN folioDisposicion VARCHAR(20)
 )
@@ -357,7 +355,6 @@ BEGIN
 
     SELECT folioDisposicion AS folio, 'EJECUTADO' AS nuevoEstado, CURDATE() AS fechaEjecucion;
 END$$
-
 DELIMITER ;
 
 

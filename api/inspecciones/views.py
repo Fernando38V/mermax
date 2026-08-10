@@ -279,29 +279,25 @@ class EjecutarDisposicionAPIView(AuditoriaSqlMixin, APIView):
     """
     POST /api/inspecciones/disposicion/ejecutar/<folio>/
 
-    Marca que el material ya salió físicamente de la planta: se devolvió al
-    proveedor, se entregó a la recicladora o se destruyó. Es lo que separa
-    "ya se decidió qué hacer" de "ya se hizo".
+    Marca que el material ya salió físicamente de la planta. La validación
+    de que la merma asociada esté CERRADA (regla que antes no se verificaba
+    en el backend) vive ahora en sp_ejecutar_disposicion_final.
     """
     permission_classes = [EsAlmacenista]
 
     def post(self, request, folio):
-        disposicion = get_object_or_404(models.RegistroDisposicion, folio=folio)
-
-        if disposicion.estado_disposicion_id == 'EJECUTADO':
-            return Response(
-                {"error": "Esta disposición ya fue ejecutada."},
-                status=status.HTTP_400_BAD_REQUEST
-            )
-
-        disposicion.estado_disposicion_id = 'EJECUTADO'
-        disposicion.fecha_ejecucion = date.today()
-        disposicion.save()
+        with connection.cursor() as cursor:
+            try:
+                cursor.callproc('sp_ejecutar_disposicion_final', [folio])
+                resultado = cursor.fetchone()
+            except OperationalError as e:
+                mensaje = str(e.args[1]) if len(e.args) > 1 else str(e)
+                return Response({"error": mensaje}, status=status.HTTP_400_BAD_REQUEST)
 
         return Response(
             {
                 "mensaje": f"Disposición {folio} marcada como ejecutada.",
-                "fecha_ejecucion": disposicion.fecha_ejecucion,
+                "fecha_ejecucion": resultado[2],
             },
             status=status.HTTP_200_OK
         )

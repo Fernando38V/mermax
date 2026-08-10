@@ -1,5 +1,5 @@
 from django.shortcuts import render
-
+from django.db.utils import OperationalError
 # Create your views here.
 """
 App: reportes - views
@@ -231,6 +231,11 @@ class TrazabilidadLoteView(APIView):
     Ciclo completo de un lote: cuánto entró, cuánto se convirtió en scrap,
     cuánto se aprovechó, qué disposición se le dio y cuánto costó el
     desperdicio.
+
+    El cálculo numérico (cantidad mermada, % de merma, costo del
+    desperdicio) vive en el procedimiento almacenado sp_trazabilidad_lote;
+    esta vista solo agrega los datos descriptivos del lote (proveedor,
+    componente) y el desglose de disposición final, que el SP no cubre.
     """
     permission_classes = [permissions.IsAuthenticated]
 
@@ -242,11 +247,19 @@ class TrazabilidadLoteView(APIView):
             return Response({'detail': 'Lote no encontrado.'},
                             status=status.HTTP_404_NOT_FOUND)
 
-        mermas = RegistroMerma.objects.filter(lote_material=lote)
-        agg = mermas.aggregate(piezas=Sum('cantidad'), costo=Sum('costo_total'))
+        with connection.cursor() as cursor:
+            try:
+                cursor.callproc('sp_trazabilidad_lote', [num])
+                fila = cursor.fetchone()
+            except OperationalError as e:
+                mensaje = str(e.args[1]) if len(e.args) > 1 else str(e)
+                return Response({'detail': mensaje}, status=status.HTTP_400_BAD_REQUEST)
 
-        mermadas = float(agg['piezas'] or 0)
-        recibidas = float(lote.cantidad)
+        # fila = (numLote, cantidadRecibida, cantidadMermada, porcentajeMerma,
+        #          costoTotalDesperdicio, eventosMerma), en ese orden exacto
+        # según el SELECT final de sp_trazabilidad_lote.
+        recibidas = float(fila[1])
+        mermadas = float(fila[2])
 
         resumen = {
             'lote': lote.num,
@@ -256,13 +269,12 @@ class TrazabilidadLoteView(APIView):
             'proveedor': lote.proveedor.nombre,
             'fecha_recepcion': lote.fecha,
             'cantidad_recibida': recibidas,
-            'cantidad_mermada': round(mermadas, 2),
+            'cantidad_mermada': mermadas,
             'cantidad_aprovechada': round(recibidas - mermadas, 2),
-            'porcentaje_merma': round(mermadas / recibidas * 100, 2) if recibidas else 0.0,
-            'costo_desperdicio': agg['costo'] or 0,
+            'porcentaje_merma': float(fila[3]),
+            'costo_desperdicio': fila[4],
         }
 
-        # Desglose de la disposición final aplicada al scrap de este lote
         disposiciones = (RegistroDisposicion.objects
                          .filter(registro_merma__lote_material=lote)
                          .values('disposicion_final')
@@ -272,7 +284,7 @@ class TrazabilidadLoteView(APIView):
 
         return Response({
             'resumen': s.TrazabilidadLoteSerializer(resumen).data,
-            'eventos_merma': mermas.count(),
+            'eventos_merma': fila[5],
             'disposicion_final': [
                 {'dictamen': d['disposicion_final'],
                  'eventos': d['eventos'],
