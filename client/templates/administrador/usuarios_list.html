@@ -8,60 +8,164 @@
 {% block app_content %}
 
 {% if messages %}
-    {% for message in messages %}
-    <div class="alert alert-{{ message.tags }} alert-dismissible fade show d-flex align-items-center gap-2">
-        {{ message }}
-        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    <div class="row mb-3">
+        <div class="col-12">
+            {% for message in messages %}
+            <div class="alert alert-{% if message.tags == 'error' %}danger{% else %}{{ message.tags }}{% endif %} alert-dismissible fade show d-flex align-items-center gap-2" role="alert">
+                <span class="material-symbols-outlined fs-5">
+                    {% if message.tags == 'error' %}error{% else %}check_circle{% endif %}
+                </span>
+                <div>{{ message }}</div>
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+            {% endfor %}
+        </div>
     </div>
-    {% endfor %}
 {% endif %}
 
-<div class="mb-4 d-flex justify-content-between">
-    <a href="{% url 'administrador:empleados_list' %}" class="btn btn-secondary d-inline-flex align-items-center gap-2">
-        <span class="material-symbols-outlined">group</span>
-        Ver empleados
-    </a>
-    <a href="{% url 'administrador:personal_create' %}" class="btn mx-btn-primary">
-        <span class="material-symbols-outlined">add</span> Nuevo empleado + usuario
-    </a>
+<div class="mb-4 d-flex justify-content-between align-items-center flex-wrap gap-3">
+    <div class="d-flex align-items-center gap-2">
+        <a href="{% url 'administrador:empleados_list' %}" class="btn btn-secondary shadow-sm d-inline-flex align-items-center gap-2 px-3 py-2">
+            <span class="material-symbols-outlined fs-5">group</span>
+            <span class="fw-medium">Ver empleados</span>
+        </a>
+        <span class="badge bg-white text-secondary border shadow-sm px-3 py-2 rounded-3 d-none d-sm-inline-flex align-items-center gap-1">
+            <span class="material-symbols-outlined fs-6 text-primary">person</span>
+            <span>Total: <strong>{{ usuarios|length }}</strong></span>
+        </span>
+    </div>
+
+    <div class="d-flex align-items-center gap-2 flex-wrap">
+        <div class="position-relative" style="min-width: 240px;">
+            <div class="input-group shadow-sm">
+                <span class="input-group-text bg-white border-end-0 text-secondary">
+                    <span class="material-symbols-outlined fs-5">search</span>
+                </span>
+                <input type="text" id="search-usuarios" class="form-control border-start-0 ps-0" placeholder="Buscar usuario, correo, rol...">
+            </div>
+        </div>
+
+        <a href="{% url 'administrador:personal_create' %}" class="btn mx-btn-primary shadow-sm d-inline-flex align-items-center gap-2 px-3 py-2">
+            <span class="material-symbols-outlined fs-5">person_add</span>
+            <span class="fw-medium">Nuevo empleado + usuario</span>
+        </a>
+    </div>
 </div>
-<div class="mx-list-table table-responsive">
-    <table class="table">
-        <thead>
-            <tr>
-                <th></th>
-                <th> Número</th>
-                <th>Nombre de Usuario</th>
-                <th>Correo</th>
-                <th>Rol</th>
-                <th>Estado</th>
-                <th>Acciones</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for u in usuarios %}
-            <tr>
-                <td></td>
-                <td> {{ u.num|stringformat:"02d" }}</td>
-                <td>{{ u.username }}</td>
-                <td>{{ u.correo }}</td>
-                <td>{{ u.rol_nombre }}</td>
-                <td>
-                    {% if u.activo %}
-                        <span class="badge bg-success">Activo</span>
-                    {% else %}
-                        <span class="badge bg-secondary">Inactivo</span>
-                    {% endif %}
-                </td>
-                <td>
-                    <a href="{% url 'administrador:usuario_edit' pk=u.num %}" class="btn btn-secondary ">Editar</a>
-                </td>
-            </tr>
-            {% empty %}
-            <tr><td colspan="5" class="text-center mx-text-muted py-4">No hay usuarios.</td></tr>
-            {% endfor %}
-        </tbody>
-    </table>
+
+<div class="card border-0 shadow-sm rounded-3 overflow-hidden">
+    <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0" id="table-usuarios">
+            <thead class="bg-light border-bottom">
+                <tr>
+                    <th class="ps-4 text-secondary text-uppercase fs-7 fw-bold py-3" style="width: 90px;">Número</th>
+                    <th class="text-secondary text-uppercase fs-7 fw-bold py-3">Nombre de Usuario</th>
+                    <th class="text-secondary text-uppercase fs-7 fw-bold py-3">Correo</th>
+                    <th class="text-secondary text-uppercase fs-7 fw-bold py-3">Rol</th>
+                    <th class="text-secondary text-uppercase fs-7 fw-bold py-3">Estado</th>
+                    <th class="text-end pe-4 text-secondary text-uppercase fs-7 fw-bold py-3">Acciones</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for u in usuarios %}
+                <tr class="usuario-row">
+                    <td class="ps-4">
+                        <span class="badge bg-light text-dark border font-monospace fw-bold px-2.5 py-1.5 rounded-2 fs-7">
+                            #{{ u.num|stringformat:"02d" }}
+                        </span>
+                    </td>
+
+                    <td>
+                        <div class="d-flex align-items-center gap-3 py-1">
+                            <div class="avatar-circle rounded-circle d-flex align-items-center justify-content-center shadow-sm" 
+                                 style="width: 38px; height: 38px; min-width: 38px; background-color: #f1f5f9; color: #475569; border: 1px solid #cbd5e1;">
+                                <span class="material-symbols-outlined fs-5">account_circle</span>
+                            </div>
+                            <div>
+                                <span class="fw-bold text-dark fs-6">{{ u.username }}</span>
+                            </div>
+                        </div>
+                    </td>
+
+                    <td>
+                        <div class="d-inline-flex align-items-center gap-1.5 text-secondary fw-medium">
+                            <span class="material-symbols-outlined fs-6 text-muted">mail</span>
+                            <span>{{ u.correo }}</span>
+                        </div>
+                    </td>
+
+                    <td>
+                        {% if 'Administrador' in u.rol_nombre or 'ADMIN' in u.rol_nombre %}
+                            <span class="badge border px-2.5 py-1 rounded-pill fw-semibold d-inline-flex align-items-center gap-1" style="background-color: #f3e8ff; color: #6b21a8; border-color: #e9d5ff !important;">
+                                <span class="material-symbols-outlined fs-6">admin_panel_settings</span> {{ u.rol_nombre }}
+                            </span>
+                        {% elif 'Supervisor' in u.rol_nombre %}
+                            <span class="badge border px-2.5 py-1 rounded-pill fw-semibold d-inline-flex align-items-center gap-1" style="background-color: #e0f2fe; color: #0369a1; border-color: #bae6fd !important;">
+                                <span class="material-symbols-outlined fs-6">supervisor_account</span> {{ u.rol_nombre }}
+                            </span>
+                        {% elif 'Calidad' in u.rol_nombre %}
+                            <span class="badge border px-2.5 py-1 rounded-pill fw-semibold d-inline-flex align-items-center gap-1" style="background-color: #ccfbf1; color: #0f766e; border-color: #99f6e4 !important;">
+                                <span class="material-symbols-outlined fs-6">verified</span> {{ u.rol_nombre }}
+                            </span>
+                        {% elif 'Almacenista' in u.rol_nombre or 'Almacén' in u.rol_nombre %}
+                            <span class="badge border px-2.5 py-1 rounded-pill fw-semibold d-inline-flex align-items-center gap-1" style="background-color: #fef3c7; color: #92400e; border-color: #fde68a !important;">
+                                <span class="material-symbols-outlined fs-6">inventory_2</span> {{ u.rol_nombre }}
+                            </span>
+                        {% else %}
+                            <span class="badge bg-light text-secondary border px-2.5 py-1 rounded-pill fw-medium d-inline-flex align-items-center gap-1">
+                                <span class="material-symbols-outlined fs-6">badge</span> {{ u.rol_nombre }}
+                            </span>
+                        {% endif %}
+                    </td>
+
+                    <td>
+                        {% if u.activo %}
+                            <span class="badge bg-success-subtle text-success border border-success-subtle px-2.5 py-1 rounded-pill fw-semibold d-inline-flex align-items-center gap-1">
+                                <span class="material-symbols-outlined fs-6">check_circle</span> Activo
+                            </span>
+                        {% else %}
+                            <span class="badge bg-secondary-subtle text-secondary border border-secondary-subtle px-2.5 py-1 rounded-pill fw-semibold d-inline-flex align-items-center gap-1">
+                                <span class="material-symbols-outlined fs-6">cancel</span> Inactivo
+                            </span>
+                        {% endif %}
+                    </td>
+
+                    <td class="text-end pe-4">
+                        <a href="{% url 'administrador:usuario_edit' pk=u.num %}" class="btn btn-sm btn-outline-secondary d-inline-flex align-items-center gap-1 shadow-sm px-3">
+                            <span class="material-symbols-outlined fs-6">edit</span>
+                            <span>Editar</span>
+                        </a>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="6" class="text-center mx-text-muted py-5">
+                        <span class="material-symbols-outlined fs-1 text-secondary mb-2 d-block">manage_accounts</span>
+                        No hay cuentas de usuario registradas.
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
 </div>
 
 {% endblock app_content %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const searchInput = document.getElementById('search-usuarios');
+    if (searchInput) {
+        searchInput.addEventListener('keyup', function () {
+            const filter = this.value.toLowerCase().trim();
+            const rows = document.querySelectorAll('#table-usuarios tbody tr.usuario-row');
+            
+            rows.forEach(row => {
+                const text = row.textContent.toLowerCase();
+                row.style.display = text.includes(filter) ? '' : 'none';
+            });
+        });
+    }
+});
+</script>
+{% endblock extra_js %}
