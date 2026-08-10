@@ -7,7 +7,8 @@ from rest_framework.response import Response
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import IsAuthenticated
 from rest_framework import generics, status
-from django.db import IntegrityError, DatabaseError, transaction
+from django.db import IntegrityError, DatabaseError, transaction, connection
+from django.db.utils import OperationalError
 from django.utils import timezone
 from rest_framework.pagination import PageNumberPagination
 from django.db.models import Sum
@@ -182,17 +183,17 @@ class DiscrepanciaCreateAPIView(AuditoriaSqlMixin, generics.CreateAPIView):
 
 
 class ResolverDiscrepanciaAPIView(AuditoriaSqlMixin, APIView):
+    """
+    RF-05/RF-48: resuelve una discrepancia y, si era la última abierta de
+    su merma, reanuda el flujo a RECIBIDA en la misma operación.
+
+    La lógica completa (validación de estado, motivo obligatorio, conteo de
+    discrepancias restantes y reanudación del flujo) vive en el procedimiento
+    almacenado sp_resolver_discrepancia.
+    """
     permission_classes = [EsAlmacenista]
 
     def post(self, request, folio):
-        discrepancia = get_object_or_404(models.Discrepancia, folio=folio)
-
-        if discrepancia.edo_discrepancia_id == 'RESUELTA':
-            return Response(
-                {"error": "Esta discrepancia ya se encuentra cerrada."},
-                status=status.HTTP_400_BAD_REQUEST
-            )
-
         motivo_resolucion = request.data.get('motivo_resolucion', '').strip()
 
         if not motivo_resolucion:
@@ -201,64 +202,63 @@ class ResolverDiscrepanciaAPIView(AuditoriaSqlMixin, APIView):
                 status=status.HTTP_400_BAD_REQUEST
             )
 
-        # Los dos cambios van juntos o no van. Si el segundo fallara por su
-        # cuenta, la discrepancia quedaría resuelta pero la merma seguiría
-        # bloqueada y sin solicitud: un estado del que no se puede salir
-        # desde la interfaz.
-        with transaction.atomic():
-            discrepancia.edo_discrepancia_id = 'RESUELTA'
-            discrepancia.usuario_resolucion = request.user  # El almacenista del 2do turno
-            discrepancia.motivo_resolucion = motivo_resolucion
-            discrepancia.fecha_resolucion = timezone.now().date()
-            discrepancia.save()
+        with connection.cursor() as cursor:
+            try:
+                cursor.callproc('sp_resolver_discrepancia', [
+                    folio, motivo_resolucion, request.user.num,
+                ])
+                resultado = cursor.fetchone()
+            except OperationalError as e:
+                mensaje = str(e.args[1]) if len(e.args) > 1 else str(e)
+                return Response({"error": mensaje}, status=status.HTTP_400_BAD_REQUEST)
 
-            # Como ya se aclaró la diferencia, la merma pasa a 'RECIBIDA'.
-            # Este save dispara el Trigger 2, que genera la solicitud de
-            # inspección al no encontrar ya discrepancias abiertas.
-            # El orden importa: primero la discrepancia, después la merma.
-            registro_merma = discrepancia.registro_merma
-            registro_merma.edo_flujo_merma_id = 'RECIBIDA'
-            registro_merma.save()
+        folio_merma = resultado[1]
+        discrepancias_restantes = resultado[2]
+        nuevo_estado_merma = 'RECIBIDA' if discrepancias_restantes == 0 else None
 
         return Response(
             {
                 "mensaje": f"Discrepancia {folio} resuelta exitosamente.",
-                "folio_discrepancia": discrepancia.folio,
-                "motivo_resolucion": discrepancia.motivo_resolucion,
-                "merma_actualizada": registro_merma.folio,
-                "nuevo_estado_merma": registro_merma.edo_flujo_merma_id
+                "folio_discrepancia": resultado[0],
+                "motivo_resolucion": motivo_resolucion,
+                "merma_actualizada": folio_merma,
+                "discrepancias_restantes": discrepancias_restantes,
+                "nuevo_estado_merma": nuevo_estado_merma,
             },
             status=status.HTTP_200_OK
         )
 
 
 class ConfirmarRecepcionAPIView(AuditoriaSqlMixin, APIView):
+    """
+    RF-04: confirma la recepción física del scrap en almacén.
+
+    La lógica de validación y el cambio de estado viven en el procedimiento
+    almacenado sp_confirmar_recepcion_merma (ver procedimientosAlmacenados.sql).
+    El UPDATE que hace el SP dispara automáticamente tg_generar_solicitud_inspeccion,
+    así que la solicitud de inspección se genera sola, sin código adicional aquí.
+    """
     permission_classes = [EsAlmacenista]
 
     def post(self, request, folio):
-        registro_merma = get_object_or_404(models.RegistroMerma, folio=folio)
-
-        if registro_merma.edo_flujo_merma_id != 'REGISTRADA':
-            return Response(
-                {
-                    "error": f"No se puede confirmar la recepción. La merma se encuentra en estado '{registro_merma.edo_flujo_merma_id}' y solo se pueden recibir mermas en estado 'REGISTRADA'."
-                },
-                status=status.HTTP_400_BAD_REQUEST
-            )
-
         observaciones = request.data.get('observaciones', 'Sin observaciones')
 
-        # 3.Cambiamos el estado al flujo de "Recibida"
-        registro_merma.edo_flujo_merma_id = 'RECIBIDA'
-
-        registro_merma.save()
+        with connection.cursor() as cursor:
+            try:
+                cursor.callproc('sp_confirmar_recepcion_merma', [folio])
+                resultado = cursor.fetchone()
+            except OperationalError as e:
+                # El SP usa SIGNAL SQLSTATE '45000' para sus validaciones de negocio
+                # (folio inexistente, o merma que no está en REGISTRADA).
+                mensaje = str(e.args[1]) if len(e.args) > 1 else str(e)
+                return Response({"error": mensaje}, status=status.HTTP_400_BAD_REQUEST)
 
         return Response(
             {
                 "mensaje": f"Recepción confirmada exitosamente para el folio {folio}.",
-                "folio": registro_merma.folio,
-                "estado_actualizado": registro_merma.edo_flujo_merma_id,
-                "observaciones_recibidas": observaciones
+                "folio": resultado[0],
+                "estado_actualizado": resultado[1],
+                "observaciones_recibidas": observaciones,
             },
             status=status.HTTP_200_OK
         )

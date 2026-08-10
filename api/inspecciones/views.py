@@ -10,6 +10,9 @@ from django.db.models import Q, Count
 from django.db import transaction
 from datetime import date, datetime
 from auditoria.services import AuditoriaSqlMixin
+from django.db import connection
+from django.db.utils import OperationalError
+from auditoria.services import AuditoriaSqlMixin
 
 from .models import SolicitudInspeccion, RegistroDisposicion
 from reportes.models import AlertaGenerada
@@ -184,110 +187,66 @@ class DictaminarInspeccionAPIView(AuditoriaSqlMixin, APIView):
     """
     POST /api/inspecciones/dictaminar/<codigo_solicitud>/
 
-    Cierra el ciclo de la merma. En una sola transacción:
-      1. crea el REGISTRO_DISPOSICION
-      2. crea su tabla satélite según el dictamen (RF-08, RF-09 o RF-10)
-      3. marca la solicitud como ATENDIDA con fecha y hora
-      4. pasa la merma a CERRADA
+    RF-08/RF-09/RF-10: cierra el ciclo de la merma en dos pasos, cada uno
+    en su propio procedimiento almacenado (responsabilidad única):
 
-    Los cuatro pasos van juntos o no van: si se creara la disposición y
-    fallara el cierre de la merma, quedaría un folio dictaminado que la
-    interfaz seguiría mostrando como pendiente de inspección.
+      sp_generar_registro_disposicion  -> crea el REGISTRO_DISPOSICION y su
+                                           tabla satélite según el dictamen
+      sp_cerrar_solicitud_inspeccion   -> marca la solicitud ATENDIDA y
+                                           cierra la merma a CERRADA
 
-    El registro nace con estado_disposicion = PENDIENTE. El dictamen dice qué
-    hacer con el material; que ya haya salido de la planta es otra cosa, y se
-    marca después con el endpoint de ejecutar.
+    Ambos se llaman en secuencia desde aquí; si el primero falla, el
+    segundo nunca se ejecuta.
     """
     permission_classes = [EsCalidad]
 
-    SATELITES = {
-        'RTN_PROV': ('DEV', models.DisposicionDevolucion),
-        'RECICLAJE': ('RCJ', models.DisposicionReciclaje),
-        'DESTR_CTRL': ('DES', models.DisposicionDesecho),
-    }
-
     def post(self, request, codigo_solicitud):
         solicitud = get_object_or_404(models.SolicitudInspeccion, codigo=codigo_solicitud)
-
-        if solicitud.edo_solicitud_id != 'PENDIENTE':
-            return Response(
-                {"error": "Esta solicitud ya fue atendida."},
-                status=status.HTTP_400_BAD_REQUEST
-            )
-
-        registro_merma = solicitud.registro_merma
-        if registro_merma.edo_flujo_merma_id != 'INSPECCIO':
-            return Response(
-                {"error": f"La merma debe estar en INSPECCIO para dictaminarse. Su estado es {registro_merma.edo_flujo_merma_id}. Inicia la inspección primero."},
-                status=status.HTTP_400_BAD_REQUEST
-            )
+        folio_merma = solicitud.registro_merma_id
 
         entrada = serializers.DictamenSerializer(data=request.data)
         entrada.is_valid(raise_exception=True)
         datos = entrada.validated_data
         dictamen = datos['disposicion_final']
 
-        with transaction.atomic():
-            # 1. El registro de disposición
-            disposicion = models.RegistroDisposicion.objects.create(
-                folio=_siguiente_folio(models.RegistroDisposicion, 'DISP'),
-                fecha_determinacion=date.today(),
-                fecha_ejecucion=None,
-                cantidad_ejecutada=datos.get('cantidad_ejecutada') or registro_merma.cantidad,
-                observaciones=datos.get('observaciones') or f'Dictamen emitido tras la inspección del folio {registro_merma.folio}.',
-                sale_almacen_id='ALM-SCRP',
-                llega_almacen=None,   # el material sale de la planta
-                disposicion_final_id=dictamen,
-                usuario=request.user,
-                registro_merma=registro_merma,
-                estado_disposicion_id='PENDIENTE',
-            )
+        with connection.cursor() as cursor:
+            try:
+                # sp_generar_registro_disposicion tiene un parámetro OUT
+                # (folioDisposicion) al final; MySQLdb lo resuelve solo
+                # cuando se le manda None como valor inicial.
+                parametros = [
+                    folio_merma,
+                    dictamen,
+                    request.user.num,
+                    datos.get('cantidad_ejecutada'),
+                    datos.get('observaciones'),
+                    datos.get('proveedor'),
+                    datos.get('motivo_rechazo'),
+                    datos.get('empresa_recicladora'),
+                    datos.get('peso_neto'),
+                    datos.get('metodo_destruccion'),
+                    datos.get('folio_probatorio'),
+                    None,  # OUT folioDisposicion
+                ]
+                resultado_sp3 = cursor.callproc('sp_generar_registro_disposicion', parametros)
+                folio_disposicion = resultado_sp3[-1]
 
-            # 2. La tabla satélite que corresponda
-            prefijo, modelo_satelite = self.SATELITES[dictamen]
-            folio_satelite = _siguiente_folio(modelo_satelite, prefijo)
+                cursor.callproc('sp_cerrar_solicitud_inspeccion', [
+                    codigo_solicitud, folio_merma, request.user.num,
+                ])
+                resultado_sp4 = cursor.fetchone()
 
-            if dictamen == 'RTN_PROV':
-                modelo_satelite.objects.create(
-                    folio=folio_satelite,
-                    motivo_rechazo=datos['motivo_rechazo'],
-                    registro_disposicion=disposicion,
-                    proveedor_id=datos['proveedor'],
-                )
-            elif dictamen == 'RECICLAJE':
-                modelo_satelite.objects.create(
-                    folio=folio_satelite,
-                    empresa_recicladora_id=datos['empresa_recicladora'],
-                    peso_neto=datos['peso_neto'],
-                    registro_disposicion=disposicion,
-                )
-            else:
-                modelo_satelite.objects.create(
-                    folio=folio_satelite,
-                    metodo_destruccion_id=datos['metodo_destruccion'],
-                    folio_probatorio=datos['folio_probatorio'],
-                    registro_disposicion=disposicion,
-                )
-
-            # 3. La solicitud queda atendida
-            ahora = datetime.now()
-            solicitud.edo_solicitud_id = 'ATENDIDA'
-            solicitud.fecha_atencion = ahora.date()
-            solicitud.hora_atencion = ahora.time().replace(microsecond=0)
-            solicitud.save()
-
-            # 4. Y la merma cierra su ciclo
-            registro_merma.edo_flujo_merma_id = 'CERRADA'
-            registro_merma.save()
+            except OperationalError as e:
+                mensaje = str(e.args[1]) if len(e.args) > 1 else str(e)
+                return Response({"error": mensaje}, status=status.HTTP_400_BAD_REQUEST)
 
         return Response(
             {
-                "mensaje": f"Dictamen emitido para la merma {registro_merma.folio}.",
-                "folio_disposicion": disposicion.folio,
-                "folio_satelite": folio_satelite,
+                "mensaje": f"Dictamen emitido para la merma {folio_merma}.",
+                "folio_disposicion": folio_disposicion,
                 "dictamen": dictamen,
-                "solicitud": solicitud.codigo,
-                "nuevo_estado_merma": registro_merma.edo_flujo_merma_id,
+                "solicitud": resultado_sp4[0],
+                "nuevo_estado_merma": resultado_sp4[2],
             },
             status=status.HTTP_201_CREATED
         )
