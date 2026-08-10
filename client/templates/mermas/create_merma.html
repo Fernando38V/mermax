@@ -8,8 +8,8 @@
 {% block app_content %}
 
 <!-- btn para regresar -->
-<div class="mb-4">
-    <a href="{% url 'mermas:list_mermas' %}" class="btn btn-secondary">
+<div class="mb-2">
+    <a href="{% url 'mermas:list_mermas' %}" class="mx-btn-secondary">
         <span class="material-symbols-outlined">arrow_back</span>
         Regresar
     </a>
@@ -19,14 +19,14 @@
     <form method="post" id="formMerma">
 
         {% csrf_token %}
-        <div class="card mb-4">
-            <div class="card-header">
+        <div class="card mb-3">
+            <div class="card-header py-2">
                 <strong>Datos generales</strong>
             </div>
-            <div class="card-body">
+            <div class="card-body py-3">
                 <div class="row g-3">
 
-                    <div class="col-md-4">
+                    <div class="col-6 col-lg-3">
                         <label class="form-label" for="linea">Línea de producción</label>
                         <select class="form-select {% if errores.linea %}is-invalid{% endif %}" name="linea" id="linea" required>
                             <option value="">-- Seleccionar línea --</option>
@@ -41,7 +41,7 @@
                         {% endif %}
                     </div>
 
-                    <div class="col-md-4">
+                    <div class="col-6 col-lg-3">
                         <label class="form-label" for="estacion">Estación de trabajo</label>
                         <select class="form-select {% if errores.estacion %}is-invalid{% endif %}" name="estacion" id="estacion" required disabled>
                             <option value="">-- Selecciona primero una linea --</option>
@@ -49,10 +49,10 @@
                         {% if errores.estacion %}
                         <div class="invalid-feedback">{{ errores.estacion|join:", " }}</div>
                         {% endif %}
-                        <div class="form-text">Se actualiza según la línea seleccionada</div>
+                        <div class="form-text">Se actualiza según la línea</div>
                     </div>
 
-                    <div class="col-md-4">
+                    <div class="col-6 col-lg-3">
                         <label class="form-label" for="orden_produccion">Orden de producción</label>
                         <select class="form-select {% if errores.orden_produccion %}is-invalid{% endif %}"
                                 name="orden_produccion" id="orden_produccion" required disabled>
@@ -61,10 +61,10 @@
                         {% if errores.orden_produccion %}
                         <div class="invalid-feedback">{{ errores.orden_produccion|join:", " }}</div>
                         {% endif %}
-                        <div class="form-text">Solo órdenes de la estación seleccionada</div>
+                        <div class="form-text">Solo órdenes de la estación</div>
                     </div>
 
-                    <div class="col-md-4">
+                    <div class="col-6 col-lg-3">
                         <label class="form-label" for="fecha">Fecha de registro</label>
                         <input type="date" class="form-control {% if errores.fecha %}is-invalid{% endif %}"
                                name="fecha" id="fecha"
@@ -72,10 +72,10 @@
                         {% if errores.fecha %}
                         <div class="invalid-feedback">{{ errores.fecha|join:", " }}</div>
                         {% endif %}
-                        <div class="form-text">Se registra automáticamente la fecha de hoy</div>
+                        <div class="form-text">Automática, fecha de hoy</div>
                     </div>
 
-                    <div class="col-md-4">
+                    <div class="col-6 col-lg-3">
                         <label class="form-label" for="componente">Componente</label>
                         <select class="form-select {% if errores.componente %}is-invalid{% endif %}" name="componente" id="componente" required>
                             <option value="">-- Seleccionar componente --</option>
@@ -90,7 +90,7 @@
                         {% endif %}
                     </div>
 
-                    <div class="col-md-4">
+                    <div class="col-6 col-lg-3">
                         <label class="form-label" for="lote_material">Lote de material</label>
                         <select class="form-select {% if errores.lote_material %}is-invalid{% endif %}"
                                 name="lote_material" id="lote_material" required disabled>
@@ -99,10 +99,10 @@
                         {% if errores.lote_material %}
                         <div class="invalid-feedback">{{ errores.lote_material|join:", " }}</div>
                         {% endif %}
-                        <div class="form-text">Solo lotes del componente seleccionado</div>
+                        <div class="form-text">Solo lotes del componente</div>
                     </div>
 
-                    <div class="col-md-4">
+                    <div class="col-6 col-lg-3">
                         <label class="form-label" for="tipos_merma">Tipo de merma</label>
                         <select class="form-select {% if errores.tipos_merma %}is-invalid{% endif %}" name="tipos_merma" id="tipos_merma">
                             <option value="">-- Seleccionar un tipo --</option>
@@ -117,7 +117,7 @@
                         {% endif %}
                     </div>
 
-                    <div class="col-md-4">
+                    <div class="col-6 col-lg-3">
                         <label class="form-label" for="causa_raiz">Causa raíz</label>
                         <select class="form-select {% if errores.causa_raiz %}is-invalid{% endif %}"
                                 name="causa_raiz" id="causa_raiz" required>
@@ -137,15 +137,15 @@
             </div>
         </div>
 
-        <div class="card mb-4">
-            <div class="card-header">
-                <strong>Cantidad</strong>
+        <div class="card mb-3">
+            <div class="card-header py-2">
+                <strong>Cantidad y observaciones</strong>
             </div>
 
-            <div class="card-body">
+            <div class="card-body py-3">
                 <div class="row g-3">
-                    
-                    <div class="col-md-4">
+
+                    <div class="col-6 col-lg-2">
                         <label class="form-label" for="cantidad">Cantidad</label>
 
                         <div class="input-group">
@@ -161,28 +161,17 @@
                         {% endif %}
                     </div>
 
-                </div>
-            </div>
-        </div>
-
-        <div class="card mb-4">
-            <div class="card-header">
-                <strong>Observaciones</strong>
-            </div>
-
-            <div class="card-body">
-                <div class="row g-3">
-
-                    <div class="col-12">
-                        <label class="form-label">Descripción</label>
-                        <textarea name="descripcion" id="descripcion" class="form-control" rows="3" placeholder="Detalles adicionales sobre la merma"></textarea>
+                    <div class="col-12 col-lg-10">
+                        <label class="form-label" for="descripcion">Descripción</label>
+                        <textarea name="descripcion" id="descripcion" class="form-control" rows="1" placeholder="Detalles adicionales sobre la merma"></textarea>
                     </div>
+
                 </div>
             </div>
         </div>
 
         <div class="d-flex justify-content-end gap-2">
-            <a href="{% url 'mermas:list_mermas' %}" class="btn btn-secondary">Cancelar</a>
+            <a href="{% url 'mermas:list_mermas' %}" class="mx-btn-secondary">Cancelar</a>
             <button type="submit" class="mx-btn-primary" id="btnRegistrar">
                 <span class="material-symbols-outlined">add</span>
                 Registrar Merma

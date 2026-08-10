@@ -1,9 +1,7 @@
-from django.shortcuts import render
-
 # Create your views here.
 
-from django.contrib import messages
 from django.shortcuts import redirect, render
+from django.contrib import messages
 
 from .wrappers import ApiError, api_post, api_get
 from .decorators import login_required_api
@@ -78,3 +76,16 @@ def dashboard_view(request):
         'dash': dash,
     })
  
+@login_required_api
+def mi_perfil(request):
+    token = request.session.get('api_token')
+    
+    try:
+        perfil = api_get('/usuarios/mi-perfil/', token=token)
+    except ApiError as e:
+        messages.error(request, 'No se pudieron cargar los datos del perfil.')
+        return redirect('usuarios:dashboard')
+    
+    return render(request, 'usuarios/mi_perfil.html', {
+        'perfil': perfil,
+    })

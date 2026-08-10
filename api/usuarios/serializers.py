@@ -190,3 +190,41 @@ class UpdateEmpleadoSerializer(serializers.ModelSerializer):
     class Meta:
         model = Empleado
         fields = CAMPOS_EMPLEADO
+        
+
+# ======================================================
+# Serializers Mi Perfil
+# ======================================================
+
+class EmpleadoPerfilSerializer(serializers.ModelSerializer):
+    edad = serializers.IntegerField(read_only=True)
+    turno_nombre = serializers.CharField(source='turno.nombre', read_only=True)
+    area_nombre = serializers.CharField(source='area.nombre', read_only=True)
+    class Meta:
+        model = Empleado
+        fields = (
+            "nombre",
+            "primer_apellido",
+            "segundo_apellido",
+            "fecha_nacimiento",
+            "fecha_ingreso",
+            "area",
+            "area_nombre",
+            "turno",
+            "turno_nombre",
+            "edad",
+        )
+
+class MiPerfilSerializer(serializers.ModelSerializer):
+    rol_nombre = serializers.CharField(source='rol.nombre', read_only=True)
+    empleado = EmpleadoPerfilSerializer(read_only=True)
+    class Meta:
+        model = Usuario
+        fields = (
+            "username",
+            "correo",
+            "rol",
+            "rol_nombre",
+            "empleado",
+        )
+        

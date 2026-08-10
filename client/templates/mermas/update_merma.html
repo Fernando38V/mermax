@@ -9,7 +9,7 @@
 
 <!-- btn para regresar -->
 <div class="mb-4">
-    <a href="{% url 'mermas:detail_mermas' pk=merma.folio %}" class="btn btn-secondary">
+    <a href="{% url 'mermas:detail_mermas' pk=merma.folio %}" class="mx-btn-secondary">
         <span class="material-symbols-outlined">arrow_back</span>
         Regresar
     </a>
@@ -112,7 +112,7 @@
         </div>
 
         <div class="d-flex justify-content-end gap-2">
-            <a href="{% url 'mermas:detail_mermas' pk=merma.folio %}" class="btn btn-secondary">Cancelar</a>
+            <a href="{% url 'mermas:detail_mermas' pk=merma.folio %}" class="mx-btn-secondary">Cancelar</a>
             <button type="submit" class="mx-btn-primary" id="btnGuardar" disabled>
                 <span class="material-symbols-outlined">save</span>
                 Guardar cambios

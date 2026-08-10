@@ -3,6 +3,9 @@ from django.shortcuts import render
 # Create your views here.
 
 from rest_framework import permissions, status
+from rest_framework.decorators import api_view, authentication_classes, permission_classes
+from rest_framework.permissions import IsAuthenticated
+from .authentication import UsuarioTokenAuthentication
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework import generics
@@ -11,7 +14,6 @@ from auditoria.services import AuditoriaSqlMixin
 from .models import Token
 from usuarios import serializers, models
 from usuarios.permissions import EsAdministrador
-
 
 class LoginView(APIView):
     """POST /api/usuarios/login/  {"username": "...", "password": "..."}"""
@@ -189,3 +191,13 @@ def dashboard_admin(request):
         'bitacora_por_dia': bitacora_por_dia,
         'usuarios_por_rol': usuarios_por_rol,
     })
+    
+# Mi Perfil
+
+@api_view(['GET'])
+@authentication_classes([UsuarioTokenAuthentication])
+@permission_classes([IsAuthenticated])
+def mi_perfil(request):
+    
+    serializer = serializers.MiPerfilSerializer(request.user)
+    return Response(serializer.data)

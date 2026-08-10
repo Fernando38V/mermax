@@ -1,0 +1,242 @@
+{% extends 'base/layout_app.html' %}
+
+{% block page_title %}Mi Perfil{% endblock page_title %}
+{% block page_subtitle %}Consulta tu información personal y laboral{% endblock page_subtitle %}
+
+{% block app_content %}
+<style>
+    .perfil-avatar {
+        width: 110px;
+        height: 110px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, #2563eb, #1d4ed8);
+        color: #fff;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 2.75rem;
+        font-weight: 600;
+        margin: 0 auto;
+    }
+
+    .perfil-badge-rol {
+        background-color: #dbeafe;
+        color: #1d4ed8;
+        font-weight: 500;
+        font-size: 0.85rem;
+        padding: 0.35rem 0.9rem;
+        border-radius: 999px;
+        display: inline-block;
+    }
+
+    .perfil-card {
+        border: 1px solid #e5e7eb;
+        border-radius: 0.75rem;
+        background: #fff;
+    }
+
+    .perfil-card-header {
+        display: flex;
+        align-items: center;
+        gap: 0.6rem;
+        padding: 1rem 1.25rem;
+        border-bottom: 1px solid #f1f3f5;
+    }
+
+    .perfil-icon-circle {
+        width: 34px;
+        height: 34px;
+        border-radius: 8px;
+        background-color: #2563eb;
+        color: #fff;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+    }
+
+    .perfil-item {
+        display: flex;
+        align-items: flex-start;
+        gap: 0.6rem;
+        padding: 0.75rem 0;
+        border-bottom: 1px solid #f1f3f5;
+    }
+
+    .perfil-item:last-child {
+        border-bottom: none;
+    }
+
+    .perfil-item i {
+        color: #6b7280;
+        margin-top: 0.15rem;
+    }
+
+    .perfil-item-label {
+        font-size: 0.8rem;
+        color: #6b7280;
+        margin-bottom: 0.1rem;
+    }
+
+    .perfil-item-value {
+        font-weight: 500;
+        color: #1f2937;
+    }
+
+    .perfil-lateral .perfil-item {
+        padding: 0.9rem 0;
+    }
+
+    .perfil-grid {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 1.25rem 1.5rem;
+        padding: 1.25rem;
+    }
+
+    @media (max-width: 767px) {
+        .perfil-grid {
+            grid-template-columns: 1fr;
+        }
+    }
+
+    .perfil-info-banner {
+        background-color: #eff6ff;
+        border: 1px solid #dbeafe;
+        color: #1e3a8a;
+        border-radius: 0.6rem;
+        padding: 0.9rem 1.1rem;
+        display: flex;
+        align-items: center;
+        gap: 0.6rem;
+        font-size: 0.9rem;
+    }
+</style>
+
+<div class="row g-4">
+    <!-- Columna lateral -->
+    <div class="col-lg-4">
+        <div class="perfil-card p-4 h-100">
+            <div class="perfil-avatar">
+                {{ perfil.empleado.nombre|first|upper }}
+            </div>
+            <h5 class="text-center mt-3 mb-1">
+                {{ perfil.empleado.nombre }} {{ perfil.empleado.primer_apellido }}
+            </h5>
+            <div class="text-center mb-3">
+                <span class="perfil-badge-rol">{{ perfil.rol_nombre }}</span>
+            </div>
+
+            <hr>
+
+            <div class="perfil-lateral">
+                <div class="perfil-item">
+                    <i class="bi bi-envelope"></i>
+                    <div>
+                        <div class="perfil-item-label">Usuario</div>
+                        <div class="perfil-item-value">{{ perfil.username }}</div>
+                    </div>
+                </div>
+
+                <div class="perfil-item">
+                    <i class="bi bi-envelope"></i>
+                    <div>
+                        <div class="perfil-item-label">Correo electrónico</div>
+                        <div class="perfil-item-value">{{ perfil.correo }}</div>
+                    </div>
+                </div>
+
+                <div class="perfil-item">
+                    <i class="bi bi-shield-check"></i>
+                    <div>
+                        <div class="perfil-item-label">Rol</div>
+                        <div class="perfil-item-value">{{ perfil.rol_nombre }}</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Columna principal -->
+    <div class="col-lg-8">
+        <!-- Información de cuenta -->
+        <div class="perfil-card mb-4">
+            <div class="perfil-card-header">
+                <div class="perfil-icon-circle">
+                    <span class="material-symbols-outlined">account_circle</span>
+                </div>
+                <strong>Información de cuenta</strong>
+            </div>
+            <div class="perfil-grid" style="grid-template-columns: repeat(2, 1fr);">
+                <div>
+                    <div class="perfil-item-label">Nombre de usuario</div>
+                    <div class="perfil-item-value">{{ perfil.username }}</div>
+                </div>
+                <div>
+                    <div class="perfil-item-label">Correo electrónico</div>
+                    <div class="perfil-item-value">{{ perfil.correo }}</div>
+                </div>
+                <div>
+                    <div class="perfil-item-label">Rol asignado</div>
+                    <div class="perfil-item-value">{{ perfil.rol_nombre }}</div>
+                </div>
+                <div>
+                    <div class="perfil-item-label">Rol (nombre)</div>
+                    <span class="perfil-badge-rol">{{ perfil.rol_nombre }}</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Información del empleado -->
+        <div class="perfil-card">
+            <div class="perfil-card-header">
+                <div class="perfil-icon-circle" style="background-color:#2563eb;">
+                    <span class="material-symbols-outlined">badge</span>
+                </div>
+                <strong>Información del empleado</strong>
+            </div>
+            <div class="perfil-grid">
+                <div>
+                    <div class="perfil-item-label">Nombre</div>
+                    <div class="perfil-item-value">{{ perfil.empleado.nombre }}</div>
+                </div>
+                <div>
+                    <div class="perfil-item-label">Primer apellido</div>
+                    <div class="perfil-item-value">{{ perfil.empleado.primer_apellido }}</div>
+                </div>
+                <div>
+                    <div class="perfil-item-label">Segundo apellido</div>
+                    <div class="perfil-item-value">{{ perfil.empleado.segundo_apellido }}</div>
+                </div>
+
+                <div>
+                    <div class="perfil-item-label">Fecha de nacimiento</div>
+                    <div class="perfil-item-value">{{ perfil.empleado.fecha_nacimiento }}</div>
+                </div>
+                <div>
+                    <div class="perfil-item-label">Edad</div>
+                    <div class="perfil-item-value">{{ perfil.empleado.edad }} años</div>
+                </div>
+                <div>
+                    <div class="perfil-item-label">Área</div>
+                    <div class="perfil-item-value">{{ perfil.empleado.area_nombre|default:perfil.empleado.area }}</div>
+                </div>
+
+                <div>
+                    <div class="perfil-item-label">Fecha de ingreso</div>
+                    <div class="perfil-item-value">{{ perfil.empleado.fecha_ingreso }}</div>
+                </div>
+                <div>
+                    <div class="perfil-item-label">Turno</div>
+                    <div class="perfil-item-value">{{ perfil.empleado.turno_nombre }}</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="perfil-info-banner mt-4">
+            <i class="bi bi-info-circle"></i>
+            Si encuentras algún dato incorrecto, contacta al administrador del sistema.
+        </div>
+    </div>
+</div>
+{% endblock %}
