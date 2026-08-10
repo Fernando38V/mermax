@@ -45,7 +45,7 @@
             </div>
 
             <div class="col-auto d-flex gap-2">
-                <button type="submit" class="btn btn-secondary d-inline-flex align-items-center gap-1 shadow-sm">
+                <button type="submit" class="btn mx-btn-secondary d-inline-flex align-items-center gap-1 shadow-sm" style="height: 38px;">
                     <span class="material-symbols-outlined fs-5">filter_alt</span>
                     Filtrar
                 </button>
@@ -60,10 +60,10 @@
 
             <div class="col-auto ms-auto d-flex align-items-end">
                 <div class="mx-view-toggle btn-group shadow-sm" role="group" aria-label="Cambiar vista" data-list-target="inspecciones">
-                    <button type="button" class="btn btn-secondary d-inline-flex align-items-center" data-view-btn="table" title="Vista de Tabla">
+                    <button type="button" class="btn mx-btn-secondary mx-btn-sm d-inline-flex align-items-center" data-view-btn="table" title="Vista de Tabla">
                         <span class="material-symbols-outlined">table_rows</span>
                     </button>
-                    <button type="button" class="btn btn-secondary d-inline-flex align-items-center" data-view-btn="cards" title="Vista de Tarjetas">
+                    <button type="button" class="btn mx-btn-secondary mx-btn-sm d-inline-flex align-items-center" data-view-btn="cards" title="Vista de Tarjetas">
                         <span class="material-symbols-outlined">grid_view</span>
                     </button>
                 </div>
@@ -136,13 +136,13 @@
 
                                 <td class="text-end pe-4">
                                     {% if solicitud.edo_solicitud == 'ATENDIDA' or solicitud.edo_solicitud_id == 'ATENDIDA' %}
-                                        <span class="btn btn-sm bg-success-subtle text-success border border-success-subtle disabled fw-semibold px-3 d-inline-flex align-items-center gap-1">
+                                        <span class="btn btn-sm btn-accion bg-success-subtle text-success border border-success-subtle disabled fw-semibold px-3 d-inline-flex align-items-center gap-1">
                                             <span class="material-symbols-outlined fs-6">verified</span>
                                             Atendida
                                         </span>
 
                                     {% elif solicitud.estado_merma == 'INSPECCIO' or solicitud.registro_merma.edo_flujo_merma_id == 'INSPECCIO' or solicitud.registro_merma.edo_flujo_merma == 'INSPECCIO' %}
-                                        <a href="{% url 'inspecciones:dictaminar_inspeccion_codigo' solicitud.codigo %}" class="btn btn-sm btn-secondary text-nowrap px-3 d-inline-flex align-items-center gap-1 shadow-sm">
+                                        <a href="{% url 'inspecciones:dictaminar_inspeccion_codigo' solicitud.codigo %}" class="btn btn-sm mx-btn-secondary btn-accion text-nowrap px-3 d-inline-flex align-items-center gap-1 shadow-sm">
                                             <span class="material-symbols-outlined fs-6">gavel</span>
                                             <span>Dictaminar</span>
                                         </a>
@@ -150,7 +150,7 @@
                                     {% else %}
                                         <form method="POST" action="{% url 'inspecciones:iniciar_inspeccion' solicitud.codigo %}" class="d-inline">
                                             {% csrf_token %}
-                                            <button type="submit" class="btn btn-sm mx-btn-primary text-nowrap px-3 d-inline-flex align-items-center gap-1 shadow-sm">
+                                            <button type="submit" class="btn btn-sm btn-accion mx-btn-primary text-nowrap px-3 d-inline-flex align-items-center gap-1 shadow-sm">
                                                 <span class="material-symbols-outlined fs-6">play_arrow</span>
                                                 <span>Iniciar</span>
                                             </button>
@@ -225,7 +225,7 @@
                                 </div>
 
                             {% elif solicitud.estado_merma == 'INSPECCIO' or solicitud.registro_merma.edo_flujo_merma_id == 'INSPECCIO' or solicitud.registro_merma.edo_flujo_merma == 'INSPECCIO' %}
-                                <a href="{% url 'inspecciones:dictaminar_inspeccion_codigo' solicitud.codigo %}" class="btn btn-secondary w-100 d-flex align-items-center justify-content-center gap-1 shadow-sm">
+                                <a href="{% url 'inspecciones:dictaminar_inspeccion_codigo' solicitud.codigo %}" class="btn mx-btn-secondary w-100 d-flex align-items-center justify-content-center gap-1 shadow-sm">
                                     <span class="material-symbols-outlined fs-5">gavel</span>
                                     <span>Dictaminar Inspección</span>
                                 </a>
@@ -233,7 +233,7 @@
                             {% else %}
                                 <form method="POST" action="{% url 'inspecciones:iniciar_inspeccion' solicitud.codigo %}" class="w-100">
                                     {% csrf_token %}
-                                    <button type="submit" class="btn mx-btn-primary w-100 d-flex align-items-center justify-content-center gap-1 shadow-sm">
+                                    <button type="submit" class="mx-btn-primary w-100 d-flex align-items-center justify-content-center gap-1 shadow-sm">
                                         <span class="material-symbols-outlined fs-5">play_circle</span>
                                         <span>Iniciar Inspección</span>
                                     </button>

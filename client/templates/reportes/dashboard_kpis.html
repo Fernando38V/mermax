@@ -68,7 +68,7 @@
             <div class="card mx-kpi-card border-0 shadow-sm border-start border-warning border-4 h-100">
                 <div class="card-body">
                     <span class="text-muted fw-bold text-uppercase small">Líneas en Alerta</span>
-                    <h3 class="text-warning fw-bold my-2">{{ kpi_data.resumen.lineas_en_alerta }}</h3>
+                    <h3 class="text-orange fw-bold my-2">{{ kpi_data.resumen.lineas_en_alerta }}</h3>
                     <p class="text-muted small mb-0">Semáforo en rojo</p>
                 </div>
             </div>
@@ -77,8 +77,9 @@
 
     <!-- SEMÁFORO VISUAL POR LÍNEA -->
     <div class="card border-0 shadow-sm mb-4">
-        <div class="card-header bg-white py-3">
-            <h6 class="fw-bold mb-0">🚦 Estado de Scrap por Línea de Producción </h6>
+        <div class="card-header bg-white py-3 d-inline-flex align-items-center gap-1">
+            <span class="material-symbols-outlined">assessment</span>
+            <h6 class="fw-bold mb-0">Estado de Scrap por Línea de Producción </h6>
         </div>
         <div class="card-body">
             <div class="row g-3">
@@ -114,8 +115,9 @@
     <div class="row g-4">
         <div class="col-12 col-lg-7">
             <div class="card border-0 shadow-sm h-100">
-                <div class="card-header bg-white py-3">
-                    <h6 class="fw-bold mb-0">📊 % Scrap Real vs Umbral por Línea</h6>
+                <div class="card-header bg-white py-3 d-inline-flex align-items-center gap-1">
+                    <span class="material-symbols-outlined">bar_chart</span>
+                    <h6 class="fw-bold mb-0">% Scrap Real vs Umbral por Línea</h6>
                 </div>
                 <div class="card-body">
                     <div style="height: 300px; position: relative;">
@@ -127,8 +129,9 @@
 
         <div class="col-12 col-lg-5">
             <div class="card border-0 shadow-sm h-100">
-                <div class="card-header bg-white py-3">
-                    <h6 class="fw-bold mb-0">🔍 Ranking Causas Raíz</h6>
+                <div class="card-header bg-white py-3 d-inline-flex align-items-center gap-1">
+                    <span class="material-symbols-outlined">search</span>
+                    <h6 class="fw-bold mb-0">Ranking Causas Raíz</h6>
                 </div>
                 <div class="card-body">
                     <div style="height: 300px; position: relative;">

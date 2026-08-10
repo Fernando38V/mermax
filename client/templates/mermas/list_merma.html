@@ -8,21 +8,23 @@
 {% block app_content %}
 
     <div class="mb-4 d-flex justify-content-end align-items-center gap-2">
+        
+
+        <div class="mx-view-toggle btn-group" role="group" aria-label="Cambiar vista" data-list-target="mermas">
+            <button type="button" class="btn mx-btn-secondary mx-btn-sm d-inline-flex align-items-center" data-view-btn="table">
+                <span class="material-symbols-outlined">table_rows</span>
+            </button>
+            <button type="button" class="btn mx-btn-secondary mx-btn-sm d-inline-flex align-items-center" data-view-btn="cards">
+                <span class="material-symbols-outlined">grid_view</span>
+            </button>
+        </div>
+
         {% if filtros_activos %}
-            <a href="{% url 'mermas:list_mermas' %}" class="btn btn-secondary">
+            <a href="{% url 'mermas:list_mermas' %}" class="mx-btn-secondary">
                 <span class="material-symbols-outlined">clear</span>
                 Limpiar filtros
             </a>
         {% endif %}
-
-        <div class="mx-view-toggle btn-group" role="group" aria-label="Cambiar vista" data-list-target="mermas">
-            <button type="button" class="btn btn-secondary d-inline-flex align-items-center" data-view-btn="table">
-                <span class="material-symbols-outlined">table_rows</span>
-            </button>
-            <button type="button" class="btn btn-secondary d-inline-flex align-items-center" data-view-btn="cards">
-                <span class="material-symbols-outlined">grid_view</span>
-            </button>
-        </div>
 
         <a class="btn mx-btn-primary" href="{% url 'mermas:create_mermas' %}">
             <span class="material-symbols-outlined">add</span>
@@ -94,7 +96,7 @@
             </div>
 
             <div class="col-12 col-md-auto d-flex align-items-end">
-                <button type="submit" class="btn btn-secondary d-inline-flex align-items-center gap-1 w-100">
+                <button type="submit" class="mx-btn-secondary d-inline-flex align-items-center gap-1 w-100" style="height: 38px;">
                     <span class="material-symbols-outlined">filter_alt</span>
                     Filtrar
                 </button>
@@ -131,7 +133,7 @@
                         <td>{{ merma.causa_raiz_nombre }}</td>
                         <td>{{ merma.edo_merma_nombre }}</td>
                         <td>
-                            <a href="{% url 'mermas:detail_mermas' merma.folio %}" class="btn btn-secondary text-nowrap">
+                            <a href="{% url 'mermas:detail_mermas' merma.folio %}" class="mx-btn-secondary text-nowrap">
                                 <span>Ver Detalles</span>
                             </a>
                         </td>
@@ -167,7 +169,7 @@
                         <div class="small mb-3">
                             Tipo: {{ merma.tipo_merma_nombre }} · Causa: {{ merma.causa_raiz_nombre }}
                         </div>
-                        <a href="{% url 'mermas:detail_mermas' merma.folio %}" class="btn btn-secondary mt-auto align-self-start">
+                        <a href="{% url 'mermas:detail_mermas' merma.folio %}" class="mx-btn-secondary mt-auto align-self-start">
                             Ver Detalles
                         </a>
                     </div>
