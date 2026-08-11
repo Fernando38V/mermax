@@ -7,7 +7,7 @@
 
 {% block app_content %}
 <div class="container-fluid p-0">
-    
+
     {% if messages %}
         {% for message in messages %}
         <div class="alert alert-{{ message.tags }} alert-dismissible fade show d-flex align-items-center gap-2 mb-3 rounded-3 shadow-sm" role="alert">
@@ -18,7 +18,7 @@
     {% endif %}
 
     <div class="card border-0 shadow-sm rounded-3 mb-4 overflow-hidden">
-        
+
         <div class="card-header bg-white border-bottom p-3 d-flex flex-wrap align-items-end justify-content-between">
             <div class="d-flex align-items-center gap-2 mb-2">
                 <span class="material-symbols-outlined text-primary fs-5">inventory_2</span>
@@ -36,7 +36,7 @@
         </div>
     </div>
 
-    <div class="mx-list-container" data-view="table" data-list-id="historial">
+    <div class="mx-list-container" data-view="cards" data-list-id="historial">
 
         <div class="card border-0 shadow-sm rounded-3 mb-4 mx-list-table overflow-hidden">
             <div class="table-responsive">
@@ -97,7 +97,7 @@
         <div class="mx-list-cards mb-4">
             <div class="row g-3">
                 {% for merma in mermas %}
-                <div class="col-12 col-sm-6 col-lg-4">
+                <div class="col-12 col-sm-6">
                     <div class="card border-0 shadow-sm rounded-3 h-100 p-3 bg-white">
                         <div class="d-flex justify-content-between align-items-start mb-2">
                             <div class="d-flex align-items-center gap-2">
@@ -154,72 +154,151 @@
     </div>
 
     <div class="card border-0 shadow-sm rounded-3 mb-4 overflow-hidden">
-        <div class="card-header bg-white border-bottom p-3">
-            <div class="d-flex align-items-center gap-2">
+        <div class="card-header bg-white border-bottom p-3 d-flex flex-wrap align-items-end justify-content-between">
+            <div class="d-flex align-items-center gap-2 mb-2">
                 <span class="material-symbols-outlined text-success fs-5">fact_check</span>
                 <h5 class="mb-0 fw-bold text-dark fs-6">Discrepancias resueltas</h5>
             </div>
+
+            <div class="mx-view-toggle btn-group shadow-sm" role="group" aria-label="Cambiar vista" data-list-target="historial-discrepancias">
+                <button type="button" class="btn btn-light border d-inline-flex align-items-center" data-view-btn="table" title="Vista en Tabla">
+                    <span class="material-symbols-outlined">table_rows</span>
+                </button>
+                <button type="button" class="btn btn-light border d-inline-flex align-items-center" data-view-btn="cards" title="Vista en Tarjetas">
+                    <span class="material-symbols-outlined">grid_view</span>
+                </button>
+            </div>
         </div>
-        <div class="table-responsive">
-            <table class="table table-hover align-middle mb-0">
-                <thead class="bg-light border-bottom">
-                    <tr class="fw-bold text-dark">
-                        <th scope="col" class="ps-4 py-2 text-nowrap">Folio</th>
-                        <th scope="col" class="py-2 text-nowrap">Folio Merma</th>
-                        <th scope="col" class="py-2 text-nowrap">Cant. Reportada</th>
-                        <th scope="col" class="py-2 text-nowrap">Cant. Recibida</th>
-                        <th scope="col" class="py-2 text-nowrap">Diferencia</th>
-                        <th scope="col" class="py-2 text-nowrap">Motivo</th>
-                        <th scope="col" class="py-2 text-nowrap">Resolución</th>
-                        <th scope="col" class="py-2 text-nowrap">Fecha Resolución</th>
-                        <th scope="col" class="text-end pe-4 py-2 text-nowrap">Resolvió</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for disc in discrepancias|slice:":10" %}
-                    <tr>
-                        <td class="ps-4 py-2">
+    </div>
+
+    <div class="mx-list-container" data-view="cards" data-list-id="historial-discrepancias">
+
+        <div class="card border-0 shadow-sm rounded-3 mb-4 mx-list-table overflow-hidden">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="bg-light border-bottom">
+                        <tr class="fw-bold text-dark">
+                            <th scope="col" class="ps-4 py-2 text-nowrap">Folio</th>
+                            <th scope="col" class="py-2 text-nowrap">Folio Merma</th>
+                            <th scope="col" class="py-2 text-nowrap">Cant. Reportada</th>
+                            <th scope="col" class="py-2 text-nowrap">Cant. Recibida</th>
+                            <th scope="col" class="py-2 text-nowrap">Diferencia</th>
+                            <th scope="col" class="py-2 text-nowrap">Motivo</th>
+                            <th scope="col" class="py-2 text-nowrap">Resolución</th>
+                            <th scope="col" class="py-2 text-nowrap">Fecha Resolución</th>
+                            <th scope="col" class="text-end pe-4 py-2 text-nowrap">Resolvió</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for disc in discrepancias|slice:":10" %}
+                        <tr>
+                            <td class="ps-4 py-2">
+                                <div class="d-flex align-items-center gap-2">
+                                    <div class="p-1 bg-success-subtle text-success rounded-2 d-inline-flex align-items-center justify-content-center">
+                                        <span class="material-symbols-outlined fs-6">task_alt</span>
+                                    </div>
+                                    <span class="fw-bold text-dark">{{ disc.folio }}</span>
+                                </div>
+                            </td>
+                            <td class="py-2">
+                                <span class="badge bg-light text-dark border fw-normal py-1 px-2">
+                                    <span class="material-symbols-outlined fs-6 align-middle me-1">description</span>{{ disc.merma_folio }}
+                                </span>
+                            </td>
+                            <td class="py-2 text-dark">{{ disc.cantidad_reportada }}</td>
+                            <td class="py-2 text-dark">{{ disc.cantidad_recibida }}</td>
+                            <td class="py-2">
+                                <span class="badge bg-danger-subtle text-danger border border-danger-subtle fw-bold">
+                                    {{ disc.diferencia }}
+                                </span>
+                            </td>
+                            <td class="py-2 text-secondary">{{ disc.motivo_reporte }}</td>
+                            <td class="py-2 text-dark">{{ disc.motivo_resolucion }}</td>
+                            <td class="py-2">
+                                <div class="d-flex align-items-center gap-1 text-muted">
+                                    <span class="material-symbols-outlined fs-6">calendar_today</span>
+                                    <span>{{ disc.fecha_resolucion }}</span>
+                                </div>
+                            </td>
+                            <td class="text-end pe-4 py-2 text-dark">{{ disc.usuario_resolucion_nombre }}</td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="9" class="text-center text-muted py-4">
+                                <span class="material-symbols-outlined fs-1 d-block mb-1 opacity-50">check_circle</span>
+                                No hay discrepancias resueltas todavía.
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <div class="mx-list-cards mb-4">
+            <div class="row g-3">
+                {% for disc in discrepancias %}
+                <div class="col-12 col-sm-6">
+                    <div class="card border-0 shadow-sm rounded-3 h-100 p-3 bg-white">
+                        <div class="d-flex justify-content-between align-items-start mb-2">
                             <div class="d-flex align-items-center gap-2">
-                                <div class="p-1 bg-success-subtle text-success rounded-2 d-inline-flex align-items-center justify-content-center">
-                                    <span class="material-symbols-outlined fs-6">task_alt</span>
+                                <div class="p-2 bg-success-subtle text-success rounded-3 d-inline-flex align-items-center justify-content-center">
+                                    <span class="material-symbols-outlined">task_alt</span>
                                 </div>
                                 <span class="fw-bold text-dark">{{ disc.folio }}</span>
                             </div>
-                        </td>
-                        <td class="py-2">
-                            <span class="badge bg-light text-dark border fw-normal py-1 px-2">
-                                <span class="material-symbols-outlined fs-6 align-middle me-1">description</span>{{ disc.merma_folio }}
-                            </span>
-                        </td>
-                        <td class="py-2 text-dark">{{ disc.cantidad_reportada }}</td>
-                        <td class="py-2 text-dark">{{ disc.cantidad_recibida }}</td>
-                        <td class="py-2">
                             <span class="badge bg-danger-subtle text-danger border border-danger-subtle fw-bold">
-                                {{ disc.diferencia }}
+                                Dif. {{ disc.diferencia }}
                             </span>
-                        </td>
-                        <td class="py-2 text-secondary">{{ disc.motivo_reporte }}</td>
-                        <td class="py-2 text-dark">{{ disc.motivo_resolucion }}</td>
-                        <td class="py-2">
-                            <div class="d-flex align-items-center gap-1 text-muted">
-                                <span class="material-symbols-outlined fs-6">calendar_today</span>
-                                <span>{{ disc.fecha_resolucion }}</span>
+                        </div>
+
+                        <div class="text-muted small mb-3 d-flex align-items-center gap-1">
+                            <span class="material-symbols-outlined fs-6">calendar_today</span>
+                            <span>Resuelta: {{ disc.fecha_resolucion }}</span>
+                        </div>
+
+                        <div class="p-3 bg-light rounded-3 mb-3 border border-light-subtle">
+                            <div class="small text-muted mb-1">
+                                <span class="material-symbols-outlined fs-6 align-middle me-1">description</span>
+                                Merma {{ disc.merma_folio }}
                             </div>
-                        </td>
-                        <td class="text-end pe-4 py-2 text-dark">{{ disc.usuario_resolucion_nombre }}</td>
-                    </tr>
-                    {% empty %}
-                    <tr>
-                        <td colspan="9" class="text-center text-muted py-4">
-                            <span class="material-symbols-outlined fs-1 d-block mb-1 opacity-50">check_circle</span>
-                            No hay discrepancias resueltas todavía.
-                        </td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
+                            <div class="d-flex justify-content-between small">
+                                <span class="text-muted">Reportada:</span>
+                                <strong class="text-dark">{{ disc.cantidad_reportada }}</strong>
+                            </div>
+                            <div class="d-flex justify-content-between small">
+                                <span class="text-muted">Recibida:</span>
+                                <strong class="text-dark">{{ disc.cantidad_recibida }}</strong>
+                            </div>
+                        </div>
+
+                        <div class="small text-muted mb-1 d-flex flex-column gap-1">
+                            <div>
+                                <span>Motivo:</span>
+                                <strong class="text-dark fw-semibold d-block">{{ disc.motivo_reporte }}</strong>
+                            </div>
+                            <div>
+                                <span>Resolución:</span>
+                                <strong class="text-dark fw-semibold d-block">{{ disc.motivo_resolucion }}</strong>
+                            </div>
+                            <div class="d-flex justify-content-between mt-1">
+                                <span>Resolvió:</span>
+                                <strong class="text-dark fw-semibold">{{ disc.usuario_resolucion_nombre }}</strong>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% empty %}
+                <div class="col-12">
+                    <div class="card border-0 shadow-sm rounded-3 py-5 text-center bg-white">
+                        <span class="material-symbols-outlined fs-1 text-muted mb-2">check_circle</span>
+                        <p class="text-muted mb-0">No hay discrepancias resueltas todavía.</p>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
         </div>
     </div>
 
 </div>
-{% endblock app_content %}  
+{% endblock app_content %}
