@@ -11,10 +11,10 @@
         
 
         <div class="mx-view-toggle btn-group" role="group" aria-label="Cambiar vista" data-list-target="mermas">
-            <button type="button" class="btn mx-btn-secondary mx-btn-sm d-inline-flex align-items-center" data-view-btn="table">
+            <button type="button" class="btn btn-light border d-inline-flex align-items-center" data-view-btn="table" title="Vista en Tabla">
                 <span class="material-symbols-outlined">table_rows</span>
             </button>
-            <button type="button" class="btn mx-btn-secondary mx-btn-sm d-inline-flex align-items-center" data-view-btn="cards">
+            <button type="button" class="btn btn-light border d-inline-flex align-items-center" data-view-btn="cards" title="Vista en Tarjetas">
                 <span class="material-symbols-outlined">grid_view</span>
             </button>
         </div>
@@ -26,7 +26,7 @@
             </a>
         {% endif %}
 
-        <a class="btn mx-btn-primary" href="{% url 'mermas:create_mermas' %}">
+        <a class="mx-btn-primary" href="{% url 'mermas:create_mermas' %}">
             <span class="material-symbols-outlined">add</span>
             Registrar Merma
         </a>
