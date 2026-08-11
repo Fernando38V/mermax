@@ -5,85 +5,310 @@
 {% block page_subtitle %}Consulta del ciclo completo de un lote de material{% endblock page_subtitle %}
 
 {% block app_content %}
+<style>
+    /* Estilos visuales para la línea de tiempo del ciclo de vida */
+    .mx-timeline-step {
+        position: relative;
+        padding-left: 2.25rem;
+    }
+    .mx-timeline-step::before {
+        content: '';
+        position: absolute;
+        left: 0.7rem;
+        top: 2rem;
+        bottom: -0.8rem;
+        width: 2px;
+        background-color: #e2e8f0;
+    }
+    .mx-timeline-step:last-child::before {
+        display: none;
+    }
+    .mx-timeline-icon {
+        position: absolute;
+        left: 0;
+        top: 0;
+        width: 2rem;
+        height: 2rem;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1rem;
+    }
+</style>
 
-<form method="get" class="mb-4" id="form-consulta">
-    <div class="row g-3 align-items-end" style="max-width: 900px;">
-        <div class="col-md-5">
-            <label class="form-label">Componente</label>
-            <select name="componente" id="select-componente" class="form-select">
-                <option value="">-- Selecciona un componente --</option>
-                {% for c in componentes %}
-                <option value="{{ c.codigo }}" {% if componente_seleccionado == c.codigo %}selected{% endif %}>{{ c.nombre }}</option>
-                {% endfor %}
-            </select>
-        </div>
-        <div class="col-md-5">
-            <label class="form-label">Lote</label>
-            <select name="lote" id="select-lote" class="form-select" required>
-                <option value="">-- Primero selecciona un componente --</option>
-            </select>
-        </div>
-        <div class="col-md-2">
-            <button type="submit" class="btn mx-btn-primary w-100">
-                <span class="material-symbols-outlined">search</span> Buscar
-            </button>
+<div class="container-fluid p-0">
+
+    <div class="card border-0 shadow-sm rounded-3 mb-4">
+        <div class="card-body p-3 p-md-4">
+            <form method="get" id="form-consulta">
+                <div class="row g-3 align-items-end">
+                    <div class="col-12 col-md-5">
+                        <label class="mx-label text-dark mb-1">Componente <span class="text-danger">*</span></label>
+                        <select name="componente" id="select-componente" class="form-select">
+                            <option value="">-- Selecciona un componente --</option>
+                            {% for c in componentes %}
+                            <option value="{{ c.codigo }}" {% if componente_seleccionado == c.codigo %}selected{% endif %}>{{ c.nombre }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-12 col-md-5">
+                        <label class="mx-label text-dark mb-1">Lote <span class="text-danger">*</span></label>
+                        <select name="lote" id="select-lote" class="form-select" required>
+                            <option value="">-- Primero selecciona un componente --</option>
+                        </select>
+                    </div>
+                    <div class="col-12 col-md-2 d-flex gap-2">
+                        <button type="submit" class="mx-btn-primary mx-btn-touch w-100 shadow-sm">
+                            <span class="material-symbols-outlined fs-5">search</span>
+                            <span>Buscar</span>
+                        </button>
+                    </div>
+                </div>
+            </form>
         </div>
     </div>
-</form>
 
-{% if error %}
-<div class="alert alert-danger">{{ error }}</div>
-{% endif %}
+    {% if error %}
+    <div class="alert alert-danger alert-dismissible fade show d-flex align-items-center gap-2 mb-4" role="alert">
+        <span class="material-symbols-outlined">error</span>
+        <div>{{ error }}</div>
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+    {% endif %}
 
-{% if resultado %}
-{% with r=resultado.resumen %}
-<div class="card mb-4">
-    <div class="card-header bg-white fw-bold">Resumen del lote {{ r.lote }}</div>
-    <div class="card-body">
-        <div class="row g-3">
-            <div class="col-md-4"><strong>Lote proveedor:</strong> {{ r.numero_lote_proveedor|default:"—" }}</div>
-            <div class="col-md-4"><strong>Componente:</strong> {{ r.componente_nombre }}</div>
-            <div class="col-md-4"><strong>Proveedor:</strong> {{ r.proveedor }}</div>
-            <div class="col-md-4"><strong>Fecha de recepción:</strong> {{ r.fecha_recepcion }}</div>
-            <div class="col-md-4"><strong>Cantidad recibida:</strong> {{ r.cantidad_recibida }}</div>
-            <div class="col-md-4"><strong>Cantidad mermada:</strong> {{ r.cantidad_mermada }}</div>
-            <div class="col-md-4"><strong>Cantidad aprovechada:</strong> {{ r.cantidad_aprovechada }}</div>
-            <div class="col-md-4">
-                <strong>% de merma:</strong>
-                <span class="badge {% if r.porcentaje_merma >= 5 %}bg-danger{% elif r.porcentaje_merma >= 2 %}bg-warning text-dark{% else %}bg-success{% endif %}">
-                    {{ r.porcentaje_merma }}%
-                </span>
+    {% if resultado %}
+    {% with r=resultado.resumen %}
+
+    <div class="row g-3 mb-4">
+        <div class="col-12 col-sm-6 col-xl-3">
+            <div class="card mx-kpi-card border-0 shadow-sm border-start border-primary border-4 rounded-3 p-3 bg-white h-100">
+                <div class="d-flex align-items-center justify-content-between mb-1">
+                    <small class="mx-text-muted fw-bold text-uppercase" style="font-size: 0.725rem; letter-spacing: 0.05em;">Cantidad Recibida</small>
+                    <span class="material-symbols-outlined text-primary opacity-75">box_add</span>
+                </div>
+                <h3 class="text-dark fw-bold my-1">{{ r.cantidad_recibida|default:"0" }} <small class="fs-6 text-muted fw-normal">pcs</small></h3>
+                <small class="mx-text-muted">Fecha: {{ r.fecha_recepcion|default:"-" }}</small>
             </div>
-            <div class="col-md-4"><strong>Costo del desperdicio:</strong> ${{ r.costo_desperdicio }}</div>
-            <div class="col-md-4"><strong>Eventos de merma:</strong> {{ resultado.eventos_merma }}</div>
+        </div>
+
+        <div class="col-12 col-sm-6 col-xl-3">
+            <div class="card mx-kpi-card border-0 shadow-sm border-start border-danger border-4 rounded-3 p-3 bg-white h-100">
+                <div class="d-flex align-items-center justify-content-between mb-1">
+                    <small class="mx-text-muted fw-bold text-uppercase" style="font-size: 0.725rem; letter-spacing: 0.05em;">Impacto Merma</small>
+                    <span class="material-symbols-outlined text-danger opacity-75">report_problem</span>
+                </div>
+                <h3 class="text-danger fw-bold my-1">${{ r.costo_desperdicio|default:"0" }} <small class="fs-6 text-muted fw-normal">MXN</small></h3>
+                <div class="d-flex align-items-center gap-2 mt-1">
+                    <span class="badge {% if r.porcentaje_merma >= 5 %}bg-danger{% elif r.porcentaje_merma >= 2 %}bg-warning text-dark{% else %}bg-success{% endif %}">
+                        {{ r.porcentaje_merma }}% merma
+                    </span>
+                    <small class="mx-text-muted">({{ r.cantidad_mermada }} pcs)</small>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-12 col-sm-6 col-xl-3">
+            <div class="card mx-kpi-card border-0 shadow-sm border-start border-success border-4 rounded-3 p-3 bg-white h-100">
+                <div class="d-flex align-items-center justify-content-between mb-1">
+                    <small class="mx-text-muted fw-bold text-uppercase" style="font-size: 0.725rem; letter-spacing: 0.05em;">Aprovechamiento</small>
+                    <span class="material-symbols-outlined text-success opacity-75">check_circle</span>
+                </div>
+                <h3 class="text-success fw-bold my-1">{{ r.cantidad_aprovechada|default:"0" }} <small class="fs-6 text-muted fw-normal">pcs</small></h3>
+                <small class="text-success fw-semibold d-flex align-items-center gap-1">
+                    <span class="material-symbols-outlined fs-6">trending_up</span>
+                    Material conforme
+                </small>
+            </div>
+        </div>
+
+        <div class="col-12 col-sm-6 col-xl-3">
+            <div class="card mx-kpi-card border-0 shadow-sm border-start border-info border-4 rounded-3 p-3 bg-white h-100">
+                <div class="d-flex align-items-center justify-content-between mb-1">
+                    <small class="mx-text-muted fw-bold text-uppercase" style="font-size: 0.725rem; letter-spacing: 0.05em;">Eventos de Merma</small>
+                    <span class="material-symbols-outlined text-info opacity-75">history</span>
+                </div>
+                <h3 class="text-info fw-bold my-1">{{ resultado.eventos_merma|default:"0" }} <small class="fs-6 text-muted fw-normal">incidencias</small></h3>
+                <small class="mx-text-muted">Registradas en producción</small>
+            </div>
         </div>
     </div>
-</div>
-{% endwith %}
 
-<div class="card">
-    <div class="card-header bg-white fw-bold">Disposición final aplicada</div>
-    <div class="card-body p-0">
-        <table class="table mb-0">
-            <thead>
-                <tr><th>Dictamen</th><th>Eventos</th><th>Cantidad</th></tr>
-            </thead>
-            <tbody>
-                {% for d in resultado.disposicion_final %}
-                <tr>
-                    <td>{{ d.dictamen }}</td>
-                    <td>{{ d.eventos }}</td>
-                    <td>{{ d.cantidad }}</td>
-                </tr>
-                {% empty %}
-                <tr><td colspan="3" class="text-center mx-text-muted py-3">Aún no se ha aplicado ninguna disposición final a este lote.</td></tr>
-                {% endfor %}
-            </tbody>
-        </table>
+    <div class="row g-4 mb-4">
+        <div class="col-12 col-lg-7">
+            <div class="card border-0 shadow-sm rounded-3 h-100">
+                <div class="card-header bg-white border-bottom py-3 d-flex align-items-center justify-content-between">
+                    <h6 class="fw-bold text-dark mb-0 d-flex align-items-center gap-2">
+                        <span class="material-symbols-outlined text-primary">inventory</span>
+                        <span>Resumen del Lote {{ r.lote }}</span>
+                    </h6>
+                    <span class="badge bg-light text-dark border">Proveedor: {{ r.numero_lote_proveedor|default:"—" }}</span>
+                </div>
+                <div class="card-body p-4">
+                    <div class="row g-3">
+                        <div class="col-12 col-sm-6">
+                            <div class="p-3 bg-light rounded-3">
+                                <small class="mx-text-muted d-block mb-1">Componente</small>
+                                <strong class="text-dark fs-6">{{ r.componente_nombre }}</strong>
+                            </div>
+                        </div>
+                        <div class="col-12 col-sm-6">
+                            <div class="p-3 bg-light rounded-3">
+                                <small class="mx-text-muted d-block mb-1">Proveedor</small>
+                                <strong class="text-dark fs-6">{{ r.proveedor }}</strong>
+                            </div>
+                        </div>
+                        <div class="col-12 col-sm-6">
+                            <div class="p-3 bg-light rounded-3">
+                                <small class="mx-text-muted d-block mb-1">Lote Proveedor</small>
+                                <strong class="text-primary fs-6">{{ r.numero_lote_proveedor|default:"—" }}</strong>
+                            </div>
+                        </div>
+                        <div class="col-12 col-sm-6">
+                            <div class="p-3 bg-light rounded-3">
+                                <small class="mx-text-muted d-block mb-1">Fecha de Recepción</small>
+                                <strong class="text-dark fs-6">{{ r.fecha_recepcion }}</strong>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-12 col-lg-5">
+            <div class="card border-0 shadow-sm rounded-3 h-100">
+                <div class="card-header bg-white border-bottom py-3">
+                    <h6 class="fw-bold text-dark mb-0 d-flex align-items-center gap-2">
+                        <span class="material-symbols-outlined text-primary">route</span>
+                        <span>Ciclo del Lote</span>
+                    </h6>
+                </div>
+                <div class="card-body p-4">
+                    <div class="d-flex flex-column gap-3">
+                        <div class="mx-timeline-step">
+                            <div class="mx-timeline-icon bg-primary text-white">
+                                <span class="material-symbols-outlined fs-6">inbox</span>
+                            </div>
+                            <div class="fw-bold text-dark">Recepción Almacén</div>
+                            <small class="mx-text-muted d-block">{{ r.fecha_recepcion }} — {{ r.cantidad_recibida }} pcs ingresadas</small>
+                        </div>
+
+                        <div class="mx-timeline-step">
+                            <div class="mx-timeline-icon bg-warning text-dark">
+                                <span class="material-symbols-outlined fs-6">warning</span>
+                            </div>
+                            <div class="fw-bold text-dark">Producción / Mermas</div>
+                            <small class="mx-text-muted d-block">{{ resultado.eventos_merma }} eventos ({{ r.cantidad_mermada }} pcs mermadas)</small>
+                        </div>
+
+                        <div class="mx-timeline-step">
+                            <div class="mx-timeline-icon bg-success text-white">
+                                <span class="material-symbols-outlined fs-6">fact_check</span>
+                            </div>
+                            <div class="fw-bold text-dark">Disposición Final</div>
+                            <small class="mx-text-muted d-block">Dictámenes aplicados</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
-</div>
-{% endif %}
 
+    <div class="card border-0 shadow-sm rounded-3 mb-4">
+        <div class="card-header bg-white border-bottom py-3 d-flex align-items-center justify-content-between">
+            <h6 class="fw-bold text-dark mb-0 d-flex align-items-center gap-2">
+                <span class="material-symbols-outlined text-primary">assignment_turned_in</span>
+                <span>Disposición final aplicada</span>
+            </h6>
+            <span class="badge bg-light text-dark border">Dictámenes</span>
+        </div>
+
+        <div class="mx-list-container" data-view="table">
+            <div class="card-body p-0 mx-list-table">
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0">
+                        <thead class="bg-light border-bottom">
+                            <tr class="text-muted small fw-bold text-uppercase" style="font-size: 0.75rem;">
+                                <th scope="col" class="ps-4 py-3">Dictamen</th>
+                                <th scope="col" class="py-3 text-center">Eventos</th>
+                                <th scope="col" class="text-end pe-4 py-3">Cantidad</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for d in resultado.disposicion_final %}
+                            <tr>
+                                <td class="ps-4">
+                                    <div class="d-flex align-items-center gap-2">
+                                        {% if 'RECICL' in d.dictamen %}
+                                            <span class="material-symbols-outlined text-success">recycling</span>
+                                        {% elif 'PROV' in d.dictamen %}
+                                            <span class="material-symbols-outlined text-primary">unarchive</span>
+                                        {% else %}
+                                            <span class="material-symbols-outlined text-danger">delete_sweep</span>
+                                        {% endif %}
+                                        <span class="fw-bold text-dark">{{ d.dictamen }}</span>
+                                    </div>
+                                </td>
+                                <td class="text-center">
+                                    <span class="badge bg-light text-dark border px-3 py-1 fw-bold fs-6">{{ d.eventos }}</span>
+                                </td>
+                                <td class="text-end pe-4 fw-bold text-dark fs-6">
+                                    {{ d.cantidad }} pcs
+                                </td>
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="3" class="text-center mx-text-muted py-4">
+                                    <span class="material-symbols-outlined fs-2 d-block mb-1 opacity-50">pending_actions</span>
+                                    Aún no se ha aplicado ninguna disposición final a este lote.
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div class="card-body p-3 mx-list-cards">
+                {% for d in resultado.disposicion_final %}
+                <div class="mx-list-card mb-2">
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <span class="fw-bold text-dark">{{ d.dictamen }}</span>
+                        <span class="badge bg-light text-dark border">{{ d.eventos }} evento(s)</span>
+                    </div>
+                    <div class="d-flex justify-content-between align-items-center pt-2 border-top">
+                        <span class="small mx-text-muted">Cantidad:</span>
+                        <strong class="text-dark fs-6">{{ d.cantidad }} pcs</strong>
+                    </div>
+                </div>
+                {% empty %}
+                <div class="text-center py-4 mx-text-muted">
+                    Aún no se ha aplicado ninguna disposición final a este lote.
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+
+    {% endwith %}
+
+    {% elif not error %}
+
+    <div class="card border-0 shadow-sm rounded-3 py-5 text-center">
+        <div class="card-body p-4 mx-auto" style="max-width: 500px;">
+            <div class="mb-3">
+                <span class="material-symbols-outlined text-primary opacity-75" style="font-size: 3.5rem;">manage_search</span>
+            </div>
+            <h5 class="fw-bold text-dark mb-2">Consulta la Trazabilidad de un Lote</h5>
+            <p class="mx-text-muted small mb-0">
+                Selecciona un <strong>Componente</strong> y posteriormente el <strong>Lote</strong> a consultar en la barra superior para visualizar el análisis de impacto y disposición final.
+            </p>
+        </div>
+    </div>
+
+    {% endif %}
+
+</div>
 {% endblock app_content %}
 
 {% block extra_js %}

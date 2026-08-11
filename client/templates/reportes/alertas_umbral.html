@@ -2,213 +2,273 @@
 {% load static %}
 
 {% block nav_alertas %}active{% endblock nav_alertas %}
-
 {% block page_title %}Alertas de Calidad{% endblock page_title %}
 {% block page_subtitle %}Monitoreo de desviaciones en KPIs y atención de alertas{% endblock page_subtitle %}
 
 {% block app_content %}
+<div class="container-fluid p-0">
 
-<!-- Mensajes de Feedback -->
-{% if messages %}
+    <!-- Mensajes de Feedback -->
+    {% if messages %}
     <div class="row mb-3">
         <div class="col-12">
             {% for message in messages %}
-                <div class="alert alert-{% if message.tags == 'error' %}danger{% else %}{{ message.tags }}{% endif %} alert-dismissible fade show d-flex align-items-center gap-2" role="alert">
-                    <span class="material-symbols-outlined">
-                        {% if message.tags == 'error' %}error{% else %}check_circle{% endif %}
-                    </span>
-                    <div>{{ message }}</div>
-                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-                </div>
+            <div class="alert alert-{% if message.tags == 'error' %}danger{% else %}{{ message.tags }}{% endif %} alert-dismissible fade show d-flex align-items-center gap-2" role="alert">
+                <span class="material-symbols-outlined">
+                    {% if message.tags == 'error' %}error{% else %}check_circle{% endif %}
+                </span>
+                <div>{{ message }}</div>
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
             {% endfor %}
         </div>
     </div>
-{% endif %}
+    {% endif %}
 
-<!-- Tarjeta Principal -->
-<div class="card shadow-sm border-0">
-    
-    <div class="card-header bg-white py-3 border-bottom">
-        <div class="d-flex flex-column flex-lg-row align-items-lg-center justify-content-between gap-3">
-            
-            <div class="text-nowrap">
-                <h5 class="card-title mb-0 fw-bold d-flex align-items-center gap-2">
-                    <span class="material-symbols-outlined text-danger">warning</span>
-                    Alertas de Calidad
-                </h5>
-                <small class="text-muted">Total: {{ alertas|length }} registro(s)</small>
-            </div>
+    <!-- Panel Superior / Acciones y Filtros -->
+    <div class="card border-0 shadow-sm rounded-3 mb-4">
+        <div class="card-body p-3 p-md-4">
+            <div class="d-flex flex-column flex-lg-row align-items-lg-center justify-content-between gap-3 mb-3">
+                
+                <div class="d-flex align-items-center gap-2">
+                    <span class="material-symbols-outlined text-danger fs-3">warning</span>
+                    <div>
+                        <h5 class="fw-bold mb-0 text-dark">Alertas de Calidad</h5>
+                        <small class="mx-text-muted">Total: {{ alertas|length }} registro(s)</small>
+                    </div>
+                </div>
 
-            <!-- Botones de Acción  -->
-            <div class="d-flex align-items-center gap-2">
-                <form method="POST" action="{% url 'reportes:evaluar_alertas' %}">
-                    {% csrf_token %}
-                    <button type="submit" class="btn btn-outline-dark btn-sm d-inline-flex align-items-center gap-1 shadow-sm">
-                        <span class="material-symbols-outlined fs-6">radar</span>
-                        <span>Evaluar KPIs</span>
-                    </button>
-                </form>
+                <!-- Botones de Acción usando clases MermaX -->
+                <div class="d-flex align-items-center gap-2 flex-wrap">
+                    <form method="POST" action="{% url 'reportes:evaluar_alertas' %}" class="m-0">
+                        {% csrf_token %}
+                        <!-- Botón Primario MermaX (Azul #1d4ed8) -->
+                        <button type="submit" class="mx-btn-primary mx-btn-touch shadow-sm">
+                            <span class="material-symbols-outlined fs-5">radar</span>
+                            <span>Evaluar KPIs</span>
+                        </button>
+                    </form>
 
-                {% if usuario.rol == 'CALID' or usuario.rol == 'ADMIN' %}
-                <a href="{% url 'reportes:configurar_umbrales' %}" class="btn btn-outline-primary btn-sm d-inline-flex align-items-center gap-1 shadow-sm">
-                    <span class="material-symbols-outlined fs-6">settings</span>
-                    <span>Configurar Umbrales</span>
-                </a>
-                {% endif %}
-            </div>
-
-            <!-- Filtros por Estado -->
-            <div class="btn-group btn-group-sm" role="group" aria-label="Filtro por estado">
-                <a href="{% url 'reportes:alertas_umbral' %}?estado=TODAS{% if busqueda_actual %}&q={{ busqueda_actual }}{% endif %}" 
-                   class="btn btn-outline-primary {% if estado_actual == 'TODAS' %}active{% endif %}">
-                    Todas
-                </a>
-                <a href="{% url 'reportes:alertas_umbral' %}?estado=ACTIVA{% if busqueda_actual %}&q={{ busqueda_actual }}{% endif %}" 
-                   class="btn btn-outline-warning text-dark {% if estado_actual == 'ACTIVA' or not estado_actual %}active{% endif %}">
-                    Activas
-                </a>
-                <a href="{% url 'reportes:alertas_umbral' %}?estado=ATENDIDA{% if busqueda_actual %}&q={{ busqueda_actual }}{% endif %}" 
-                   class="btn btn-outline-success {% if estado_actual == 'ATENDIDA' %}active{% endif %}">
-                    Atendidas
-                </a>
-            </div>
-
-            <!-- Buscador -->
-            <form method="GET" action="{% url 'reportes:alertas_umbral' %}" style="max-width: 280px;" class="w-100">
-                <input type="hidden" name="estado" value="{{ estado_actual }}">
-                <div class="input-group input-group-sm">
-                    <span class="input-group-text bg-light border-end-0">
-                        <span class="material-symbols-outlined fs-6 text-muted">search</span>
-                    </span>
-                    <input type="text" 
-                           name="q" 
-                           value="{{ busqueda_actual }}" 
-                           class="form-control bg-light border-start-0" 
-                           placeholder="Buscar alerta...">
-                    {% if busqueda_actual %}
-                        <a href="{% url 'reportes:alertas_umbral' %}?estado={{ estado_actual }}" class="btn btn-outline-secondary d-flex align-items-center" title="Limpiar búsqueda">
-                            <span class="material-symbols-outlined fs-6">close</span>
-                        </a>
+                    {% if usuario.rol == 'CALID' or usuario.rol == 'ADMIN' %}
+                    <!-- Botón Secundario MermaX (Dark Slate #1E293B) -->
+                    <a href="{% url 'reportes:configurar_umbrales' %}" class="mx-btn-secondary mx-btn-touch shadow-sm">
+                        <span class="material-symbols-outlined fs-5">settings</span>
+                        <span>Configurar Umbrales</span>
+                    </a>
                     {% endif %}
                 </div>
-            </form>
+            </div>
 
+            <div class="d-flex flex-column flex-md-row align-items-md-center justify-content-between gap-3 pt-3 border-top">
+                <!-- Filtros por Estado -->
+                <div class="btn-group" role="group" aria-label="Filtro por estado">
+                    <a href="{% url 'reportes:alertas_umbral' %}?estado=TODAS{% if busqueda_actual %}&q={{ busqueda_actual }}{% endif %}" 
+                       class="btn btn-sm {% if estado_actual == 'TODAS' %}btn-primary{% else %}btn-outline-primary{% endif %} mx-btn-touch d-inline-flex align-items-center">
+                        Todas
+                    </a>
+                    <a href="{% url 'reportes:alertas_umbral' %}?estado=ACTIVA{% if busqueda_actual %}&q={{ busqueda_actual }}{% endif %}" 
+                       class="btn btn-sm {% if estado_actual == 'ACTIVA' or not estado_actual %}btn-primary{% else %}btn-outline-primary{% endif %} mx-btn-touch d-inline-flex align-items-center">
+                        Activas
+                    </a>
+                    <a href="{% url 'reportes:alertas_umbral' %}?estado=ATENDIDA{% if busqueda_actual %}&q={{ busqueda_actual }}{% endif %}" 
+                       class="btn btn-sm {% if estado_actual == 'ATENDIDA' %}btn-primary{% else %}btn-outline-primary{% endif %} mx-btn-touch d-inline-flex align-items-center">
+                        Atendidas
+                    </a>
+                </div>
+
+                <!-- Buscador con mx-input-group y mx-input -->
+                <form method="GET" action="{% url 'reportes:alertas_umbral' %}" class="w-100" style="max-width: 320px;">
+                    <input type="hidden" name="estado" value="{{ estado_actual }}">
+                    <div class="mx-input-group">
+                        <span class="material-symbols-outlined mx-input-icon">search</span>
+                        <input type="text" 
+                               name="q" 
+                               value="{{ busqueda_actual }}" 
+                               class="mx-input" 
+                               placeholder="Buscar alerta...">
+                        {% if busqueda_actual %}
+                            <a href="{% url 'reportes:alertas_umbral' %}?estado={{ estado_actual }}" class="mx-input-toggle d-flex align-items-center text-decoration-none" title="Limpiar búsqueda">
+                                <span class="material-symbols-outlined fs-5">close</span>
+                            </a>
+                        {% endif %}
+                    </div>
+                </form>
+            </div>
         </div>
     </div>
 
-    <!-- Tabla de Alertas -->
-    <div class="card-body p-0">
-        <div class="table-responsive">
-            <table class="table table-hover align-middle mb-0">
-                <thead class="table-light">
-                    <tr>
-                        <th scope="col" class="ps-3"># Alerta</th>
-                        <th scope="col">KPI / Línea</th>
-                        <th scope="col">Valor Detectado</th>
-                        <th scope="col">Umbral</th>
-                        <th scope="col">Fecha</th>
-                        <th scope="col">Estado</th>
-                        <th scope="col" class="text-end pe-4">Acción</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for alerta in alertas %}
-                    <tr>
-                        <!-- # Alerta -->
-                        <td class="fw-bold ps-3">ALT-{{ alerta.num }}</td>
-                        
-                        <!-- KPI / Línea -->
-                        <td>
-                            <div class="fw-bold">{{ alerta.kpi_nombre }}</div>
-                            <small class="text-muted">{{ alerta.linea_nombre }}</small>
-                        </td>
-                        
-                        <!-- Valor Detectado -->
-                        <td class="fw-bold text-danger">{{ alerta.valor_detectado }}</td>
-                        
-                        <!-- Umbral -->
-                        <td>
-                            <span class="badge bg-light text-dark border">
-                                {{ alerta.valor_umbral }} {{ alerta.unidad|default:"" }}
-                            </span>
-                        </td>
-                        
-                        <!-- Fecha -->
-                        <td>{{ alerta.fecha }}</td>
-                        
-                        <!-- Columna Estado -->
-                        <td>
-                            {% if alerta.estado_alerta == 'ACTIVA' or alerta.estado == 'ACTIVA' %}
-                                <span class="badge bg-warning text-dark">ACTIVA</span>
-                            {% else %}
-                                <span class="badge bg-success">ATENDIDA</span>
-                            {% endif %}
-                        </td>
-
-                        <!-- Columna Acción -->
-                        <td class="text-end pe-4">
-                            {% if alerta.estado_alerta == 'ACTIVA' or alerta.estado == 'ACTIVA' %}
-                                <button 
-                                    type="button" 
-                                    class="btn btn-outline-danger btn-sm shadow-sm" 
-                                    data-bs-toggle="modal" 
-                                    data-bs-target="#modalAtender{{ alerta.num }}">
-                                    <i class="bi bi-check-square me-1"></i> Atender
-                                </button>
-
-                                <div class="modal fade" id="modalAtender{{ alerta.num }}" tabindex="-1" aria-hidden="true">
-                                    <div class="modal-dialog modal-dialog-centered">
-                                        <div class="modal-content text-start">
-                                            
-                                            <div class="modal-header bg-primary text-white">
-                                                <h5 class="modal-title fs-6">
-                                                    <i class="bi bi-shield-check me-2"></i>Observaciones - Alerta ALT-{{ alerta.num }}
-                                                </h5>
-                                                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
-                                            </div>
-
-                                            <form action="{% url 'reportes:atender_alerta' alerta.num %}" method="POST">
-                                                {% csrf_token %}
-                                                <div class="modal-body">
-                                                    <div class="mb-3">
-                                                        <label class="form-label fw-bold small">Observaciones <span class="text-danger">*</span></label>
-                                                        <textarea 
-                                                            name="observaciones" 
-                                                            class="form-control form-control-sm" 
-                                                            rows="3" 
-                                                            placeholder="Ingrese observaciones..." 
-                                                            required></textarea>
-                                                    </div>
-
-                                                </div>
-
-                                                <div class="modal-footer">
-                                                    <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancelar</button>
-                                                    <button type="submit" class="btn btn-success btn-sm">
-                                                        <i class="bi bi-check-circle me-1"></i> Registrar Observacion
-                                                    </button>
-                                                </div>
-                                            </form>
-
-                                        </div>
-                                    </div>
-                                </div>
-                            {% else %}
-                                <span class="text-muted small"><i class="bi bi-check-all text-success fs-6"></i> Atendida</span>
-                            {% endif %}
-                        </td>
-                    </tr>
-                    {% empty %}
-                    <tr>
-                        <td colspan="7" class="text-center py-4 text-muted">
-                            No se encontraron alertas en este estado.
-                        </td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
+    <!-- Vista Adaptativa de Resultados -->
+    <div class="mx-list-container" data-view="table">
+        
+        <!-- Vista Desktop: Tabla -->
+        <div class="card border-0 shadow-sm rounded-3 mx-list-table">
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0">
+                        <thead class="bg-light border-bottom">
+                            <tr class="text-muted small fw-bold text-uppercase" style="font-size: 0.75rem;">
+                                <th scope="col" class="ps-3 py-3"># Alerta</th>
+                                <th scope="col" class="py-3">KPI / Línea</th>
+                                <th scope="col" class="py-3">Valor Detectado</th>
+                                <th scope="col" class="py-3">Umbral</th>
+                                <th scope="col" class="py-3">Fecha</th>
+                                <th scope="col" class="py-3">Estado</th>
+                                <th scope="col" class="text-end pe-4 py-3">Acción</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for alerta in alertas %}
+                            <tr>
+                                <td class="ps-3"><span class="fw-bold text-dark">ALT-{{ alerta.num }}</span></td>
+                                <td>
+                                    <div class="fw-bold text-dark">{{ alerta.kpi_nombre }}</div>
+                                    <small class="mx-text-muted">{{ alerta.linea_nombre }}</small>
+                                </td>
+                                <td class="fw-bold text-danger">{{ alerta.valor_detectado }}</td>
+                                <td>
+                                    <span class="badge bg-light text-dark border">
+                                        {{ alerta.valor_umbral }} {{ alerta.unidad|default:"" }}
+                                    </span>
+                                </td>
+                                <td class="text-nowrap text-dark">{{ alerta.fecha }}</td>
+                                <td>
+                                    {% if alerta.estado_alerta == 'ACTIVA' or alerta.estado == 'ACTIVA' %}
+                                        <span class="badge bg-warning text-dark">ACTIVA</span>
+                                    {% else %}
+                                        <span class="mx-badge-status">ATENDIDA</span>
+                                    {% endif %}
+                                </td>
+                                <td class="text-end pe-4">
+                                    {% if alerta.estado_alerta == 'ACTIVA' or alerta.estado == 'ACTIVA' %}
+                                        <!-- Botón de acción con estilo secundario MermaX -->
+                                        <button 
+                                            type="button" 
+                                            class="mx-btn-secondary mx-btn-sm mx-btn-touch shadow-sm" 
+                                            data-bs-toggle="modal" 
+                                            data-bs-target="#modalAtender{{ alerta.num }}">
+                                            <span class="material-symbols-outlined fs-6">check_box</span>
+                                            <span>Atender</span>
+                                        </button>
+                                    {% else %}
+                                        <span class="mx-text-muted small d-inline-flex align-items-center gap-1">
+                                            <span class="material-symbols-outlined text-success fs-5">done_all</span>
+                                            Atendida
+                                        </span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="7" class="text-center py-5 mx-text-muted">
+                                    <span class="material-symbols-outlined fs-1 d-block mb-2 opacity-50">notifications_off</span>
+                                    No se encontraron alertas en este estado.
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
         </div>
+
+        <!-- Vista Móvil: Tarjetas (mx-list-card) -->
+        <div class="mx-list-cards">
+            {% for alerta in alertas %}
+            <div class="mx-list-card mb-3">
+                <div class="d-flex justify-content-between align-items-center mb-2 pb-2 border-bottom">
+                    <span class="fw-bold text-dark fs-6">ALT-{{ alerta.num }}</span>
+                    {% if alerta.estado_alerta == 'ACTIVA' or alerta.estado == 'ACTIVA' %}
+                        <span class="badge bg-warning text-dark">ACTIVA</span>
+                    {% else %}
+                        <span class="mx-badge-status">ATENDIDA</span>
+                    {% endif %}
+                </div>
+                <div class="mb-2">
+                    <h6 class="fw-bold text-dark mb-0">{{ alerta.kpi_nombre }}</h6>
+                    <small class="mx-text-muted">{{ alerta.linea_nombre }}</small>
+                </div>
+                <div class="row g-2 small mb-3 bg-light p-2 rounded-2">
+                    <div class="col-6">
+                        <span class="mx-text-muted d-block">Detectado:</span>
+                        <strong class="text-danger fs-6">{{ alerta.valor_detectado }}</strong>
+                    </div>
+                    <div class="col-6 text-end">
+                        <span class="mx-text-muted d-block">Umbral:</span>
+                        <span class="badge bg-white text-dark border mt-1">
+                            {{ alerta.valor_umbral }} {{ alerta.unidad|default:"" }}
+                        </span>
+                    </div>
+                    <div class="col-12 mx-text-muted pt-1 border-top mt-1">
+                        <span>Fecha: {{ alerta.fecha }}</span>
+                    </div>
+                </div>
+                <div class="d-grid pt-1">
+                    {% if alerta.estado_alerta == 'ACTIVA' or alerta.estado == 'ACTIVA' %}
+                        <button 
+                            type="button" 
+                            class="mx-btn-secondary mx-btn-touch w-100" 
+                            data-bs-toggle="modal" 
+                            data-bs-target="#modalAtender{{ alerta.num }}">
+                            <span class="material-symbols-outlined fs-5">check_box</span>
+                            <span>Atender Alerta</span>
+                        </button>
+                    {% else %}
+                        <div class="text-center mx-text-muted small d-flex align-items-center justify-content-center gap-1 py-1">
+                            <span class="material-symbols-outlined text-success fs-5">done_all</span>
+                            <span>Alerta Atendida</span>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+            {% empty %}
+            <div class="mx-list-card p-4 text-center mx-text-muted">
+                <span class="material-symbols-outlined fs-1 d-block mb-2 opacity-50">notifications_off</span>
+                No se encontraron alertas en este estado.
+            </div>
+            {% endfor %}
+        </div>
+
     </div>
+
+    <!-- Modales de Atención -->
+    {% for alerta in alertas %}
+        {% if alerta.estado_alerta == 'ACTIVA' or alerta.estado == 'ACTIVA' %}
+        <div class="modal fade" id="modalAtender{{ alerta.num }}" tabindex="-1" aria-hidden="true">
+            <div class="modal-dialog modal-dialog-centered">
+                <div class="modal-content border-0 shadow-lg rounded-3">
+                    <div class="modal-header text-white" style="background-color: var(--mx-bg-app);">
+                        <h5 class="modal-title fs-6 d-flex align-items-center gap-2">
+                            <span class="material-symbols-outlined">shield</span>
+                            <span>Observaciones - Alerta ALT-{{ alerta.num }}</span>
+                        </h5>
+                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <form action="{% url 'reportes:atender_alerta' alerta.num %}" method="POST">
+                        {% csrf_token %}
+                        <div class="modal-body p-3 p-md-4">
+                            <div class="mb-3">
+                                <label class="mx-label text-dark">Observaciones <span class="text-danger">*</span></label>
+                                <textarea 
+                                    name="observaciones" 
+                                    class="form-control" 
+                                    rows="3" 
+                                    placeholder="Ingrese observaciones de atención..." 
+                                    required></textarea>
+                            </div>
+                        </div>
+                        <div class="modal-footer bg-light">
+                            <button type="button" class="btn btn-light border mx-btn-touch" data-bs-dismiss="modal">Cancelar</button>
+                            <button type="submit" class="mx-btn-primary mx-btn-touch">
+                                <span class="material-symbols-outlined fs-5">check_circle</span>
+                                <span>Registrar Observación</span>
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+    {% endfor %}
+
 </div>
-
 {% endblock app_content %}

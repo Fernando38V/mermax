@@ -7,28 +7,46 @@
 
 {% block app_content %}
 
+<!-- Mensajes -->
 {% if messages %}
-    {% for message in messages %}
-    <div class="alert alert-{{ message.tags }}">{{ message }}</div>
-    {% endfor %}
+    <div class="row mb-3">
+        <div class="col-12">
+            {% for message in messages %}
+                <div class="alert alert-{% if message.tags == 'error' %}danger{% else %}{{ message.tags }}{% endif %} alert-dismissible fade show d-flex align-items-center gap-2" role="alert">
+                    <span class="material-symbols-outlined">
+                        {% if message.tags == 'error' %}error{% else %}check_circle{% endif %}
+                    </span>
+                    <div>{{ message }}</div>
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+            {% endfor %}
+        </div>
+    </div>
 {% endif %}
 
-<div class="mb-3 d-flex justify-content-between align-items-center flex-wrap gap-2">
-    <p class="mx-text-muted mb-0">Total de registros: {{ total }}</p>
-    <div class="mx-view-toggle btn-group" role="group">
-        <button type="button" class="btn btn-outline-secondary btn-sm active" data-view="table">
-            <span class="material-symbols-outlined" style="font-size:1rem;">table_rows</span> Tabla
+<!-- Encabezado de controles -->
+<div class="mb-4 d-flex justify-content-between align-items-center flex-wrap gap-2">
+    <p class="mx-text-muted mb-0 fw-medium">
+        Total de registros: <span class="fw-semibold text-body">{{ total }}</span>
+    </p>
+
+    <div class="mx-view-toggle btn-group" role="group" aria-label="Cambiar vista">
+        <button type="button" class="btn mx-btn-secondary mx-btn-sm d-inline-flex align-items-center gap-1 active" data-view="table">
+            <span class="material-symbols-outlined" style="font-size:1.1rem;">table_rows</span>
+            <span>Tabla</span>
         </button>
-        <button type="button" class="btn btn-outline-secondary btn-sm" data-view="cards">
-            <span class="material-symbols-outlined" style="font-size:1rem;">grid_view</span> Tarjetas
+        <button type="button" class="btn mx-btn-secondary mx-btn-sm d-inline-flex align-items-center gap-1" data-view="cards">
+            <span class="material-symbols-outlined" style="font-size:1.1rem;">grid_view</span>
+            <span>Tarjetas</span>
         </button>
     </div>
 </div>
 
-<form method="get">
-    <div class="row g-3 mb-4">
-        <div class="col-md-3">
-            <label class="form-label">Módulo</label>
+<!-- Filtros -->
+<form method="get" class="mb-4">
+    <div class="row g-3">
+        <div class="col-12 col-md-3">
+            <label class="form-label fw-medium">Módulo</label>
             <select name="modulo" class="form-select">
                 <option value="">Todos</option>
                 {% for m in modulos %}
@@ -38,8 +56,8 @@
                 {% endfor %}
             </select>
         </div>
-        <div class="col-md-3">
-            <label class="form-label">Acción</label>
+        <div class="col-12 col-md-3">
+            <label class="form-label fw-medium">Acción</label>
             <select name="accion" class="form-select">
                 <option value="">Todas</option>
                 {% for a in acciones %}
@@ -49,27 +67,29 @@
                 {% endfor %}
             </select>
         </div>
-        <div class="col-md-2">
-            <label class="form-label">Desde</label>
+        <div class="col-12 col-md-2">
+            <label class="form-label fw-medium">Desde</label>
             <input type="date" name="desde" class="form-control" value="{{ filtros.desde|default:'' }}">
         </div>
-        <div class="col-md-2">
-            <label class="form-label">Hasta</label>
+        <div class="col-12 col-md-2">
+            <label class="form-label fw-medium">Hasta</label>
             <input type="date" name="hasta" class="form-control" value="{{ filtros.hasta|default:'' }}">
         </div>
-        <div class="col-auto d-flex align-items-end">
-            <button type="submit" class="btn btn-secondary">
-                <span class="material-symbols-outlined">filter_alt</span> Filtrar
+        <div class="col-12 col-md-auto d-flex align-items-end">
+            <button type="submit" class="btn mx-btn-secondary d-inline-flex align-items-center justify-content-center gap-1 w-100" style="height: 38px;">
+                <span class="material-symbols-outlined">filter_alt</span>
+                Filtrar
             </button>
         </div>
     </div>
 </form>
 
-<div class="mx-list-container" data-view="table">
+<!-- Contenedor de lista -->
+<div class="mx-list-container mb-4" data-view="table">
 
-    <!-- Vista de tabla: escritorio -->
-    <div class="mx-list-table">
-        <table class="table">
+    <!-- Vista de tabla -->
+    <div class="mx-list-table table-responsive">
+        <table class="table align-middle">
             <thead>
                 <tr>
                     <th class="text-center">Fecha y hora</th>
@@ -83,55 +103,77 @@
             <tbody>
                 {% for r in registros %}
                 <tr>
-                    <td class="text-center align-middle">{{ r.fecha_hora|fecha_legible }}</td>
-                    <td class="text-center align-middle">{{ r.usuario_nombre }}</td>
-                    <td class="text-center align-middle">{{ r.rol }}</td>
+                    <td class="text-center text-nowrap align-middle">{{ r.fecha_hora|fecha_legible }}</td>
+                    <td class="text-center align-middle fw-medium">{{ r.usuario_nombre }}</td>
+                    <td class="text-center align-middle"><span class="mx-text-muted">{{ r.rol }}</span></td>
                     <td class="text-center align-middle">{{ r.modulo|espaciar }}</td>
-                    <td class="text-center align-middle">{{ r.accion_nombre }}</td>
-                    <td>{{ r.valor_anterior|diferencias_json:r.valor_nuevo }}</td>
+                    <td class="text-center align-middle">
+                        <span class="mx-badge-status">{{ r.accion_nombre }}</span>
+                    </td>
+                    <td class="align-middle">{{ r.valor_anterior|diferencias_json:r.valor_nuevo }}</td>
                 </tr>
                 {% empty %}
-                <tr><td colspan="6" class="text-center mx-text-muted py-4">No hay registros.</td></tr>
+                <tr>
+                    <td colspan="6" class="text-center mx-text-muted py-4">No hay registros.</td>
+                </tr>
                 {% endfor %}
             </tbody>
         </table>
     </div>
 
-    <!-- Vista de tarjetas: tablet -->
+    <!-- Vista de tarjetas -->
     <div class="mx-list-cards">
-        {% for r in registros %}
-        <div class="mx-list-card mb-3">
-            <div class="d-flex justify-content-between flex-wrap gap-2 mb-2">
-                <span class="fw-semibold">{{ r.fecha_hora|fecha_legible }}</span>
-                <span class="mx-badge-status">{{ r.accion_nombre }}</span>
+        <div class="row g-3">
+            {% for r in registros %}
+            <div class="col-12 col-md-6">
+                <div class="mx-list-card h-100 d-flex flex-column">
+                    <div class="d-flex justify-content-between align-items-start mb-2">
+                        <span class="fw-semibold small d-flex align-items-center gap-1">
+                            <span class="material-symbols-outlined" style="font-size:1rem;">schedule</span>
+                            {{ r.fecha_hora|fecha_legible }}
+                        </span>
+                        <span class="mx-badge-status">{{ r.accion_nombre }}</span>
+                    </div>
+                    <div class="d-flex justify-content-between py-1 border-bottom">
+                        <span class="mx-text-muted small">Usuario</span>
+                        <span class="fw-medium">{{ r.usuario_nombre }} <span class="mx-text-muted">({{ r.rol }})</span></span>
+                    </div>
+                    <div class="d-flex justify-content-between py-1 border-bottom">
+                        <span class="mx-text-muted small">Módulo</span>
+                        <span>{{ r.modulo|espaciar }}</span>
+                    </div>
+                    <div class="pt-2 mt-auto">
+                        <span class="mx-text-muted small d-block mb-1 fw-medium">Cambios efectuados:</span>
+                        <div class="bg-light p-2 rounded small">
+                            {{ r.valor_anterior|diferencias_json:r.valor_nuevo }}
+                        </div>
+                    </div>
+                </div>
             </div>
-            <div class="d-flex justify-content-between py-1 border-bottom">
-                <span class="mx-text-muted small">Usuario</span>
-                <span>{{ r.usuario_nombre }} <span class="mx-text-muted">({{ r.rol }})</span></span>
-            </div>
-            <div class="d-flex justify-content-between py-1 border-bottom">
-                <span class="mx-text-muted small">Módulo</span>
-                <span>{{ r.modulo|espaciar }}</span>
-            </div>
-            <div class="pt-2">
-                <span class="mx-text-muted small d-block mb-1">Cambios</span>
-                {{ r.valor_anterior|diferencias_json:r.valor_nuevo }}
-            </div>
+            {% empty %}
+            <div class="col-12 text-center mx-text-muted py-4">No hay registros.</div>
+            {% endfor %}
         </div>
-        {% empty %}
-        <p class="text-center mx-text-muted py-4">No hay registros.</p>
-        {% endfor %}
     </div>
 
 </div>
 
-<div class="d-flex justify-content-center gap-2 mt-3">
+<!-- Paginación -->
+<div class="d-flex justify-content-center align-items-center gap-2 mt-4">
     {% if hay_anterior %}
-    <a class="btn btn-secondary btn-sm" href="?{{ querystring_filtros }}{% if querystring_filtros %}&{% endif %}pagina={{ pagina_actual|add:'-1' }}">Anterior</a>
+    <a class="btn mx-btn-secondary mx-btn-sm d-inline-flex align-items-center gap-1" href="?{{ querystring_filtros }}{% if querystring_filtros %}&{% endif %}pagina={{ pagina_actual|add:'-1' }}">
+        <span class="material-symbols-outlined" style="font-size: 1rem;">chevron_left</span>
+        Anterior
+    </a>
     {% endif %}
-    <span class="align-self-center">Página {{ pagina_actual }}</span>
+
+    <span class="mx-text-muted small fw-semibold px-2">Página {{ pagina_actual }}</span>
+
     {% if hay_siguiente %}
-    <a class="btn btn-secondary btn-sm" href="?{{ querystring_filtros }}{% if querystring_filtros %}&{% endif %}pagina={{ pagina_actual|add:'1' }}">Siguiente</a>
+    <a class="btn mx-btn-secondary mx-btn-sm d-inline-flex align-items-center gap-1" href="?{{ querystring_filtros }}{% if querystring_filtros %}&{% endif %}pagina={{ pagina_actual|add:'1' }}">
+        Siguiente
+        <span class="material-symbols-outlined" style="font-size: 1rem;">chevron_right</span>
+    </a>
     {% endif %}
 </div>
 

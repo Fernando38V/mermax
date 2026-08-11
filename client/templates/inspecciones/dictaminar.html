@@ -9,23 +9,38 @@
 {% block app_content %}
 <div class="container-fluid p-0">
 
+    <!-- Alertas de Error del Sistema -->
     {% if errores.error %}
-    <div class="alert alert-danger d-flex align-items-center mb-4" role="alert">
-        <span class="material-symbols-outlined me-2">error</span>
+    <div class="alert alert-danger alert-dismissible fade show d-flex align-items-center gap-2 mb-4 rounded-3 shadow-sm" role="alert">
+        <span class="material-symbols-outlined fs-5">error</span>
         <div>{{ errores.error }}</div>
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
     </div>
     {% endif %}
 
+    <!-- Tarjeta Principal del Formulario -->
     <div class="card border-0 shadow-sm rounded-3">
+        <div class="card-header bg-white border-bottom py-3 d-flex align-items-center gap-2">
+            <span class="material-symbols-outlined text-primary">gavel</span>
+            <h6 class="fw-bold text-dark mb-0">Formulario de Dictamen y Disposición Final</h6>
+        </div>
+
         <div class="card-body p-4">
             <form method="POST" action="{% if codigo_solicitud_param %}{% url 'inspecciones:dictaminar_inspeccion_codigo' codigo_solicitud_param %}{% else %}{% url 'inspecciones:dictaminar_inspeccion' %}{% endif %}">
                 {% csrf_token %}
 
-                <!-- Selección / Visualización de Solicitud -->
+                <!-- Bloque 1: Selección / Visualización de Solicitud -->
                 <div class="mb-4">
-                    <label class="form-label fw-bold">Solicitud de Inspección Pendiente <span class="text-danger">*</span></label>
+                    <label class="mx-label text-dark mb-1">
+                        Solicitud de Inspección Pendiente <span class="text-danger">*</span>
+                    </label>
                     {% if codigo_solicitud_param %}
-                        <input type="text" class="form-control form-control-lg bg-light" name="codigo" value="{{ codigo_solicitud_param }}" readonly>
+                        <div class="input-group">
+                            <span class="input-group-text bg-light border-end-0 text-muted">
+                                <span class="material-symbols-outlined fs-5">assignment</span>
+                            </span>
+                            <input type="text" class="form-control form-control-lg bg-light border-start-0 text-primary fw-bold" name="codigo" value="{{ codigo_solicitud_param }}" readonly>
+                        </div>
                     {% else %}
                         <select name="codigo" class="form-select form-select-lg {% if errores.codigo or errores.codigo_solicitud %}is-invalid{% endif %}" required>
                             <option value="" disabled {% if not valores.codigo %}selected{% endif %}>-- Selecciona una solicitud de la lista --</option>
@@ -51,9 +66,11 @@
                     {% endif %}
                 </div>
 
-                <!-- Selección del Dictamen Final (Limpio para RNF-06) -->
+                <!-- Bloque 2: Selección del Dictamen Final -->
                 <div class="mb-4">
-                    <label class="form-label fw-bold">Disposición Final (Dictamen) <span class="text-danger">*</span></label>
+                    <label class="mx-label text-dark mb-1">
+                        Disposición Final (Dictamen) <span class="text-danger">*</span>
+                    </label>
                     <select name="disposicion_final" id="select_dictamen" class="form-select form-select-lg {% if errores.disposicion_final %}is-invalid{% endif %}" required onchange="cambiarDictamen()">
                         <option value="" disabled {% if not valores.disposicion_final %}selected{% endif %}>-- Selecciona el tipo de disposición --</option>
                         <option value="RTN_PROV" {% if valores.disposicion_final == 'RTN_PROV' %}selected{% endif %}>Devolución a Proveedor</option>
@@ -65,15 +82,15 @@
                     {% endif %}
                 </div>
 
-                <!-- SECCIÓN: DEVOLUCIÓN A PROVEEDOR -->
-                <div id="seccion_RTN_PROV" class="seccion-dictamen p-3 mb-4 rounded-3 bg-light border" style="display: none;">
+                <!-- SECCIÓN DINÁMICA 1: DEVOLUCIÓN A PROVEEDOR -->
+                <div id="seccion_RTN_PROV" class="seccion-dictamen p-3 p-md-4 mb-4 rounded-3 border border-primary border-opacity-25 bg-primary-subtle bg-opacity-10" style="display: none;">
                     <div class="d-flex align-items-center gap-2 text-primary fw-bold mb-3">
-                        <span class="material-symbols-outlined">local_shipping</span>
+                        <span class="material-symbols-outlined fs-5">local_shipping</span>
                         <h6 class="mb-0 fw-bold">Datos de Devolución a Proveedor</h6>
                     </div>
                     <div class="row g-3">
-                        <div class="col-md-6">
-                            <label class="form-label fw-semibold">Proveedor <span class="text-danger">*</span></label>
+                        <div class="col-12 col-md-6">
+                            <label class="mx-label text-dark mb-1">Proveedor <span class="text-danger">*</span></label>
                             <select name="proveedor" class="form-select {% if errores.proveedor %}is-invalid{% endif %}">
                                 <option value="">-- Seleccionar Proveedor --</option>
                                 {% for p in proveedores %}
@@ -82,23 +99,23 @@
                             </select>
                             {% if errores.proveedor %}<div class="invalid-feedback">{{ errores.proveedor.0 }}</div>{% endif %}
                         </div>
-                        <div class="col-md-6">
-                            <label class="form-label fw-semibold">Motivo de Rechazo <span class="text-danger">*</span></label>
+                        <div class="col-12 col-md-6">
+                            <label class="mx-label text-dark mb-1">Motivo de Rechazo <span class="text-danger">*</span></label>
                             <input type="text" name="motivo_rechazo" class="form-control {% if errores.motivo_rechazo %}is-invalid{% endif %}" value="{{ valores.motivo_rechazo|default:'' }}" placeholder="Describa la causa del rechazo">
                             {% if errores.motivo_rechazo %}<div class="invalid-feedback">{{ errores.motivo_rechazo.0 }}</div>{% endif %}
                         </div>
                     </div>
                 </div>
 
-                <!-- SECCIÓN: RECICLAJE -->
-                <div id="seccion_RECICLAJE" class="seccion-dictamen p-3 mb-4 rounded-3 bg-light border" style="display: none;">
+                <!-- SECCIÓN DINÁMICA 2: RECICLAJE -->
+                <div id="seccion_RECICLAJE" class="seccion-dictamen p-3 p-md-4 mb-4 rounded-3 border border-success border-opacity-25 bg-success-subtle bg-opacity-10" style="display: none;">
                     <div class="d-flex align-items-center gap-2 text-success fw-bold mb-3">
-                        <span class="material-symbols-outlined">recycling</span>
+                        <span class="material-symbols-outlined fs-5">recycling</span>
                         <h6 class="mb-0 fw-bold">Datos de Reciclaje</h6>
                     </div>
                     <div class="row g-3">
-                        <div class="col-md-6">
-                            <label class="form-label fw-semibold">Empresa Recicladora <span class="text-danger">*</span></label>
+                        <div class="col-12 col-md-6">
+                            <label class="mx-label text-dark mb-1">Empresa Recicladora <span class="text-danger">*</span></label>
                             <select name="empresa_recicladora" class="form-select {% if errores.empresa_recicladora %}is-invalid{% endif %}">
                                 <option value="">-- Seleccionar Recicladora --</option>
                                 {% for r in empresas_recicladoras %}
@@ -107,23 +124,23 @@
                             </select>
                             {% if errores.empresa_recicladora %}<div class="invalid-feedback">{{ errores.empresa_recicladora.0 }}</div>{% endif %}
                         </div>
-                        <div class="col-md-6">
-                            <label class="form-label fw-semibold">Peso Neto (kg) <span class="text-danger">*</span></label>
+                        <div class="col-12 col-md-6">
+                            <label class="mx-label text-dark mb-1">Peso Neto (kg) <span class="text-danger">*</span></label>
                             <input type="number" step="0.01" name="peso_neto" class="form-control {% if errores.peso_neto %}is-invalid{% endif %}" value="{{ valores.peso_neto|default:'' }}" placeholder="0.00">
                             {% if errores.peso_neto %}<div class="invalid-feedback">{{ errores.peso_neto.0 }}</div>{% endif %}
                         </div>
                     </div>
                 </div>
 
-                <!-- SECCIÓN: DESECHO CONTROLADO -->
-                <div id="seccion_DESTR_CTRL" class="seccion-dictamen p-3 mb-4 rounded-3 bg-light border" style="display: none;">
+                <!-- SECCIÓN DINÁMICA 3: DESECHO CONTROLADO -->
+                <div id="seccion_DESTR_CTRL" class="seccion-dictamen p-3 p-md-4 mb-4 rounded-3 border border-danger border-opacity-25 bg-danger-subtle bg-opacity-10" style="display: none;">
                     <div class="d-flex align-items-center gap-2 text-danger fw-bold mb-3">
-                        <span class="material-symbols-outlined">delete</span>
+                        <span class="material-symbols-outlined fs-5">delete</span>
                         <h6 class="mb-0 fw-bold">Datos de Destrucción Controlada</h6>
                     </div>
                     <div class="row g-3">
-                        <div class="col-md-6">
-                            <label class="form-label fw-semibold">Método de Destrucción <span class="text-danger">*</span></label>
+                        <div class="col-12 col-md-6">
+                            <label class="mx-label text-dark mb-1">Método de Destrucción <span class="text-danger">*</span></label>
                             <select name="metodo_destruccion" class="form-select {% if errores.metodo_destruccion %}is-invalid{% endif %}">
                                 <option value="">-- Seleccionar Método --</option>
                                 {% for m in metodos_destruccion %}
@@ -132,35 +149,40 @@
                             </select>
                             {% if errores.metodo_destruccion %}<div class="invalid-feedback">{{ errores.metodo_destruccion.0 }}</div>{% endif %}
                         </div>
-                        <div class="col-md-6">
-                            <label class="form-label fw-semibold">Folio Probatorio <span class="text-danger">*</span></label>
+                        <div class="col-12 col-md-6">
+                            <label class="mx-label text-dark mb-1">Folio Probatorio <span class="text-danger">*</span></label>
                             <input type="text" name="folio_probatorio" class="form-control {% if errores.folio_probatorio %}is-invalid{% endif %}" value="{{ valores.folio_probatorio|default:'' }}" placeholder="Número de acta o folio de destrucción">
                             {% if errores.folio_probatorio %}<div class="invalid-feedback">{{ errores.folio_probatorio.0 }}</div>{% endif %}
                         </div>
                     </div>
                 </div>
 
+                <!-- Bloque 3: Cantidad y Observaciones -->
                 <div class="row g-3 mb-4">
-                    <div class="col-md-6">
-                        <label class="form-label fw-semibold">Cantidad Ejecutada</label>
+                    <div class="col-12 col-md-6">
+                        <label class="mx-label text-dark mb-1">Cantidad Ejecutada</label>
                         <input type="number" 
-                            step="0.01" 
-                            name="cantidad_ejecutada" 
-                            class="form-control bg-light" 
-                            value="{{ valores.cantidad_ejecutada|default:''|floatformat:0 }}" 
-                            readonly>
+                               step="0.01" 
+                               name="cantidad_ejecutada" 
+                               class="form-control bg-light fw-bold text-dark" 
+                               value="{{ valores.cantidad_ejecutada|default:''|floatformat:0 }}" 
+                               readonly>
                     </div>
-                    <div class="col-md-6">
-                        <label class="form-label fw-semibold">Observaciones Generales</label>
+                    <div class="col-12 col-md-6">
+                        <label class="mx-label text-dark mb-1">Observaciones Generales</label>
                         <input type="text" name="observaciones" class="form-control" value="{{ valores.observaciones|default:'' }}" placeholder="Observaciones adicionales sobre la inspección">
                     </div>
                 </div>
 
                 <!-- Botones de Acción -->
-                <div class="d-flex justify-content-end gap-2 pt-3 border-top">
-                    <a href="{% url 'inspecciones:alertas' %}" class="btn btn-light border">Volver a Solicitudes Pendientes</a>
-                    <button type="submit" class="btn btn-primary d-flex align-items-center gap-1 px-4">
-                        <span class="material-symbols-outlined fs-5">task_alt</span> Guardar Dictamen
+                <div class="d-flex flex-column flex-sm-row justify-content-end gap-2 pt-3 border-top">
+                    <a href="{% url 'inspecciones:alertas' %}" class="btn btn-outline-secondary btn-sm d-inline-flex align-items-center justify-content-center gap-1 order-2 order-sm-1 px-3 py-2">
+                        <span class="material-symbols-outlined fs-6">arrow_back</span>
+                        <span>Volver a Solicitudes Pendientes</span>
+                    </a>
+                    <button type="submit" class="mx-btn-primary mx-btn-touch d-inline-flex align-items-center justify-content-center gap-1 order-1 order-sm-2 px-4 shadow-sm">
+                        <span class="material-symbols-outlined fs-5">task_alt</span>
+                        <span>Guardar Dictamen</span>
                     </button>
                 </div>
             </form>
