@@ -31,9 +31,11 @@
                         <select class="form-select {% if errores.linea %}is-invalid{% endif %}" name="linea" id="linea" required>
                             <option value="">-- Seleccionar línea --</option>
                             {% for linea in lineas %}
-                            <option value="{{ linea.num }}"{% if valores.linea == linea.num|stringformat:"s" %}selected{% endif %}>
-                                {{ linea.nombre }}
-                            </option>
+                                {% if linea.estado_linea == 'ACTIVA' %}
+                                    <option value="{{ linea.num }}"{% if valores.linea == linea.num|stringformat:"s" %}selected{% endif %}>
+                                        {{ linea.nombre }}
+                                    </option>
+                                {% endif %}
                             {% endfor %}
                         </select>
                         {% if errores.linea %}
