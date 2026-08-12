@@ -82,9 +82,11 @@
                         <select class="form-select {% if errores.componente %}is-invalid{% endif %}" name="componente" id="componente" required>
                             <option value="">-- Seleccionar componente --</option>
                             {% for componente in componentes %}
-                            <option value="{{ componente.codigo }}" {% if valores.componente == componente.codigo|stringformat:"s" %}selected{% endif %}>
-                                {{ componente.nombre }}
-                            </option>
+                                {% if componente.activo %}
+                                    <option value="{{ componente.codigo }}" {% if valores.componente == componente.codigo|stringformat:"s" %}selected{% endif %}>
+                                        {{ componente.nombre }}
+                                    </option>
+                                {% endif %}
                             {% endfor %}
                         </select>
                         {% if errores.componente %}
@@ -109,9 +111,11 @@
                         <select class="form-select {% if errores.tipos_merma %}is-invalid{% endif %}" name="tipos_merma" id="tipos_merma">
                             <option value="">-- Seleccionar un tipo --</option>
                             {% for tipo in tipos_merma %}
-                            <option value="{{ tipo.codigo }}" {% if valores.tipo == tipo.codigo|stringformat:"s" %}selected{% endif %}>
-                                {{ tipo.nombre }}
-                            </option>
+                                {% if tipo.activo %}
+                                    <option value="{{ tipo.codigo }}" {% if valores.tipo == tipo.codigo|stringformat:"s" %}selected{% endif %}>
+                                        {{ tipo.nombre }}
+                                    </option>
+                                {% endif %}
                             {% endfor %}
                         </select>
                         {% if errores.tipo %}
@@ -125,10 +129,12 @@
                                 name="causa_raiz" id="causa_raiz" required>
                             <option value="">-- Seleccionar una causa --</option>
                             {% for causa in causa_raiz %}
-                            <option value="{{ causa.codigo }}"
-                                {% if valores.causa_raiz == causa.codigo|stringformat:"s" %}selected{% endif %}>
-                                {{ causa.nombre }}
-                            </option>
+                                {% if causa.activo %}
+                                    <option value="{{ causa.codigo }}"
+                                        {% if valores.causa_raiz == causa.codigo|stringformat:"s" %}selected{% endif %}>
+                                        {{ causa.nombre }}
+                                    </option>
+                                {% endif %}
                             {% endfor %}
                         </select>
                         {% if errores.causa_raiz %}
@@ -198,7 +204,7 @@
         const ordenInicial = "{{ valores.orden_produccion|default:'' }}";
         const loteInicial = "{{ valores.lote_material|default:'' }}";
 
-        function cargarOpciones(select, url, paramName, paramValue, seleccionarValor, etiquetaVacia, etiquetaLista, formatearOpcion) {
+        function cargarOpciones(select, url, paramName, paramValue, seleccionarValor, etiquetaVacia, etiquetaLista, formatearOpcion, filtroActivo) {
             select.disabled = true;
             select.innerHTML = '<option value="">' + etiquetaVacia + '</option>';
 
@@ -219,7 +225,12 @@
                 })
                 .then(function (items) {
                     select.innerHTML = '<option value="">' + etiquetaLista + '</option>';
-                    items.forEach(function (item) {
+
+                    const itemsActivos = typeof filtroActivo === 'function'
+                        ? items.filter(filtroActivo)
+                        : items;
+
+                    itemsActivos.forEach(function (item) {
                         const option = document.createElement('option');
                         const formatted = formatearOpcion(item);
                         option.value = formatted.value;
@@ -234,7 +245,7 @@
                         }
                         select.appendChild(option);
                     });
-                    select.disabled = items.length === 0;
+                    select.disabled = itemsActivos.length === 0;
                 })
                 .catch(function () {
                     select.innerHTML = '<option value="">Error al cargar opciones</option>';
@@ -253,6 +264,8 @@
                 function (estacion) {
                     return { value: estacion.codigo, label: estacion.nombre };
                 }
+                // Sin filtroActivo: el backend (ListEstacionesPorLineaAPIView)
+                // ya filtra activo=True antes de responder.
             );
         }
 
@@ -272,6 +285,9 @@
                         label: 'Orden ' + orden.numero + detalle,
                         dataset: { estacion: orden.estacion_trabajo_codigo || orden.estacion_trabajo },
                     };
+                },
+                function (orden) {
+                    return orden.estado_orden === 'COMPLETA';
                 }
             );
         }
@@ -292,6 +308,9 @@
                         label: 'Lote ' + lote.num + prov,
                         dataset: { componente: lote.componente_codigo || lote.componente },
                     };
+                },
+                function (lote) {
+                    return lote.estado_lote === 'DISPONIBLE';
                 }
             );
         }

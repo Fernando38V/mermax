@@ -74,7 +74,7 @@
                     <small class="text-muted fw-bold text-uppercase" style="font-size: 0.75rem; letter-spacing: 0.05em;">Piezas Mermadas</small>
                     <span class="material-symbols-outlined text-primary opacity-75">inventory_2</span>
                 </div>
-                <h3 class="text-primary fw-bold my-0">{{ reporte_data.totales.piezas|default:"0" }}</h3>
+                <h3 class="text-primary fw-bold my-0">{{ reporte_data.totales.piezas|default:"0"|floatformat:0 }}</h3>
             </div>
         </div>
         <div class="col-12 col-md-4">
@@ -121,7 +121,7 @@
                                     <span class="badge bg-light text-dark border">{{ item.turno|default:"-" }}</span>
                                 </td>
                                 <td><span class="fw-semibold">{{ item.componente }}</span></td>
-                                <td class="text-end fw-bold">{{ item.cantidad }}</td>
+                                <td class="text-end fw-bold">{{ item.cantidad|floatformat:0 }}</td>
                                 <td class="text-end fw-bold text-danger">${{ item.costo_total|moneda_mx }}</td>
                                 <td class="text-muted small">{{ item.causa_raiz|default:"-" }}</td>
                                 <td class="pe-3">
