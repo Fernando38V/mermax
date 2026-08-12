@@ -48,7 +48,7 @@
             <div class="card mx-kpi-card border-0 shadow-sm border-start border-primary border-4 h-100">
                 <div class="card-body">
                     <span class="text-muted fw-bold text-uppercase small">Piezas Mermadas</span>
-                    <h3 class="text-primary fw-bold my-2">{{ kpi_data.resumen.piezas_mermadas|moneda_mx }}</h3>
+                    <h3 class="text-primary fw-bold my-2">{{ kpi_data.resumen.piezas_mermadas|moneda_mx|floatformat:0 }}</h3>
                     <p class="text-muted small mb-0">Unidades perdidas</p>
                 </div>
             </div>

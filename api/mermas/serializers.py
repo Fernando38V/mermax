@@ -143,7 +143,7 @@ class LoteMaterialComboSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = LoteMaterial
-        fields = ['num', 'numero_lote_prov', 'componente', 'componente_codigo', 'fecha', 'cantidad']
+        fields = ['num', 'numero_lote_prov', 'componente', 'componente_codigo', 'fecha', 'cantidad', 'estado_lote']
 
 
 class OrdenProduccionComboSerializer(serializers.ModelSerializer):

@@ -326,11 +326,9 @@ def dashboard_supervisor(request):
         'por_estacion': por_estacion,
     })
     
-    """
-Vista de agregación para el dashboard del rol ALMAC.
-Se apoya en recepciones.models.LoteMaterial / Discrepancia y en
-inspecciones.models.RegistroDisposicion (+ subtipos Devolucion/Reciclaje/Desecho).
-"""
+
+#Vista para el dashboard del rol ALMAC.
+
 from datetime import date
 
 from django.db.models import Count
