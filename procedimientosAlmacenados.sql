@@ -48,12 +48,12 @@ BEGIN
 END$$
 DELIMITER ;
 
-SELECT folio, edo_flujo_merma FROM REGISTRO_MERMA WHERE edo_flujo_merma = 'REGISTRADA' LIMIT 5;
+-- SELECT folio, edo_flujo_merma FROM REGISTRO_MERMA WHERE edo_flujo_merma = 'REGISTRADA' LIMIT 5;
 
 -- Llamada sp_confirmar_recepcion_merma:
-CALL sp_confirmar_recepcion_merma('MRM-2026-010');
+-- CALL sp_confirmar_recepcion_merma('MRM-2026-010');
 -- Verifica que el trigger disparó la solicitud sola:
-SELECT * FROM SOLICITUD_INSPECCION WHERE registro_merma = 'MRM-2026-010';
+-- SELECT * FROM SOLICITUD_INSPECCION WHERE registro_merma = 'MRM-2026-010';
 
 /*
     Estado de un folio de registro de merma:
@@ -124,23 +124,25 @@ BEGIN
 END$$
 DELIMITER ;
 
+/*
+
 -- Ubicar una discrepancia abierta:
-SELECT folio, registro_merma, edo_discrepancia 
+-- SELECT folio, registro_merma, edo_discrepancia 
 FROM DISCREPANCIA 
 WHERE edo_discrepancia = 'ABIERTA' LIMIT 5;
 -- Llamada sp_resolver_discrepancia:
-CALL sp_resolver_discrepancia
+-- CALL sp_resolver_discrepancia
 ('DISC-2026-004', 'Conteo verificado con báscula', 3);
 -- Confirmamos solicitud de inspección creada:
-SELECT * FROM SOLICITUD_INSPECCION 
+-- SELECT * FROM SOLICITUD_INSPECCION 
 WHERE registro_merma = 'MRM-2026-012';
 
-SELECT codigo as Codigo, 
+-- SELECT codigo as Codigo, 
 edo_solicitud as EstadoSolicitud
 FROM SOLICITUD_INSPECCION 
 WHERE registro_merma = 'MRM-2026-012';
 
-SELECT folio as Folio, 
+-- SELECT folio as Folio, 
 edo_flujo_merma as EstadoMerma
 FROM REGISTRO_MERMA 
 WHERE folio = 'MRM-2026-012';
@@ -148,11 +150,12 @@ WHERE folio = 'MRM-2026-012';
 
 
 -- Para el flujo 3 -> 4, se necesita una merma en INSPECCIO con su solicitud PENDIENTE:
-SELECT si.codigo, si.registro_merma, rm.edo_flujo_merma
+-- SELECT si.codigo, si.registro_merma, rm.edo_flujo_merma
 FROM SOLICITUD_INSPECCION si
 JOIN REGISTRO_MERMA rm ON rm.folio = si.registro_merma
 WHERE si.edo_solicitud = 'PENDIENTE' AND rm.edo_flujo_merma = 'INSPECCIO';
 
+*/
 
 /*
     3. sp_generar_registro_disposicion
@@ -245,9 +248,9 @@ END$$
 DELIMITER ;
 
 -- elegir una empresa de reciclaje
-SELECT codigo, nombre FROM EMPRESA_RECICLADORA LIMIT 5;
-
-CALL sp_generar_registro_disposicion(
+-- SELECT codigo, nombre FROM EMPRESA_RECICLADORA LIMIT 5;
+/*
+-- CALL sp_generar_registro_disposicion(
     'MRM-SEED-0004',
     'RECICLAJE', 3,
     NULL, NULL,
@@ -257,12 +260,13 @@ CALL sp_generar_registro_disposicion(
     NULL, NULL,
     @folioGenerado
 );
+*/
 
-SELECT @folioGenerado;
+-- SELECT @folioGenerado;
 
 -- verificar que se creo bien
-SELECT * FROM REGISTRO_DISPOSICION WHERE folio = @folioGenerado;
-SELECT * FROM DISPOSICION_RECICLAJE WHERE registro_disposicion = @folioGenerado;
+-- SELECT * FROM REGISTRO_DISPOSICION WHERE folio = @folioGenerado;
+-- SELECT * FROM DISPOSICION_RECICLAJE WHERE registro_disposicion = @folioGenerado;
 
 
 /* 
@@ -306,11 +310,11 @@ END$$
 DELIMITER ;
 
 -- usando el mismo folio de merma:
-CALL sp_cerrar_solicitud_inspeccion('SOL-MRM-SEED-0004', 'MRM-SEED-0004', 3);
+-- CALL sp_cerrar_solicitud_inspeccion('SOL-MRM-SEED-0004', 'MRM-SEED-0004', 3);
 
 -- confirmaa el cierre completo
-SELECT edo_solicitud, fecha_atencion FROM SOLICITUD_INSPECCION WHERE codigo = 'SOL-MRM-SEED-0004';
-SELECT edo_flujo_merma FROM REGISTRO_MERMA WHERE folio = 'MRM-SEED-0004';
+-- SELECT edo_solicitud, fecha_atencion FROM SOLICITUD_INSPECCION WHERE codigo = 'SOL-MRM-SEED-0004';
+-- SELECT edo_flujo_merma FROM REGISTRO_MERMA WHERE folio = 'MRM-SEED-0004';
 
 
 /*
@@ -359,13 +363,13 @@ DELIMITER ;
 
 
 -- Llamada sp_ejecutar_disposicion_final:
-CALL sp_ejecutar_disposicion_final('DISP-2026-006');
+-- CALL sp_ejecutar_disposicion_final('DISP-2026-006');
 
 -- Verificamos:
-SELECT folio, estado_disposicion, fecha_ejecucion FROM REGISTRO_DISPOSICION WHERE folio = 'DISP-2026-006';
+-- SELECT folio, estado_disposicion, fecha_ejecucion FROM REGISTRO_DISPOSICION WHERE folio = 'DISP-2026-006';
 
 -- Prueba extra con caso de error (mensaje: esta disposicion ya fue ejecutada.):
-CALL sp_ejecutar_disposicion_final('DISP-2026-006');
+-- CALL sp_ejecutar_disposicion_final('DISP-2026-006');
 
 /*
     6. sp_trazabilidad_lote
@@ -402,7 +406,7 @@ END$$
 DELIMITER ;
 
 -- tomamos cualquier numero de la lista
-SELECT DISTINCT lote_material FROM REGISTRO_MERMA WHERE lote_material IS NOT NULL LIMIT 5;
+-- SELECT DISTINCT lote_material FROM REGISTRO_MERMA WHERE lote_material IS NOT NULL LIMIT 5;
 
 -- Llamada sp_trazabilidad_lote:
-CALL sp_trazabilidad_lote(2);
+-- CALL sp_trazabilidad_lote(2);
