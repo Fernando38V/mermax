@@ -16,6 +16,51 @@
 <div class="card">
     <div class="card-body">
         <form method="post" id="form-resolver">
+            <div class="card mb-4">
+                <div class="card-body">
+                    <div class="row g-4">
+                        <div class="col-md-4">
+                            <div class="text-muted small">Cantidad reportada (supervisor)</div>
+                            <div class="fw-semibold">{{ discrepancia.cantidad_reportada|floatformat:0 }}</div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="text-muted small">Cantidad recibida (almacén)</div>
+                            <div class="fw-semibold">{{ discrepancia.cantidad_recibida|floatformat:0 }}</div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="text-muted small">Motivo reportado</div>
+                            <div class="fw-semibold">{{ discrepancia.motivo_reporte }}</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="form-group mb-3">
+                <label class="form-label">¿Cuál es la cantidad correcta?</label>
+                <div class="d-flex flex-column gap-2">
+                    <div class="form-check">
+                        <input class="form-check-input" type="radio" name="cantidad_correcta_opcion"
+                            id="opcion_reportada" value="reportada" required>
+                        <label class="form-check-label" for="opcion_reportada">
+                            La reportada por el supervisor ({{ discrepancia.cantidad_reportada|floatformat:0 }})
+                        </label>
+                    </div>
+                    <div class="form-check">
+                        <input class="form-check-input" type="radio" name="cantidad_correcta_opcion"
+                            id="opcion_recibida" value="recibida" required>
+                        <label class="form-check-label" for="opcion_recibida">
+                            La recibida en almacén ({{ discrepancia.cantidad_recibida|floatformat:0 }})
+                        </label>
+                    </div>
+                    <div class="form-check d-flex align-items-center gap-2">
+                        <input class="form-check-input" type="radio" name="cantidad_correcta_opcion"
+                            id="opcion_otra" value="otra" required>
+                        <label class="form-check-label" for="opcion_otra">Otra cantidad:</label>
+                        <input type="number" step="1" min="0" class="form-control form-control-sm" style="width: 120px;"
+                            name="cantidad_correcta_otra" id="cantidad_correcta_otra" disabled>
+                    </div>
+                </div>
+            </div>
             {% csrf_token %}
             <div class="form-group">
                 <label class="form-label" for="motivo_resolucion">Motivo de la resolución</label>
@@ -86,6 +131,11 @@ document.addEventListener('DOMContentLoaded', function () {
     const modal = document.getElementById('modal-confirmar-resolucion');
     const form = document.getElementById('form-resolver');
     document.getElementById('btn-abrir-confirmacion').addEventListener('click', function () {
+        const opcionElegida = document.querySelector('input[name="cantidad_correcta_opcion"]:checked');
+        if (!opcionElegida) {
+            alert('Selecciona la cantidad correcta antes de continuar.');
+            return;
+        }
         modal.classList.add('mx-modal-open');
     });
     document.getElementById('btn-cancelar-modal').addEventListener('click', function () {
@@ -94,6 +144,16 @@ document.addEventListener('DOMContentLoaded', function () {
     document.getElementById('btn-aceptar-modal').addEventListener('click', function () {
         form.requestSubmit();
     });
+
+    document.querySelectorAll('input[name="cantidad_correcta_opcion"]').forEach(function (radio) {
+        radio.addEventListener('change', function () {
+            const inputOtra = document.getElementById('cantidad_correcta_otra');
+            inputOtra.disabled = this.value !== 'otra';
+            inputOtra.required = this.value === 'otra';
+            if (this.value !== 'otra') inputOtra.value = '';
+        });
+    });
+
 });
 </script>
 {% endblock extra_js %}

@@ -172,6 +172,12 @@ class ListDiscrepanciaAPIView(generics.ListAPIView):
 
         return queryset
 
+class DetailDiscrepanciaAPIView(generics.RetrieveAPIView):
+    permission_classes = [LecturaTodosEscrituraAlmacenista]
+    serializer_class = serializers.DetalleDiscrepanciaSerializer
+    queryset = models.Discrepancia.objects.all()
+    lookup_field = 'folio' 
+
 
 class DiscrepanciaCreateAPIView(AuditoriaSqlMixin, generics.CreateAPIView):
     permission_classes = [EsAlmacenista]
@@ -212,7 +218,7 @@ class ResolverDiscrepanciaAPIView(AuditoriaSqlMixin, APIView):
         with connection.cursor() as cursor:
             try:
                 cursor.callproc('sp_resolver_discrepancia', [
-                    folio, motivo_resolucion, request.user.num,
+                    folio, motivo_resolucion, cantidad_correcta, request.user.num,
                 ])
                 resultado = cursor.fetchone()
             except OperationalError as e:
@@ -253,7 +259,7 @@ class ConfirmarRecepcionAPIView(AuditoriaSqlMixin, APIView):
 
         with connection.cursor() as cursor:
             try:
-                cursor.callproc('sp_confirmar_recepcion_merma', [folio])
+                cursor.callproc('sp_confirmar_recepcion_merma', [folio, request.user.num])
                 resultado = cursor.fetchone()
             except OperationalError as e:
                 # El SP usa SIGNAL SQLSTATE '45000' para sus validaciones de negocio

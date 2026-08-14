@@ -13,6 +13,9 @@
    (el dictamen de disposición final) y se invocan en secuencia desde la
    misma vista de Django, separados por responsabilidad única: el 3 genera
    el registro y su tabla satélite, el 4 cierra la solicitud y la merma.
+
+   PARCHE — corrige que SOLICITUD_INSPECCION.usuario guarde a quien confirmó
+   recepción o resolvió la discrepancia, en vez de a quien registró la merma.
    ========================================================================== */
 
 /*
@@ -21,59 +24,49 @@
 DROP PROCEDURE IF EXISTS sp_confirmar_recepcion_merma;
 DELIMITER $$
 CREATE PROCEDURE sp_confirmar_recepcion_merma(
-    IN folioMerma VARCHAR(20)
+    IN folioMerma VARCHAR(20),
+    IN usuarioConfirma INT
 )
 BEGIN
     DECLARE estadoActual VARCHAR(10);
-
+ 
     SELECT edo_flujo_merma INTO estadoActual
     FROM REGISTRO_MERMA
     WHERE folio = folioMerma;
-
+ 
     IF estadoActual IS NULL THEN
         SIGNAL SQLSTATE '45000'
         SET MESSAGE_TEXT = 'No existe una merma con ese folio.';
     END IF;
-
+ 
     IF estadoActual <> 'REGISTRADA' THEN
         SIGNAL SQLSTATE '45000'
         SET MESSAGE_TEXT = 'Solo se puede confirmar recepción de mermas en estado REGISTRADA.';
     END IF;
-
+ 
     UPDATE REGISTRO_MERMA
     SET edo_flujo_merma = 'RECIBIDA'
     WHERE folio = folioMerma;
-
+ 
+    UPDATE SOLICITUD_INSPECCION
+    SET usuario = usuarioConfirma
+    WHERE registro_merma = folioMerma
+      AND edo_solicitud = 'PENDIENTE';
+ 
     SELECT folioMerma AS folio, 'RECIBIDA' AS nuevoEstado;
 END$$
 DELIMITER ;
-
--- SELECT folio, edo_flujo_merma FROM REGISTRO_MERMA WHERE edo_flujo_merma = 'REGISTRADA' LIMIT 5;
-
--- Llamada sp_confirmar_recepcion_merma:
--- CALL sp_confirmar_recepcion_merma('MRM-2026-010');
--- Verifica que el trigger disparó la solicitud sola:
--- SELECT * FROM SOLICITUD_INSPECCION WHERE registro_merma = 'MRM-2026-010';
-
+ 
+ 
 /*
-    Estado de un folio de registro de merma:
-
-select 
-folio as Folio, 
-edo_flujo_merma as Estado
-from registro_merma
-where folio = 'MRM-2026-010';
-*/
-
-/*
-    2. sp_resolver_discrepancia
+   2. sp_resolver_discrepancia
 */
 DROP PROCEDURE IF EXISTS sp_resolver_discrepancia;
 DELIMITER $$
 CREATE PROCEDURE sp_resolver_discrepancia(
     IN folioDiscrepancia VARCHAR(20),
     IN motivoResolucion VARCHAR(100),
-    IN cantidadCorrecta DECIMAL(10,2),  
+    IN cantidadCorrecta DECIMAL(10,2),
     IN usuarioResolucion INT
 )
 BEGIN
@@ -101,9 +94,9 @@ BEGIN
         SET MESSAGE_TEXT = 'El motivo de resolución es obligatorio.';
     END IF;
 
-    IF cantidadCorrecta IS NULL OR cantidadCorrecta < 0 THEN
+    IF cantidadCorrecta IS NULL OR cantidadCorrecta <= 0 THEN
         SIGNAL SQLSTATE '45000'
-        SET MESSAGE_TEXT = 'La cantidad correcta es obligatoria y debe ser mayor a cero.'
+        SET MESSAGE_TEXT = 'La cantidad correcta es obligatoria y debe ser mayor a cero.';
     END IF;
 
     UPDATE DISCREPANCIA
@@ -113,9 +106,13 @@ BEGIN
         usuario_resolucion = usuarioResolucion
     WHERE folio = folioDiscrepancia;
 
+    -- Bandera de sesión: le indica al trigger que este UPDATE puntual de
+    -- cantidad, aunque el estado ya no sea REGISTRADA, viene de la
+    -- resolución de una discrepancia y debe permitirse. costo_total lo
+    -- recalcula el propio trigger.
     SET @resolviendo_discrepancia = 1;
 
-    UPDATE REGISTRO_MERMA 
+    UPDATE REGISTRO_MERMA
     SET cantidad = cantidadCorrecta
     WHERE folio = folioMerma;
 

@@ -217,3 +217,9 @@ class ListDiscrepanciaSerializer(serializers.ModelSerializer):
             "usuario_resolucion",
             "usuario_resolucion_nombre",
         ]
+        
+class DetalleDiscrepanciaSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Discrepancia
+        fields = ['folio', 'registro_merma', 'cantidad_reportada', 'cantidad_recibida',
+                  'motivo_reporte', 'edo_discrepancia']

@@ -1,0 +1,370 @@
+{% extends "base/layout_app.html" %}
+{% load static %}
+
+{% block title %}Trazabilidad por Folio{% endblock %}
+
+{% block app_content %}
+<div class="container-fluid py-4">
+
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="h4 mb-0">
+            <span class="material-symbols-outlined align-middle">manage_search</span>
+            Trazabilidad por Folio
+        </h1>
+    </div>
+
+    <!-- Buscador -->
+    <div class="card mb-4">
+        <div class="card-body">
+            <form method="get" class="row g-2 align-items-end">
+                <div class="col-md-6">
+                    <label for="folio" class="form-label">Folio de merma</label>
+                    <input
+                        type="text"
+                        id="folio"
+                        name="folio"
+                        class="form-control"
+                        placeholder="Ej. MRM-2026-0001"
+                        value="{{ folio_buscado }}"
+                        autofocus
+                    >
+                </div>
+                <div class="col-md-auto">
+                    <button type="submit" class="btn btn-primary">
+                        <span class="material-symbols-outlined align-middle">search</span>
+                        Buscar
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    {% if error %}
+        <div class="alert alert-danger d-flex align-items-center gap-2">
+            <span class="material-symbols-outlined">error</span>
+            {{ error }}
+        </div>
+    {% elif folio_buscado and not resultado %}
+        <div class="alert alert-warning d-flex align-items-center gap-2">
+            <span class="material-symbols-outlined">warning</span>
+            No se encontró ningún registro con el folio "{{ folio_buscado }}".
+        </div>
+    {% endif %}
+
+    {% if resultado %}
+        {% with r=resultado %}
+
+        <!-- ===================== Datos generales ===================== -->
+        <div class="card mb-4">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <span class="fw-semibold">Folio {{ r.folio }}</span>
+                <span class="badge estado-badge estado-{{ r.estado_actual.codigo|lower }}">
+                    {{ r.estado_actual.nombre }}
+                </span>
+            </div>
+            <div class="card-body">
+                <div class="row g-3">
+                    <div class="col-md-3">
+                        <div class="text-muted small">Fecha de registro</div>
+                        <div>{{ r.fecha }}</div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="text-muted small">Registrado por</div>
+                        <div>{{ r.usuario_registro }}</div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="text-muted small">Cantidad</div>
+                        <div>{{ r.cantidad }} {{ r.unidad }}</div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="text-muted small">Costo total</div>
+                        <div>{% if r.costo_total %}${{ r.costo_total|floatformat:2 }}{% else %}—{% endif %}</div>
+                    </div>
+
+                    <div class="col-md-3">
+                        <div class="text-muted small">Componente</div>
+                        <div>{{ r.componente|default:"—" }}</div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="text-muted small">Lote</div>
+                        <div>{{ r.lote_material|default:"—" }}</div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="text-muted small">Tipo de merma</div>
+                        <div>{{ r.tipo_merma }}</div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="text-muted small">Causa raíz</div>
+                        <div>{{ r.causa_raiz|default:"—" }}</div>
+                    </div>
+
+                    <div class="col-md-3">
+                        <div class="text-muted small">Estación de trabajo</div>
+                        <div>{{ r.estacion_trabajo|default:"—" }}</div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="text-muted small">Orden de producción</div>
+                        <div>{{ r.orden_produccion|default:"—" }}</div>
+                    </div>
+                    {% if r.descripcion %}
+                    <div class="col-md-6">
+                        <div class="text-muted small">Descripción</div>
+                        <div>{{ r.descripcion }}</div>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- ===================== Línea de flujo ===================== -->
+        <div class="card mb-4">
+            <div class="card-header fw-semibold">Flujo del registro</div>
+            <div class="card-body">
+                <div class="trazabilidad-timeline">
+
+                    <div class="timeline-item completado">
+                        <div class="timeline-marker"></div>
+                        <div class="timeline-content">
+                            <div class="fw-semibold">Registrada</div>
+                            <div class="text-muted small">{{ r.fecha }} · {{ r.usuario_registro }}</div>
+                        </div>
+                    </div>
+
+                    {% if r.recepcion %}
+                    <div class="timeline-item completado">
+                        <div class="timeline-marker"></div>
+                        <div class="timeline-content">
+                            <div class="fw-semibold">Recibida en Almacén</div>
+                            <div class="text-muted small">{{ r.recepcion.fecha_hora }} · {{ r.recepcion.usuario }}</div>
+                        </div>
+                    </div>
+                    {% endif %}
+
+                    {% if r.inspeccion %}
+                    <div class="timeline-item completado">
+                        <div class="timeline-marker"></div>
+                        <div class="timeline-content">
+                            <div class="fw-semibold">Solicitud de inspección — {{ r.inspeccion.codigo }}</div>
+                            <div class="text-muted small">
+                                Generada: {{ r.inspeccion.fecha_generacion }}
+                                {% if r.inspeccion.usuario_generacion %} · {{ r.inspeccion.usuario_generacion }}{% endif %}
+                            </div>
+                            <span class="badge bg-{% if r.inspeccion.estado == 'Atendida' %}success{% else %}warning{% endif %} mt-1">
+                                {{ r.inspeccion.estado }}
+                            </span>
+                            {% if r.inspeccion.fecha_atencion %}
+                                <div class="text-muted small mt-1">
+                                    Atendida: {{ r.inspeccion.fecha_atencion }}
+                                    {% if r.inspeccion.usuario_atencion %} · {{ r.inspeccion.usuario_atencion }}{% endif %}
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    {% endif %}
+
+                    {% if r.discrepancia %}
+                    <div class="timeline-item {% if r.discrepancia.fecha_resolucion %}completado{% else %}pendiente{% endif %}">
+                        <div class="timeline-marker"></div>
+                        <div class="timeline-content">
+                            <div class="fw-semibold">Discrepancia — {{ r.discrepancia.folio }}</div>
+                            <div class="text-muted small">
+                                Reportada: {{ r.discrepancia.fecha_reporte }} · {{ r.discrepancia.usuario_reporte }}
+                            </div>
+                            <div class="small mt-1">
+                                Reportado: {{ r.discrepancia.cantidad_reportada }} ·
+                                Recibido: {{ r.discrepancia.cantidad_recibida }} ·
+                                Diferencia: <strong>{{ r.discrepancia.diferencia }}</strong>
+                            </div>
+                            {% if r.discrepancia.motivo_reporte %}
+                                <div class="text-muted small">{{ r.discrepancia.motivo_reporte }}</div>
+                            {% endif %}
+                            <span class="badge bg-secondary mt-1">{{ r.discrepancia.estado }}</span>
+                            {% if r.discrepancia.fecha_resolucion %}
+                                <div class="text-muted small mt-1">
+                                    Resuelta: {{ r.discrepancia.fecha_resolucion }}
+                                    {% if r.discrepancia.usuario_resolucion %} · {{ r.discrepancia.usuario_resolucion }}{% endif %}
+                                </div>
+                                {% if r.discrepancia.motivo_resolucion %}
+                                    <div class="text-muted small">{{ r.discrepancia.motivo_resolucion }}</div>
+                                {% endif %}
+                            {% endif %}
+                        </div>
+                    </div>
+                    {% endif %}
+
+                    {% if r.disposicion %}
+                    <div class="timeline-item completado">
+                        <div class="timeline-marker"></div>
+                        <div class="timeline-content">
+                            <div class="fw-semibold">Disposición final — {{ r.disposicion.folio }}</div>
+                            <div class="text-muted small">
+                                Determinada: {{ r.disposicion.fecha_determinacion }} · {{ r.disposicion.usuario }}
+                            </div>
+                            <div class="mt-1">
+                                <span class="badge bg-info-subtle text-info-emphasis">{{ r.disposicion.disposicion_final }}</span>
+                                <span class="badge bg-secondary">{{ r.disposicion.estado_disposicion }}</span>
+                            </div>
+                            {% if r.disposicion.fecha_ejecucion %}
+                                <div class="text-muted small mt-1">
+                                    Ejecutada: {{ r.disposicion.fecha_ejecucion }}
+                                    {% if r.disposicion.cantidad_ejecutada %} · {{ r.disposicion.cantidad_ejecutada }} unidades{% endif %}
+                                </div>
+                            {% endif %}
+                            {% if r.disposicion.sale_almacen or r.disposicion.llega_almacen %}
+                                <div class="text-muted small">
+                                    {{ r.disposicion.sale_almacen|default:"—" }} → {{ r.disposicion.llega_almacen|default:"—" }}
+                                </div>
+                            {% endif %}
+                            {% if r.disposicion.observaciones %}
+                                <div class="text-muted small mt-1">{{ r.disposicion.observaciones }}</div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    {% endif %}
+
+                    {% if r.estado_actual.codigo == 'CERRADA' %}
+                    <div class="timeline-item completado">
+                        <div class="timeline-marker"></div>
+                        <div class="timeline-content">
+                            <div class="fw-semibold">Cerrada</div>
+                        </div>
+                    </div>
+                    {% endif %}
+
+                </div>
+            </div>
+        </div>
+
+        <!-- ===================== Bitácora de auditoría ===================== 
+        <div class="card mb-4">
+            <div class="card-header d-flex justify-content-between align-items-center" data-bs-toggle="collapse" href="#bitacoraCollapse" role="button" style="cursor: pointer;">
+                <span class="fw-semibold">
+                    <span class="material-symbols-outlined align-middle">history</span>
+                    Bitácora de auditoría ({{ r.bitacora|length }} evento{{ r.bitacora|length|pluralize }})
+                </span>
+                <span class="material-symbols-outlined">expand_more</span>
+            </div>
+            <div class="collapse" id="bitacoraCollapse">
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-sm mb-0 align-middle">
+                            <thead>
+                                <tr>
+                                    <th>Fecha</th>
+                                    <th>Módulo</th>
+                                    <th>Acción</th>
+                                    <th>Usuario</th>
+                                    <th>Motivo</th>
+                                    <th></th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for evento in r.bitacora %}
+                                <tr>
+                                    <td class="text-nowrap small">{{ evento.fecha_hora }}</td>
+                                    <td><span class="badge bg-light text-dark border">{{ evento.modulo }}</span></td>
+                                    <td>
+                                        <span class="badge bg-{% if evento.accion == 'CREATE' %}success{% elif evento.accion == 'UPDATE' %}primary{% else %}secondary{% endif %}">
+                                            {{ evento.accion }}
+                                        </span>
+                                    </td>
+                                    <td class="small">{{ evento.usuario|default:"—" }}</td>
+                                    <td class="small">{{ evento.motivo|default:"—" }}</td>
+                                    <td>
+                                        <button
+                                            class="btn btn-sm btn-link"
+                                            type="button"
+                                            data-bs-toggle="collapse"
+                                            data-bs-target="#detalle-{{ evento.num }}"
+                                        >
+                                            Ver cambios
+                                        </button>
+                                    </td>
+                                </tr>
+                                <tr class="collapse" id="detalle-{{ evento.num }}">
+                                    <td colspan="6" class="bg-light">
+                                        <div class="row g-3 py-2">
+                                            <div class="col-md-6">
+                                                <div class="text-muted small mb-1">Valor anterior</div>
+                                                <pre class="small mb-0">{{ evento.valor_anterior|default:"—" }}</pre>
+                                            </div>
+                                            <div class="col-md-6">
+                                                <div class="text-muted small mb-1">Valor nuevo</div>
+                                                <pre class="small mb-0">{{ evento.valor_nuevo|default:"—" }}</pre>
+                                            </div>
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% empty %}
+                                <tr>
+                                    <td colspan="6" class="text-center text-muted py-3">
+                                        Sin eventos de auditoría para este folio.
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+        -->
+
+        {% endwith %}
+    {% endif %}
+
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+    .estado-badge {
+        font-size: 0.8rem;
+        padding: 0.4em 0.8em;
+    }
+    .estado-registrada { background-color: var(--mx-gray-400, #adb5bd); color: #fff; }
+    .estado-recibida    { background-color: var(--mx-info, #0dcaf0); color: #000; }
+    .estado-inspeccio   { background-color: var(--mx-warning, #ffc107); color: #000; }
+    .estado-dicrepan    { background-color: var(--mx-danger, #dc3545); color: #fff; }
+    .estado-cerrada     { background-color: var(--mx-success, #198754); color: #fff; }
+
+    .trazabilidad-timeline {
+        position: relative;
+        padding-left: 2rem;
+    }
+    .trazabilidad-timeline::before {
+        content: '';
+        position: absolute;
+        left: 0.5rem;
+        top: 0.25rem;
+        bottom: 0.25rem;
+        width: 2px;
+        background-color: var(--mx-border, #dee2e6);
+    }
+    .timeline-item {
+        position: relative;
+        padding-bottom: 1.5rem;
+    }
+    .timeline-item:last-child {
+        padding-bottom: 0;
+    }
+    .timeline-marker {
+        position: absolute;
+        left: -2rem;
+        top: 0.2rem;
+        width: 0.9rem;
+        height: 0.9rem;
+        border-radius: 50%;
+        border: 2px solid var(--mx-border, #dee2e6);
+        background-color: #fff;
+    }
+    .timeline-item.completado .timeline-marker {
+        border-color: var(--mx-success, #198754);
+        background-color: var(--mx-success, #198754);
+    }
+    .timeline-item.pendiente .timeline-marker {
+        border-color: var(--mx-warning, #ffc107);
+        background-color: var(--mx-warning, #ffc107);
+    }
+</style>
+{% endblock %}

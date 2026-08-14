@@ -205,17 +205,46 @@ class DiscrepanciasAbiertas(generic.View):
 class ResolverDiscrepancia(generic.View):
     template_name = 'recepciones/resolver.html'
 
+    def _obtener_detalle(self, folio, token):
+        try:
+            return api_get(f'/mermas/discrepancias/detail/{folio}/', token=token)
+        except ApiError:
+            return {}
+
     def get(self, request, folio):
-        return render(request, self.template_name, {'folio': folio, 'valores': {}})
+        token = request.session.get('api_token')
+        discrepancia = self._obtener_detalle(folio, token)
+        return render(request, self.template_name, {
+            'folio': folio,
+            'discrepancia': discrepancia,
+            'valores': {},
+            'errores': {},
+        })
 
     def post(self, request, folio):
         token = request.session.get('api_token')
         motivo_resolucion = request.POST.get('motivo_resolucion', '').strip()
+        opcion = request.POST.get('cantidad_correcta_opcion', '')
+        otra_cantidad = request.POST.get('cantidad_correcta_otra', '').strip()
+
+        discrepancia = self._obtener_detalle(folio, token)
+
+        if opcion == 'reportada':
+            cantidad_correcta = discrepancia.get('cantidad_reportada')
+        elif opcion == 'recibida':
+            cantidad_correcta = discrepancia.get('cantidad_recibida')
+        elif opcion == 'otra':
+            cantidad_correcta = otra_cantidad
+        else:
+            cantidad_correcta = None
 
         try:
             api_post(
                 f'/mermas/discrepancias/resolver/{folio}/',
-                {'motivo_resolucion': motivo_resolucion},
+                {
+                    'motivo_resolucion': motivo_resolucion,
+                    'cantidad_correcta': cantidad_correcta,
+                },
                 token=token,
             )
             messages.success(request, f'Discrepancia {folio} resuelta. Flujo reanudado.')
@@ -224,7 +253,11 @@ class ResolverDiscrepancia(generic.View):
             errores = e.detail if isinstance(e.detail, dict) else {'error': [str(e.detail)]}
             mensaje = errores.get('motivo_resolucion', [str(e.detail)])[0] if isinstance(errores, dict) else str(e.detail)
             messages.error(request, mensaje)
-            return render(request, self.template_name, {'folio': folio, 'valores': request.POST})
+            return render(request, self.template_name, {
+                'folio': folio,
+                'discrepancia': discrepancia,
+                'valores': request.POST,
+            })
 
 @method_decorator(login_required_api, name='dispatch')
 class HistorialMovimientos(generic.View):
