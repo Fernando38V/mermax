@@ -172,6 +172,12 @@ class ListDiscrepanciaAPIView(generics.ListAPIView):
 
         return queryset
 
+class DetailDiscrepanciaAPIView(generics.RetrieveAPIView):
+    permission_classes = [LecturaTodosEscrituraAlmacenista]
+    serializer_class = serializers.DetalleDiscrepanciaSerializer
+    queryset = models.Discrepancia.objects.all()
+    lookup_field = 'folio' 
+
 
 class DiscrepanciaCreateAPIView(AuditoriaSqlMixin, generics.CreateAPIView):
     permission_classes = [EsAlmacenista]
@@ -195,17 +201,24 @@ class ResolverDiscrepanciaAPIView(AuditoriaSqlMixin, APIView):
 
     def post(self, request, folio):
         motivo_resolucion = request.data.get('motivo_resolucion', '').strip()
+        cantidad_correcta = request.data.get('cantidad_correcta')
 
         if not motivo_resolucion:
             return Response(
                 {"motivo_resolucion": ["Este campo es obligatorio y no puede estar vacío."]},
                 status=status.HTTP_400_BAD_REQUEST
             )
+            
+        if cantidad_correcta in (None, ''):
+            return Response(
+                {"cantidad_correcta": ["Este campo es obligatorio."]},
+                status=status.HTTP_400_BAD_REQUEST
+            )
 
         with connection.cursor() as cursor:
             try:
                 cursor.callproc('sp_resolver_discrepancia', [
-                    folio, motivo_resolucion, request.user.num,
+                    folio, motivo_resolucion, cantidad_correcta, request.user.num,
                 ])
                 resultado = cursor.fetchone()
             except OperationalError as e:
@@ -221,6 +234,7 @@ class ResolverDiscrepanciaAPIView(AuditoriaSqlMixin, APIView):
                 "mensaje": f"Discrepancia {folio} resuelta exitosamente.",
                 "folio_discrepancia": resultado[0],
                 "motivo_resolucion": motivo_resolucion,
+                "cantidad_correcta": cantidad_correcta,
                 "merma_actualizada": folio_merma,
                 "discrepancias_restantes": discrepancias_restantes,
                 "nuevo_estado_merma": nuevo_estado_merma,

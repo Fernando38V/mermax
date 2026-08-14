@@ -123,7 +123,9 @@ class EdoDiscrepancia(models.Model):
     class Meta:
         managed = False
         db_table = 'EDO_DISCREPANCIA'
-
+        
+    def __str__(self):
+        return self.nombre
 
 class EdoSolicitud(models.Model):
     codigo = models.CharField(primary_key=True, max_length=10)
@@ -132,8 +134,10 @@ class EdoSolicitud(models.Model):
     class Meta:
         managed = False
         db_table = 'EDO_SOLICITUD'
-
-
+        
+    def __str__(self):
+        return self.nombre
+    
 class Discrepancia(models.Model):
     folio = models.CharField(primary_key=True, max_length=20)
     fecha_reporte = models.DateField(auto_now_add=True)

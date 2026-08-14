@@ -62,6 +62,10 @@
                 <span class="material-symbols-outlined">account_tree</span> Trazabilidad
             </a>
 
+            <a href="{% url 'trazabilidad:trazabilidad-folio' %}" class="mx-sidebar-link {% block nav_trazaFolio %}{% endblock nav_trazaFolio %}">
+                <span class="material-symbols-outlined">account_tree</span> Trazabilidad de merma
+            </a>
+
             {% if usuario.rol == 'ALMAC' %}
             <a href="{% url 'recepciones:discrepancias' %}" class="mx-sidebar-link {% block nav_discrepancias %}{% endblock nav_discrepancias %}">
                 <span class="material-symbols-outlined">report</span> Discrepancias

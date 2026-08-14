@@ -41,3 +41,22 @@ class ConsultaLote(generic.View):
                     contexto['error'] = mensaje or 'No se encontró información para ese lote.'
 
         return render(request, self.template_name, contexto)
+    
+@method_decorator(login_required_api, name='dispatch')
+@method_decorator(login_required_api, name='dispatch')
+class TrazabilidadFolio(generic.View):
+    template_name = 'trazabilidad/trazabilidad_folio.html'
+
+    def get(self, request):
+        token = request.session.get('api_token')
+        folio = request.GET.get('folio', '').strip()
+
+        contexto = {"folio_buscado": folio, "resultado": None, "error": None}
+
+        if folio:
+            try:
+                contexto["resultado"] = api_get(f'/reportes/trazabilidad-folio/{folio}/', token=token)
+            except ApiError as e:
+                contexto["error"] = str(e)
+
+        return render(request, self.template_name, contexto)

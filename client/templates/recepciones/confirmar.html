@@ -150,8 +150,8 @@
                 </div>
             </div>
 
-            {% if requiere_motivo %}
-            <div class="card border-warning mt-3">
+            
+            <div class="card border-warning mt-3 {% if not requiere_motivo %}d-none{% endif %}" id="card-motivo-discrepancia">
                 <div class="card-body">
                     <h5 class="card-title text-warning">Discrepancia detectada</h5>
                     <p class="card-text">
@@ -173,20 +173,19 @@
                         </div>
 
                         <textarea class="form-control" id="motivo_reporte" name="motivo_reporte"
-                                rows="3" maxlength="100" required>{{ valores.motivo_reporte|default:'' }}</textarea>
+                                rows="3" maxlength="100">{{ valores.motivo_reporte|default:'' }}</textarea>
                         <div class="form-text text-end">
                             <span id="contador_motivo_reporte">0</span>/100 caracteres
                         </div>
                     </div>
                 </div>
             </div>
-            {% endif %}
 
             <div class="mt-4 d-flex gap-2">
-                <button type="submit" class="btn mx-btn-primary">
+                <button type="submit" class="mx-btn-primary" id="btn-submit-confirmar">
                     {% if requiere_motivo %}Registrar discrepancia{% else %}Confirmar recepción{% endif %}
                 </button>
-                <a href="{% url 'recepciones:bandeja' %}" class="btn btn-secondary d-inline-flex align-items-center">Cancelar</a>
+                <a href="{% url 'recepciones:bandeja' %}" class="mx-btn-secondary d-inline-flex align-items-center">Cancelar</a>
             </div>
         </form>
     </div>
@@ -222,35 +221,41 @@ document.addEventListener('DOMContentLoaded', function () {
     const inputDiferencia = document.getElementById('diferencia');
     const contenedorDiferencia = document.getElementById('contenedor_diferencia');
 
-    function calcularDiferencia() {
+    const cardMotivo = document.getElementById('card-motivo-discrepancia');
+    const btnSubmit = document.getElementById('btn-submit-confirmar');
+
+    function actualizarUI() {
         if (!inputReportada || !inputRecibida) return;
 
         const reportada = parseFloat(inputReportada.value) || 0;
-        const recibida = parseFloat(inputRecibida.value);
+        const recibidaRaw = inputRecibida.value;
+        const recibida = parseFloat(recibidaRaw);
 
-        // Si el campo está vacío o no es un número válido, ocultamos
-        if (isNaN(recibida)) {
+        if (recibidaRaw === '' || isNaN(recibida)) {
             contenedorDiferencia.classList.add('d-none');
+            cardMotivo.classList.add('d-none');
+            if (textarea) textarea.required = false;
+            btnSubmit.textContent = 'Confirmar recepción';
             return;
         }
 
         const dif = recibida - reportada;
+        const hayDiscrepancia = dif !== 0;
 
-        if (dif !== 0) {
-            // Muestra la diferencia con signo (+ o -)
+        if (hayDiscrepancia) {
             inputDiferencia.value = dif > 0 ? `+${dif}` : `${dif}`;
             contenedorDiferencia.classList.remove('d-none');
         } else {
-            // Si la cantidad coincide exactamente, oculta el campo
             contenedorDiferencia.classList.add('d-none');
         }
+
+        cardMotivo.classList.toggle('d-none', !hayDiscrepancia);
+        if (textarea) textarea.required = hayDiscrepancia;
+        btnSubmit.textContent = hayDiscrepancia ? 'Registrar discrepancia' : 'Confirmar recepción';
     }
 
-    // Escucha cada tecla/cambio en el campo de cantidad recibida
-    inputRecibida.addEventListener('input', calcularDiferencia);
-    
-    // Ejecuta al cargar por si la página se recargó con datos previos
-    calcularDiferencia();
+    inputRecibida.addEventListener('input', actualizarUI);
+    actualizarUI();
 });
 </script>
 {% endblock extra_js %}

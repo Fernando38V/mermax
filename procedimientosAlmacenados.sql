@@ -66,56 +66,69 @@ DELIMITER $$
 CREATE PROCEDURE sp_resolver_discrepancia(
     IN folioDiscrepancia VARCHAR(20),
     IN motivoResolucion VARCHAR(100),
+    IN cantidadCorrecta DECIMAL(10,2),
     IN usuarioResolucion INT
 )
 BEGIN
     DECLARE estadoActual VARCHAR(10);
     DECLARE folioMerma VARCHAR(20);
     DECLARE discrepanciasAbiertas INT;
- 
+
     SELECT edo_discrepancia, registro_merma
         INTO estadoActual, folioMerma
     FROM DISCREPANCIA
     WHERE folio = folioDiscrepancia;
- 
+
     IF estadoActual IS NULL THEN
         SIGNAL SQLSTATE '45000'
         SET MESSAGE_TEXT = 'No existe una discrepancia con ese folio.';
     END IF;
- 
+
     IF estadoActual <> 'ABIERTA' THEN
         SIGNAL SQLSTATE '45000'
         SET MESSAGE_TEXT = 'Esta discrepancia ya se encuentra resuelta.';
     END IF;
- 
+
     IF motivoResolucion IS NULL OR TRIM(motivoResolucion) = '' THEN
         SIGNAL SQLSTATE '45000'
         SET MESSAGE_TEXT = 'El motivo de resolución es obligatorio.';
     END IF;
- 
+
+    IF cantidadCorrecta IS NULL OR cantidadCorrecta <= 0 THEN
+        SIGNAL SQLSTATE '45000'
+        SET MESSAGE_TEXT = 'La cantidad correcta es obligatoria y debe ser mayor a cero.';
+    END IF;
+
     UPDATE DISCREPANCIA
     SET edo_discrepancia = 'RESUELTA',
         fecha_resolucion = CURDATE(),
         motivo_resolucion = motivoResolucion,
         usuario_resolucion = usuarioResolucion
     WHERE folio = folioDiscrepancia;
- 
+
+    -- Bandera de sesión: le indica al trigger que este UPDATE puntual de
+    -- cantidad, aunque el estado ya no sea REGISTRADA, viene de la
+    -- resolución de una discrepancia y debe permitirse. costo_total lo
+    -- recalcula el propio trigger.
+    SET @resolviendo_discrepancia = 1;
+
+    UPDATE REGISTRO_MERMA
+    SET cantidad = cantidadCorrecta
+    WHERE folio = folioMerma;
+
+    SET @resolviendo_discrepancia = NULL;
+
     SELECT COUNT(*) INTO discrepanciasAbiertas
     FROM DISCREPANCIA
     WHERE registro_merma = folioMerma
       AND edo_discrepancia = 'ABIERTA';
- 
+
     IF discrepanciasAbiertas = 0 THEN
         UPDATE REGISTRO_MERMA
         SET edo_flujo_merma = 'RECIBIDA'
         WHERE folio = folioMerma;
- 
-        UPDATE SOLICITUD_INSPECCION
-        SET usuario = usuarioResolucion
-        WHERE registro_merma = folioMerma
-          AND edo_solicitud = 'PENDIENTE';
     END IF;
- 
+
     SELECT folioDiscrepancia AS folioDiscrepancia,
            folioMerma AS folioMerma,
            discrepanciasAbiertas AS discrepanciasRestantes;
