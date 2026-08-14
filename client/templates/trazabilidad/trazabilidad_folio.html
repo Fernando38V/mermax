@@ -1,17 +1,12 @@
 {% extends "base/layout_app.html" %}
 {% load static %}
 
-{% block title %}Trazabilidad por Folio{% endblock %}
+{% block nav_trazaFolio %}active{% endblock nav_trazaFolio %}
+{% block page_title %}Trazabilidad por Folio{% endblock %}
+{% block page_subtitle %}Consulta de trazabilidad de merma por folio único{% endblock page_subtitle %}
 
 {% block app_content %}
 <div class="container-fluid py-4">
-
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <h1 class="h4 mb-0">
-            <span class="material-symbols-outlined align-middle">manage_search</span>
-            Trazabilidad por Folio
-        </h1>
-    </div>
 
     <!-- Buscador -->
     <div class="card mb-4">
