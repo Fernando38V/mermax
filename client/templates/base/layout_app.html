@@ -59,11 +59,11 @@
             {% endif %}
 
             <a href="{% url 'trazabilidad:consulta' %}" class="mx-sidebar-link {% block nav_trazabilidad %}{% endblock nav_trazabilidad %}">
-                <span class="material-symbols-outlined">account_tree</span> Trazabilidad
+                <span class="material-symbols-outlined">account_tree</span> Trazabilidad por lote
             </a>
 
             <a href="{% url 'trazabilidad:trazabilidad-folio' %}" class="mx-sidebar-link {% block nav_trazaFolio %}{% endblock nav_trazaFolio %}">
-                <span class="material-symbols-outlined">account_tree</span> Trazabilidad de merma
+                <span class="material-symbols-outlined">timeline</span> Trazabilidad de merma
             </a>
 
             {% if usuario.rol == 'ALMAC' %}
