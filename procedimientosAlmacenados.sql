@@ -73,6 +73,7 @@ DELIMITER $$
 CREATE PROCEDURE sp_resolver_discrepancia(
     IN folioDiscrepancia VARCHAR(20),
     IN motivoResolucion VARCHAR(100),
+    IN cantidadCorrecta DECIMAL(10,2),  
     IN usuarioResolucion INT
 )
 BEGIN
@@ -100,12 +101,25 @@ BEGIN
         SET MESSAGE_TEXT = 'El motivo de resolución es obligatorio.';
     END IF;
 
+    IF cantidadCorrecta IS NULL OR cantidadCorrecta < 0 THEN
+        SIGNAL SQLSTATE '45000'
+        SET MESSAGE_TEXT = 'La cantidad correcta es obligatoria y debe ser mayor a cero.'
+    END IF;
+
     UPDATE DISCREPANCIA
     SET edo_discrepancia = 'RESUELTA',
         fecha_resolucion = CURDATE(),
         motivo_resolucion = motivoResolucion,
         usuario_resolucion = usuarioResolucion
     WHERE folio = folioDiscrepancia;
+
+    SET @resolviendo_discrepancia = 1;
+
+    UPDATE REGISTRO_MERMA 
+    SET cantidad = cantidadCorrecta
+    WHERE folio = folioMerma;
+
+    SET @resolviendo_discrepancia = NULL;
 
     SELECT COUNT(*) INTO discrepanciasAbiertas
     FROM DISCREPANCIA

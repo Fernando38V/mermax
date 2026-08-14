@@ -5,4 +5,5 @@ app_name = 'trazabilidad'
 
 urlpatterns = [
     path('', views.ConsultaLote.as_view(), name='consulta'),
+    path('trazabilidad-folio/', views.TrazabilidadFolio.as_view(), name='trazabilidad-folio'),
 ]

@@ -1,5 +1,7 @@
 from django.shortcuts import render
 from django.db.utils import OperationalError
+
+from django.db import models
 # Create your views here.
 """
 App: reportes - views
@@ -18,30 +20,40 @@ from datetime import date, datetime
 from django.db import connection
 from django.db.models import Count, F, Sum
 from django.http import HttpResponse, JsonResponse
+from django.shortcuts import get_object_or_404
 from rest_framework import permissions, status
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from catalogos.models import CausaRaiz, LineaProduccion
 from inspecciones.models import RegistroDisposicion
-from mermas.models import RegistroMerma, TurnoOrden
+from mermas.models import RegistroMerma, TurnoOrden, Discrepancia, SolicitudInspeccion
 from recepciones.models import LoteMaterial
 
 from . import serializers as s
 from .models import AlertaGenerada, UmbralAlerta
-
+from auditoria.models import BitacoraAuditoria
+import json
 # Estados que ya no cuentan como scrap "vivo" no existen: toda merma
 # registrada cuenta para el KPI, sin importar en qué punto del flujo esté.
 # Sólo se excluyen las que quedaron bloqueadas por discrepancia, porque su
 # cantidad todavía está en disputa.
 ESTADOS_EN_DISPUTA = ['DISCREPAN']
 
+ESTADOS_FLUJO = {
+    'REGISTRADA': 'Registrada',
+    'RECIBIDA': 'Recibida en Almacén',
+    'INSPECCIO': 'En inspección',
+    'DICREPAN': 'En Discrepancia',
+    'CERRADA': 'Cerrada',
+}
 
 # ======================================================
 # Permisos
 # ======================================================
 
 class SoloCalidadOAdmin(permissions.BasePermission):
+    
     """RF-13: las alertas se despliegan y se atienden en el panel de Calidad."""
     message = 'Sólo el Ingeniero de Calidad puede atender alertas.'
 
@@ -293,7 +305,156 @@ class TrazabilidadLoteView(APIView):
             ],
         })
 
+MODULOS_RELACIONADOS = ['DISCREPANCIA', 'SOLICITUD_INSPECCION', 'REGISTRO_DISPOSICION']
 
+def _parsear(texto):
+    """valor_anterior/valor_nuevo son TextField con JSON adentro (o NULL)."""
+    if not texto:
+        return None
+    try:
+        return json.loads(texto)
+    except (TypeError, ValueError):
+        return None
+
+
+def _coincide_folio(evento, campo, folio):
+    """True si folio aparece en valor_anterior o valor_nuevo bajo `campo`."""
+    for texto in (evento.valor_nuevo, evento.valor_anterior):
+        datos = _parsear(texto)
+        if datos and datos.get(campo) == folio:
+            return True
+    return False
+
+class TrazabilidadFolioView(APIView):
+    
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request, folio):
+        registro = get_object_or_404(
+            RegistroMerma.objects.select_related(
+                'componente', 'lote_material', 'usuario', 'tipo_merma',
+                'causa_raiz', 'estacion_trabajo', 'orden_produccion', 'edo_flujo_merma'
+            ),
+            folio=folio
+        )
+
+        data = {
+            "folio": registro.folio,
+            "fecha": registro.fecha,
+            "cantidad": registro.cantidad,
+            "unidad": registro.unidad,
+            "descripcion": registro.descripcion,
+            "costo_total": float(registro.costo_total) if registro.costo_total is not None else None,
+            "estado_actual": {
+                "codigo": registro.edo_flujo_merma_id,
+                "nombre": str(registro.edo_flujo_merma),
+            },
+            "usuario_registro": str(registro.usuario),
+            "componente": str(registro.componente) if registro.componente else None,
+            "lote_material": str(registro.lote_material) if registro.lote_material else None,
+            "tipo_merma": str(registro.tipo_merma),
+            "causa_raiz": str(registro.causa_raiz) if registro.causa_raiz else None,
+            "estacion_trabajo": str(registro.estacion_trabajo) if registro.estacion_trabajo else None,
+            "orden_produccion": str(registro.orden_produccion) if registro.orden_produccion else None,
+        }
+
+        # --- Discrepancia relacionada ---
+        discrepancia = Discrepancia.objects.filter(registro_merma=registro).select_related(
+            'usuario_reporte', 'usuario_resolucion', 'edo_discrepancia'
+        ).first()
+        data["discrepancia"] = None
+        if discrepancia:
+            data["discrepancia"] = {
+                "folio": discrepancia.folio,
+                "fecha_reporte": discrepancia.fecha_reporte,
+                "cantidad_reportada": discrepancia.cantidad_reportada,
+                "cantidad_recibida": discrepancia.cantidad_recibida,
+                "diferencia": discrepancia.diferencia,
+                "motivo_reporte": discrepancia.motivo_reporte,
+                "estado": str(discrepancia.edo_discrepancia),
+                "usuario_reporte": str(discrepancia.usuario_reporte),
+                "fecha_resolucion": discrepancia.fecha_resolucion,
+                "motivo_resolucion": discrepancia.motivo_resolucion,
+                "usuario_resolucion": str(discrepancia.usuario_resolucion) if discrepancia.usuario_resolucion else None,
+            }
+
+        # --- Solicitud de inspección relacionada ---
+        solicitud = SolicitudInspeccion.objects.filter(registro_merma=registro).select_related(
+            'usuario', 'usuario_atencion', 'edo_solicitud'
+        ).first()
+        data["inspeccion"] = None
+        if solicitud:
+            data["inspeccion"] = {
+                "codigo": solicitud.codigo,
+                "fecha_generacion": solicitud.fecha_generacion,
+                "hora_generacion": solicitud.hora_generacion,
+                "fecha_atencion": solicitud.fecha_atencion,
+                "estado": str(solicitud.edo_solicitud),
+                "usuario_generacion": str(solicitud.usuario) if solicitud.usuario else None,
+                "usuario_atencion": str(solicitud.usuario_atencion) if solicitud.usuario_atencion else None,
+            }
+
+        # --- Disposición final relacionada ---
+        disposicion = RegistroDisposicion.objects.filter(registro_merma=registro).select_related(
+            'disposicion_final', 'usuario', 'sale_almacen', 'llega_almacen', 'estado_disposicion'
+        ).first()
+        data["disposicion"] = None
+        if disposicion:
+            data["disposicion"] = {
+                "folio": disposicion.folio,
+                "fecha_determinacion": disposicion.fecha_determinacion,
+                "fecha_ejecucion": disposicion.fecha_ejecucion,
+                "cantidad_ejecutada": disposicion.cantidad_ejecutada,
+                "disposicion_final": str(disposicion.disposicion_final),
+                "estado_disposicion": str(disposicion.estado_disposicion),
+                "sale_almacen": str(disposicion.sale_almacen) if disposicion.sale_almacen else None,
+                "llega_almacen": str(disposicion.llega_almacen) if disposicion.llega_almacen else None,
+                "observaciones": disposicion.observaciones,
+                "usuario": str(disposicion.usuario),
+            }
+
+        # --- Bitácora del folio ---
+        # Primer filtro a nivel SQL (icontains) solo para no traer la tabla
+        # completa; el match real y exacto se hace ya parseado en Python,
+        # porque un folio corto podría ser substring de otro más largo.
+        candidatos = BitacoraAuditoria.objects.filter(
+            models.Q(modulo='REGISTRO_MERMA') | models.Q(modulo__in=MODULOS_RELACIONADOS)
+        ).filter(
+            models.Q(valor_nuevo__icontains=folio) | models.Q(valor_anterior__icontains=folio)
+        ).select_related('usuario').order_by('fecha_hora', 'num')
+
+        eventos = []
+        for e in candidatos:
+            campo = 'folio' if e.modulo == 'REGISTRO_MERMA' else 'registro_merma'
+            if _coincide_folio(e, campo, folio):
+                eventos.append({
+                    "num": e.num,
+                    "modulo": e.modulo,
+                    "accion": e.accion,
+                    "usuario": str(e.usuario) if e.usuario else None,
+                    "motivo": e.motivo,
+                    "fecha_hora": e.fecha_hora,
+                    "valor_anterior": _parsear(e.valor_anterior),
+                    "valor_nuevo": _parsear(e.valor_nuevo),
+                })
+
+        # recepcion
+        data["recepcion"] = None
+        for e in eventos:
+            if e["modulo"] == "REGISTRO_MERMA" and e["accion"] == "UPDATE":
+                anterior = e["valor_anterior"] or {}
+                nuevo = e["valor_nuevo"] or {}
+                if anterior.get("edo_flujo_merma") == "REGISTRADA" and nuevo.get("edo_flujo_merma") == "RECIBIDA":
+                    data["recepcion"] = {
+                        "fecha_hora": e["fecha_hora"],
+                        "usuario": e["usuario"],
+                    }
+                    break
+        
+        data["bitacora"] = eventos
+
+        return Response(data, status=status.HTTP_200_OK)
+        
 # ======================================================
 # RF-13: Alertas automáticas
 # ======================================================

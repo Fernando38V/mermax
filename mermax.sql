@@ -984,7 +984,11 @@ BEGIN
 
     -- RF-03: sólo se puede corregir mientras el almacenista no registre la
     -- recepción. Los cambios de estado sí se permiten: hacen avanzar el flujo.
+    -- Excepción controlada: sp_resolver_discrepancia activa
+    -- @resolviendo_discrepancia para poder corregir la cantidad cuando el
+    -- estado es DISCREPAN, sin abrir la puerta a cualquier otro UPDATE.
     IF OLD.edo_flujo_merma <> 'REGISTRADA'
+       AND IFNULL(@resolviendo_discrepancia, 0) = 0
        AND ( NEW.cantidad <> OLD.cantidad
              OR NOT (NEW.componente <=> OLD.componente)
              OR NOT (NEW.tipo_merma <=> OLD.tipo_merma)

@@ -195,10 +195,17 @@ class ResolverDiscrepanciaAPIView(AuditoriaSqlMixin, APIView):
 
     def post(self, request, folio):
         motivo_resolucion = request.data.get('motivo_resolucion', '').strip()
+        cantidad_correcta = request.data.get('cantidad_correcta')
 
         if not motivo_resolucion:
             return Response(
                 {"motivo_resolucion": ["Este campo es obligatorio y no puede estar vacío."]},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+            
+        if cantidad_correcta in (None, ''):
+            return Response(
+                {"cantidad_correcta": ["Este campo es obligatorio."]},
                 status=status.HTTP_400_BAD_REQUEST
             )
 
@@ -221,6 +228,7 @@ class ResolverDiscrepanciaAPIView(AuditoriaSqlMixin, APIView):
                 "mensaje": f"Discrepancia {folio} resuelta exitosamente.",
                 "folio_discrepancia": resultado[0],
                 "motivo_resolucion": motivo_resolucion,
+                "cantidad_correcta": cantidad_correcta,
                 "merma_actualizada": folio_merma,
                 "discrepancias_restantes": discrepancias_restantes,
                 "nuevo_estado_merma": nuevo_estado_merma,
