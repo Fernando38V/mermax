@@ -13,6 +13,9 @@
    (el dictamen de disposición final) y se invocan en secuencia desde la
    misma vista de Django, separados por responsabilidad única: el 3 genera
    el registro y su tabla satélite, el 4 cierra la solicitud y la merma.
+
+   PARCHE — corrige que SOLICITUD_INSPECCION.usuario guarde a quien confirmó
+   recepción o resolvió la discrepancia, en vez de a quien registró la merma.
    ========================================================================== */
 
 /*
@@ -21,52 +24,42 @@
 DROP PROCEDURE IF EXISTS sp_confirmar_recepcion_merma;
 DELIMITER $$
 CREATE PROCEDURE sp_confirmar_recepcion_merma(
-    IN folioMerma VARCHAR(20)
+    IN folioMerma VARCHAR(20),
+    IN usuarioConfirma INT
 )
 BEGIN
     DECLARE estadoActual VARCHAR(10);
-
+ 
     SELECT edo_flujo_merma INTO estadoActual
     FROM REGISTRO_MERMA
     WHERE folio = folioMerma;
-
+ 
     IF estadoActual IS NULL THEN
         SIGNAL SQLSTATE '45000'
         SET MESSAGE_TEXT = 'No existe una merma con ese folio.';
     END IF;
-
+ 
     IF estadoActual <> 'REGISTRADA' THEN
         SIGNAL SQLSTATE '45000'
         SET MESSAGE_TEXT = 'Solo se puede confirmar recepción de mermas en estado REGISTRADA.';
     END IF;
-
+ 
     UPDATE REGISTRO_MERMA
     SET edo_flujo_merma = 'RECIBIDA'
     WHERE folio = folioMerma;
-
+ 
+    UPDATE SOLICITUD_INSPECCION
+    SET usuario = usuarioConfirma
+    WHERE registro_merma = folioMerma
+      AND edo_solicitud = 'PENDIENTE';
+ 
     SELECT folioMerma AS folio, 'RECIBIDA' AS nuevoEstado;
 END$$
 DELIMITER ;
-
--- SELECT folio, edo_flujo_merma FROM REGISTRO_MERMA WHERE edo_flujo_merma = 'REGISTRADA' LIMIT 5;
-
--- Llamada sp_confirmar_recepcion_merma:
--- CALL sp_confirmar_recepcion_merma('MRM-2026-010');
--- Verifica que el trigger disparó la solicitud sola:
--- SELECT * FROM SOLICITUD_INSPECCION WHERE registro_merma = 'MRM-2026-010';
-
+ 
+ 
 /*
-    Estado de un folio de registro de merma:
-
-select 
-folio as Folio, 
-edo_flujo_merma as Estado
-from registro_merma
-where folio = 'MRM-2026-010';
-*/
-
-/*
-    2. sp_resolver_discrepancia
+   2. sp_resolver_discrepancia
 */
 DROP PROCEDURE IF EXISTS sp_resolver_discrepancia;
 DELIMITER $$
@@ -79,45 +72,50 @@ BEGIN
     DECLARE estadoActual VARCHAR(10);
     DECLARE folioMerma VARCHAR(20);
     DECLARE discrepanciasAbiertas INT;
-
+ 
     SELECT edo_discrepancia, registro_merma
         INTO estadoActual, folioMerma
     FROM DISCREPANCIA
     WHERE folio = folioDiscrepancia;
-
+ 
     IF estadoActual IS NULL THEN
         SIGNAL SQLSTATE '45000'
         SET MESSAGE_TEXT = 'No existe una discrepancia con ese folio.';
     END IF;
-
+ 
     IF estadoActual <> 'ABIERTA' THEN
         SIGNAL SQLSTATE '45000'
         SET MESSAGE_TEXT = 'Esta discrepancia ya se encuentra resuelta.';
     END IF;
-
+ 
     IF motivoResolucion IS NULL OR TRIM(motivoResolucion) = '' THEN
         SIGNAL SQLSTATE '45000'
         SET MESSAGE_TEXT = 'El motivo de resolución es obligatorio.';
     END IF;
-
+ 
     UPDATE DISCREPANCIA
     SET edo_discrepancia = 'RESUELTA',
         fecha_resolucion = CURDATE(),
         motivo_resolucion = motivoResolucion,
         usuario_resolucion = usuarioResolucion
     WHERE folio = folioDiscrepancia;
-
+ 
     SELECT COUNT(*) INTO discrepanciasAbiertas
     FROM DISCREPANCIA
     WHERE registro_merma = folioMerma
       AND edo_discrepancia = 'ABIERTA';
-
+ 
     IF discrepanciasAbiertas = 0 THEN
         UPDATE REGISTRO_MERMA
         SET edo_flujo_merma = 'RECIBIDA'
         WHERE folio = folioMerma;
+ 
+        UPDATE SOLICITUD_INSPECCION
+        SET usuario = usuarioResolucion
+        WHERE registro_merma = folioMerma
+          AND edo_solicitud = 'PENDIENTE';
     END IF;
-
+ 
     SELECT folioDiscrepancia AS folioDiscrepancia,
            folioMerma AS folioMerma,
            discrepanciasAbiertas AS discrepanciasRestantes;

@@ -245,7 +245,7 @@ class ConfirmarRecepcionAPIView(AuditoriaSqlMixin, APIView):
 
         with connection.cursor() as cursor:
             try:
-                cursor.callproc('sp_confirmar_recepcion_merma', [folio])
+                cursor.callproc('sp_confirmar_recepcion_merma', [folio, request.user.num])
                 resultado = cursor.fetchone()
             except OperationalError as e:
                 # El SP usa SIGNAL SQLSTATE '45000' para sus validaciones de negocio
